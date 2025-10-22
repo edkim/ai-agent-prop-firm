@@ -1,0 +1,137 @@
+/**
+ * API Client Service
+ * Handles all communication with the backend API
+ */
+
+import axios, { AxiosInstance } from 'axios';
+
+// API base URL - defaults to localhost during development
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+
+// Create axios instance with default config
+const apiClient: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 120000, // 2 minute timeout for backtests
+});
+
+// Types for API requests and responses
+export interface IntelligentBacktestRequest {
+  prompt: string;
+  ticker: string;
+  strategyType?: string;
+  timeframe?: string;
+  config?: Record<string, any>;
+}
+
+export interface RoutingDecision {
+  strategy: 'template-api' | 'custom-dates' | 'fully-custom';
+  reason: string;
+  dates?: string[];
+  useTemplate?: string;
+}
+
+export interface Trade {
+  date?: string;
+  ticker: string;
+  entryTime?: string;
+  entryPrice?: number;
+  exitTime?: string;
+  exitPrice?: number;
+  pnl?: number;
+  pnlPercent?: number;
+  exitReason?: string;
+  noTrade?: boolean;
+  noTradeReason?: string;
+}
+
+export interface Metrics {
+  total_trades?: number;
+  winning_trades?: number;
+  losing_trades?: number;
+  win_rate?: number;
+  total_pnl?: number;
+  avg_pnl?: number;
+  avg_winner?: number;
+  avg_loser?: number;
+  largest_winner?: number;
+  largest_loser?: number;
+}
+
+export interface BacktestResults {
+  backtest?: {
+    ticker: string;
+    strategy: string;
+    period?: string;
+  };
+  trades: Trade[];
+  metrics: Metrics;
+  summary?: string;
+}
+
+export interface IntelligentBacktestResponse {
+  success: boolean;
+  executionId: string;
+  results: BacktestResults;
+  executionTime: number;
+  routing: RoutingDecision;
+  scriptPath?: string;
+  error?: string;
+  stderr?: string;
+}
+
+/**
+ * Execute an intelligent backtest using natural language prompt
+ */
+export const executeIntelligentBacktest = async (
+  request: IntelligentBacktestRequest
+): Promise<IntelligentBacktestResponse> => {
+  const response = await apiClient.post<IntelligentBacktestResponse>(
+    '/backtests/execute-intelligent',
+    request
+  );
+  return response.data;
+};
+
+/**
+ * Execute a custom script backtest (legacy endpoint)
+ */
+export const executeScriptBacktest = async (
+  scriptTemplate: string,
+  parameters: Record<string, any>
+): Promise<IntelligentBacktestResponse> => {
+  const response = await apiClient.post<IntelligentBacktestResponse>(
+    '/backtests/execute-script',
+    { scriptTemplate, parameters }
+  );
+  return response.data;
+};
+
+/**
+ * Get all backtests
+ */
+export const getAllBacktests = async () => {
+  const response = await apiClient.get('/backtests');
+  return response.data;
+};
+
+/**
+ * Get specific backtest by ID
+ */
+export const getBacktest = async (id: number) => {
+  const response = await apiClient.get(`/backtests/${id}`);
+  return response.data;
+};
+
+/**
+ * Delete a backtest
+ */
+export const deleteBacktest = async (id: number) => {
+  const response = await apiClient.delete(`/backtests/${id}`);
+  return response.data;
+};
+
+// Export the axios instance for custom requests
+export default apiClient;
