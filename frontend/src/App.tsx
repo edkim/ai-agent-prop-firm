@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import BacktestForm from './components/BacktestForm';
 import ResultsDisplay from './components/ResultsDisplay';
-import { IntelligentBacktestResponse } from './services/api';
+import type { IntelligentBacktestResponse } from './services/api';
 
 function App() {
   const [results, setResults] = useState<IntelligentBacktestResponse | null>(null);

@@ -4,7 +4,8 @@
  */
 
 import { useState } from 'react';
-import { executeIntelligentBacktest, IntelligentBacktestRequest } from '../services/api';
+import { executeIntelligentBacktest } from '../services/api';
+import type { IntelligentBacktestRequest } from '../services/api';
 
 interface BacktestFormProps {
   onResults: (results: any) => void;

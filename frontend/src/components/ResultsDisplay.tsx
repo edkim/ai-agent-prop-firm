@@ -3,7 +3,7 @@
  * Shows backtest results including metrics, trades, and routing decision
  */
 
-import { IntelligentBacktestResponse, Trade } from '../services/api';
+import type { IntelligentBacktestResponse, Trade } from '../services/api';
 
 interface ResultsDisplayProps {
   results: IntelligentBacktestResponse;
