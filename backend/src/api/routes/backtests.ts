@@ -11,6 +11,7 @@ import { ScriptExecutionRequest } from '../../types/script.types';
 import BacktestService from '../../services/backtest.service';
 import ScriptGeneratorService from '../../services/script-generator.service';
 import ScriptExecutionService from '../../services/script-execution.service';
+import BacktestRouterService from '../../services/backtest-router.service';
 import crypto from 'crypto';
 
 const router = Router();
@@ -255,8 +256,110 @@ router.delete('/:id', (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/backtests/execute-intelligent
+ * Execute a backtest using intelligent routing
+ * This endpoint analyzes the request and automatically decides whether to use
+ * template API or custom script generation
+ */
+router.post('/execute-intelligent', async (req: Request, res: Response) => {
+  try {
+    const { prompt, ticker, strategyType = 'orb', timeframe = '5min', config = {} } = req.body;
+
+    if (!prompt || !ticker) {
+      return res.status(400).json({
+        error: 'Missing required fields: prompt, ticker',
+      });
+    }
+
+    console.log(`Analyzing request: "${prompt}"`);
+
+    // Use router to analyze request
+    const decision = await BacktestRouterService.analyzeRequest(prompt, {
+      ticker,
+      strategyType,
+      timeframe,
+      config,
+    });
+
+    console.log(`Routing decision: ${decision.strategy} - ${decision.reason}`);
+
+    // Build script generation params
+    const params: any = {
+      strategyType,
+      ticker,
+      timeframe,
+      config: { ...config },
+    };
+
+    // Add date information based on routing decision
+    if (decision.dates && decision.dates.length > 0) {
+      if (decision.dates.length === 1) {
+        params.date = decision.dates[0];
+      } else {
+        params.specificDates = decision.dates;
+      }
+    }
+
+    // Extract exit time from prompt if specified
+    const lowercasePrompt = prompt.toLowerCase();
+    if (lowercasePrompt.includes('noon') || lowercasePrompt.includes('12:00')) {
+      params.config.exitTime = '12:00';
+    } else {
+      const timeMatch = prompt.match(/(?:exit|close)(?:\s+at)?\s+(\d{1,2}):?(\d{2})/i);
+      if (timeMatch) {
+        const hours = timeMatch[1].padStart(2, '0');
+        const minutes = timeMatch[2] || '00';
+        params.config.exitTime = `${hours}:${minutes}`;
+      }
+    }
+
+    // Execute the routing decision
+    const { script, filepath } = await BacktestRouterService.executeDecision(decision, params);
+
+    console.log(`Generated script: ${filepath}`);
+    console.log(`Running backtest...`);
+
+    // Execute script
+    const startTime = Date.now();
+    const result = await ScriptExecutionService.executeScript(filepath);
+    const executionTime = Date.now() - startTime;
+
+    if (!result.success) {
+      console.error('Script execution failed:', result.error);
+      return res.status(500).json({
+        success: false,
+        error: result.error,
+        stderr: result.stderr,
+        routing: decision,
+        executionId: crypto.randomUUID(),
+      });
+    }
+
+    console.log(`Script completed in ${executionTime}ms`);
+
+    res.json({
+      success: true,
+      executionId: crypto.randomUUID(),
+      results: result.data,
+      executionTime,
+      routing: decision, // Include routing decision for transparency
+      scriptPath: filepath, // For debugging
+    });
+
+  } catch (error: any) {
+    console.error('Error executing intelligent backtest:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to execute backtest',
+      message: error.message,
+      executionId: crypto.randomUUID(),
+    });
+  }
+});
+
+/**
  * POST /api/backtests/execute-script
- * Execute a backtest script dynamically
+ * Execute a backtest script dynamically (legacy endpoint)
  * This endpoint is used internally by Claude to run complex backtests
  */
 router.post('/execute-script', async (req: Request, res: Response) => {

@@ -66,7 +66,15 @@ export interface ScriptMetrics {
 export interface ScriptGenerationParams {
   strategyType: 'orb' | 'momentum' | 'mean-reversion' | 'custom';
   ticker: string;
-  date: string;
+
+  // Date selection options (use one)
+  date?: string;                          // Single day
+  dateRange?: {                           // Consecutive date range
+    from: string;
+    to: string;
+  };
+  specificDates?: string[];               // Non-contiguous specific dates
+
   timeframe: string;
   config: ORBScriptConfig | Record<string, any>;
 }
@@ -79,6 +87,8 @@ export interface ORBScriptConfig {
   trailingStopPct?: number;
   marketFilterTicker?: string;
   requireEarnings?: boolean;
+  exitTime?: string;                      // Custom exit time (e.g., "12:00" for noon)
+  exitStrategy?: 'market-close' | 'fixed-time' | 'trailing-stop';
 }
 
 /**
@@ -119,4 +129,26 @@ export interface ScriptExecutionLog {
   stderr: string;
   error?: string;
   createdAt: Date;
+}
+
+/**
+ * Date query filter for special dates
+ */
+export interface DateQueryFilter {
+  type: 'earnings' | 'all-trading-days' | 'specific';
+  ticker?: string;
+  limit?: number;
+  order?: 'asc' | 'desc';
+  customDates?: string[];
+}
+
+/**
+ * Routing decision from BacktestRouter
+ */
+export interface RoutingDecision {
+  strategy: 'template-api' | 'custom-dates' | 'fully-custom';
+  reason: string;
+  dates?: string[];
+  useTemplate?: string;
+  customScript?: string;
 }
