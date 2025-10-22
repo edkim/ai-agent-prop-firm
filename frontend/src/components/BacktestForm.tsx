@@ -19,10 +19,10 @@ export default function BacktestForm({ onResults, onError }: BacktestFormProps) 
 
   // Example prompts for user guidance
   const examplePrompts = [
-    'Backtest HOOD for the past 10 trading days',
-    'Test CRML opening range breakout for past 5 days, exit at noon',
-    'Run ORB on NVDA for 2025-10-10, 2025-10-15, 2025-10-20',
-    'Backtest AAPL for the last 2 weeks',
+    'Test opening range breakout for the past 10 trading days',
+    'Backtest ORB strategy for past 5 days, exit at noon',
+    'Run opening range breakout on 2025-10-10, 2025-10-15, 2025-10-20',
+    'Test ORB for the last 2 weeks',
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,13 +98,13 @@ export default function BacktestForm({ onResults, onError }: BacktestFormProps) 
             id="prompt"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Describe your backtest in natural language..."
+            placeholder="E.g., 'Test opening range breakout for the past 10 days, exit at noon'"
             rows={3}
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             disabled={loading}
           />
           <p className="text-xs text-gray-500 mt-1">
-            Examples: "past 10 days", "exit at noon", "2025-10-10, 2025-10-15"
+            Strategy: Opening Range Breakout (ORB) • Options: date ranges, custom exit times
           </p>
         </div>
 
