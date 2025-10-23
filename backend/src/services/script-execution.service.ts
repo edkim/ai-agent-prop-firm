@@ -163,6 +163,7 @@ export class ScriptExecutionService {
             },
             trades: trades.map(t => ({
               date: t.date,
+              ticker: t.ticker,
               side: t.side,
               entry_time: t.entryTime,
               entry_price: t.entryPrice,
@@ -173,6 +174,8 @@ export class ScriptExecutionService {
               exit_reason: t.exitReason,
               highest_price: t.highestPrice,
               lowest_price: t.lowestPrice,
+              noTrade: t.noTrade,
+              noTradeReason: t.noTradeReason,
             })),
             metrics: {
               total_trades: trades.length,
