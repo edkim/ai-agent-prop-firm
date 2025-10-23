@@ -22,8 +22,9 @@ export default function BacktestForm({ onResults, onError }: BacktestFormProps) 
   const examplePrompts = [
     'Test opening range breakout for the past 10 trading days',
     'Backtest ORB strategy for past 5 days, exit at noon',
-    'Run opening range breakout on 2025-10-10, 2025-10-15, 2025-10-20',
-    'Test ORB for the last 2 weeks',
+    'Enter when VWAP is crossed. If crossing below then only enter if below 5-period SMA. Stop loss 1%. Test for the last 15 days.',
+    'Short at successful retest of low of day for the past 20 trading days',
+    'Test 5 minute ORB with 2% take profit and 1% stop loss for the last 10 days',
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,6 +33,14 @@ export default function BacktestForm({ onResults, onError }: BacktestFormProps) 
     if (!prompt.trim() || !ticker.trim()) {
       onError('Please enter both a prompt and ticker symbol');
       return;
+    }
+
+    // Check if prompt contains date keywords
+    const lowercasePrompt = prompt.toLowerCase();
+    const hasDateKeywords = /\b(last|past|previous|for the|days?|weeks?|months?|from|to|between|on|oct|nov|dec|jan|feb|mar|apr|may|jun|jul|aug|sep|\d{4}-\d{2}-\d{2})\b/.test(lowercasePrompt);
+
+    if (!hasDateKeywords) {
+      console.warn('⚠️  No date keywords detected in prompt - will default to last 10 trading days');
     }
 
     setLoading(true);

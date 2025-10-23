@@ -10,6 +10,7 @@
 import { ScriptGenerationParams, RoutingDecision, DateQueryFilter } from '../types/script.types';
 import { DateQueryService } from './date-query.service';
 import { ScriptGeneratorService } from './script-generator.service';
+import  claudeService from './claude.service';
 
 export class BacktestRouterService {
   private dateQueryService: DateQueryService;
@@ -22,47 +23,30 @@ export class BacktestRouterService {
 
   /**
    * Analyze a backtest request and determine routing strategy
+   *
+   * Strategy: Default to Claude unless it's a simple template case
    */
   async analyzeRequest(userPrompt: string, params?: Partial<ScriptGenerationParams>): Promise<RoutingDecision> {
     const lowercasePrompt = userPrompt.toLowerCase();
 
-    // Check for earnings-based queries
+    // Priority 1: Earnings queries (special date handling + template)
     if (this.isEarningsQuery(lowercasePrompt)) {
       return await this.handleEarningsQuery(userPrompt, params);
     }
 
-    // Check for date range queries
-    if (this.isDateRangeQuery(lowercasePrompt)) {
-      return this.handleDateRangeQuery(userPrompt, params);
+    // Priority 2: Simple ORB queries (use fast template)
+    if (this.isSimpleORB(lowercasePrompt)) {
+      return this.handleSimpleORB(userPrompt, params);
     }
 
-    // Check for specific dates
-    if (this.isSpecificDatesQuery(lowercasePrompt)) {
-      return this.handleSpecificDatesQuery(userPrompt, params);
-    }
-
-    // Check for custom exit time
-    if (this.isCustomExitTime(lowercasePrompt)) {
-      return this.handleCustomExitTime(userPrompt, params);
-    }
-
-    // Check for single-day backtest (simple case)
-    if (this.isSingleDayQuery(lowercasePrompt)) {
-      return this.handleSingleDayQuery(userPrompt, params);
-    }
-
-    // Default: assume template API can handle it
-    return {
-      strategy: 'template-api',
-      reason: 'Standard backtest request - using template API',
-      useTemplate: params?.strategyType || 'orb'
-    };
+    // Default: Everything else goes to Claude for intelligent generation
+    return await this.handleCustomStrategyQuery(userPrompt, params);
   }
 
   /**
    * Execute the routing decision and generate/run script
    */
-  async executeDecision(decision: RoutingDecision, params: ScriptGenerationParams): Promise<{ script: string; filepath: string }> {
+  async executeDecision(decision: RoutingDecision, params: ScriptGenerationParams): Promise<{ script: string; filepath: string; assumptions?: string[]; confidence?: number }> {
     if (decision.strategy === 'template-api' || decision.strategy === 'custom-dates') {
       // Use script generator with provided dates
       const finalParams: ScriptGenerationParams = { ...params };
@@ -77,6 +61,43 @@ export class BacktestRouterService {
       return { script, filepath };
     }
 
+    if (decision.strategy === 'claude-generated') {
+      // Use Claude AI to generate custom strategy script
+      if (!decision.userPrompt) {
+        throw new Error('User prompt is required for Claude-generated scripts');
+      }
+
+      console.log('🤖 Calling Claude API to generate custom strategy script...');
+
+      // If the routing decision has dates, add them to params
+      const finalParams: ScriptGenerationParams = { ...params };
+      if (decision.dates) {
+        finalParams.specificDates = decision.dates;
+      }
+
+      const claudeResponse = await claudeService.generateScript(decision.userPrompt, finalParams);
+
+      console.log(`✅ Claude generated script with confidence: ${claudeResponse.confidence}`);
+      console.log(`📋 Assumptions made: ${claudeResponse.assumptions.length}`);
+
+      // Update decision with Claude's metadata
+      decision.assumptions = claudeResponse.assumptions;
+      decision.confidence = claudeResponse.confidence;
+
+      // Write the generated script to file
+      const filepath = await this.scriptGenerator.writeScriptToFile(claudeResponse.script);
+
+      // Save a permanent copy of the Claude-generated script with metadata
+      await this.saveClaudeScript(claudeResponse, decision.userPrompt, finalParams, filepath);
+
+      return {
+        script: claudeResponse.script,
+        filepath,
+        assumptions: claudeResponse.assumptions,
+        confidence: claudeResponse.confidence,
+      };
+    }
+
     // Tier 3: Fully custom - would require more complex logic
     throw new Error('Fully custom scripts not yet implemented');
   }
@@ -84,6 +105,53 @@ export class BacktestRouterService {
   // ============================================================
   // QUERY DETECTION METHODS
   // ============================================================
+
+  /**
+   * Detect simple ORB queries that can use the fast template
+   * Returns true ONLY for basic ORB without custom logic
+   */
+  private isSimpleORB(prompt: string): boolean {
+    // Must mention ORB or opening range
+    const hasORBKeyword = prompt.includes('orb') ||
+                          prompt.includes('opening range') ||
+                          prompt.includes('breakout');
+
+    if (!hasORBKeyword) {
+      return false;
+    }
+
+    // Indicators that require Claude
+    const customIndicators = [
+      'vwap', 'sma', 'ema', 'rsi', 'macd', 'bollinger',
+      'stochastic', 'atr', 'adx', 'moving average'
+    ];
+
+    // Advanced patterns that require Claude
+    const advancedPatterns = [
+      'retest', 'low of day', 'high of day', 'previous high', 'previous low',
+      'new high', 'new low', 'failed', 'successful', 'multiple', 'consecutive',
+      'crossover', 'crosses above', 'crosses below'
+    ];
+
+    // Short position keywords (requires Claude for proper implementation)
+    const shortKeywords = ['short', 'short at', 'short if', 'go short'];
+
+    // Complex conditional patterns
+    const complexPatterns = [
+      'if the', 'when the', 'only if', 'only when',
+      'above the', 'below the'
+    ];
+
+    // If it has any of these, it's NOT a simple ORB
+    const hasCustomIndicator = customIndicators.some(indicator => prompt.includes(indicator));
+    const hasAdvancedPattern = advancedPatterns.some(pattern => prompt.includes(pattern));
+    const hasShortKeyword = shortKeywords.some(keyword => prompt.includes(keyword));
+    const hasComplexPattern = complexPatterns.some(pattern => prompt.includes(pattern));
+
+    // Simple ORB = has ORB keyword but no custom/advanced logic
+    return hasORBKeyword && !hasCustomIndicator && !hasAdvancedPattern &&
+           !hasShortKeyword && !hasComplexPattern;
+  }
 
   private isEarningsQuery(prompt: string): boolean {
     const earningsKeywords = [
@@ -129,24 +197,6 @@ export class BacktestRouterService {
     return hasDateFormat || hasDateList;
   }
 
-  private isCustomExitTime(prompt: string): boolean {
-    const exitKeywords = [
-      'exit at',
-      'exits at',
-      'close at',
-      'closes at',
-      'noon',
-      '12:00',
-      '11:00',
-      '13:00',
-      '14:00',
-      '15:00',
-      'exit time'
-    ];
-
-    return exitKeywords.some(keyword => prompt.includes(keyword));
-  }
-
   private isSingleDayQuery(prompt: string): boolean {
     // Check for patterns like "on 2025-10-15" or "for Oct 15"
     const singleDayPatterns = [
@@ -161,6 +211,17 @@ export class BacktestRouterService {
   // ============================================================
   // QUERY HANDLER METHODS
   // ============================================================
+
+  /**
+   * Handle simple ORB queries using the fast template
+   */
+  private handleSimpleORB(prompt: string, params?: Partial<ScriptGenerationParams>): RoutingDecision {
+    return {
+      strategy: 'template-api',
+      reason: 'Simple ORB query detected - using fast template',
+      useTemplate: params?.strategyType || 'orb'
+    };
+  }
 
   private async handleEarningsQuery(prompt: string, params?: Partial<ScriptGenerationParams>): Promise<RoutingDecision> {
     if (!params?.ticker) {
@@ -199,129 +260,126 @@ export class BacktestRouterService {
     };
   }
 
-  private handleDateRangeQuery(prompt: string, params?: Partial<ScriptGenerationParams>): RoutingDecision {
-    // Extract number of days (e.g., "past 10 days", "last 2 weeks")
-    let days = 10; // default
+  private async handleCustomStrategyQuery(prompt: string, params?: Partial<ScriptGenerationParams>): Promise<RoutingDecision> {
+    const lowercasePrompt = prompt.toLowerCase();
 
-    const daysMatch = prompt.match(/(?:past|last|previous)\s+(\d+)\s+(?:trading\s+)?days?/i);
-    if (daysMatch) {
-      days = parseInt(daysMatch[1]);
+    console.log('📋 Analyzing custom strategy query for dates...');
+
+    // Check if the prompt already contains date information
+    const hasDateRange = this.isDateRangeQuery(lowercasePrompt);
+    const hasSpecificDates = this.isSpecificDatesQuery(lowercasePrompt);
+    const hasSingleDay = this.isSingleDayQuery(lowercasePrompt);
+    const hasDateInfo = hasDateRange || hasSpecificDates || hasSingleDay;
+
+    console.log(`   - Date range detected: ${hasDateRange}`);
+    console.log(`   - Specific dates detected: ${hasSpecificDates}`);
+    console.log(`   - Single day detected: ${hasSingleDay}`);
+    console.log(`   - Has any date info: ${hasDateInfo}`);
+
+    let dates: string[] | undefined;
+
+    // If no date info, default to last 10 trading days
+    if (!hasDateInfo) {
+      console.log('📅 No dates specified in custom strategy - defaulting to last 10 trading days');
+      try {
+        const filter: DateQueryFilter = {
+          type: 'trading',
+          limit: 10,
+          order: 'desc'
+        };
+        dates = await this.dateQueryService.queryDates(filter);
+        console.log(`✅ Retrieved ${dates.length} default dates: ${dates.join(', ')}`);
+
+        if (dates.length === 0) {
+          console.warn('⚠️  DateQueryService returned empty array for default dates!');
+        }
+      } catch (error: any) {
+        console.error('❌ Error getting default dates from DateQueryService:', error.message);
+        dates = [];
+      }
+    } else if (hasDateRange) {
+      // Extract date range
+      console.log('📅 Extracting date range from prompt...');
+      const match = lowercasePrompt.match(/(?:last|past|previous)\s+(\d+)\s+(?:trading\s+)?days?/i);
+      const days = match ? parseInt(match[1]) : 10;
+      console.log(`   - Detected ${days} days`);
+
+      try {
+        const filter: DateQueryFilter = {
+          type: 'trading',
+          limit: days,
+          order: 'desc'
+        };
+        dates = await this.dateQueryService.queryDates(filter);
+        console.log(`✅ Retrieved ${dates.length} dates from range: ${dates.join(', ')}`);
+      } catch (error: any) {
+        console.error('❌ Error getting dates from DateQueryService:', error.message);
+        dates = [];
+      }
     }
 
-    const weeksMatch = prompt.match(/(?:past|last|previous)\s+(\d+)\s+weeks?/i);
-    if (weeksMatch) {
-      days = parseInt(weeksMatch[1]) * 5; // 5 trading days per week
-    }
+    const reason = `Custom strategy detected (VWAP, SMA, crossovers, etc.) - using Claude AI for script generation${!hasDateInfo ? ' (defaulting to last 10 trading days)' : ''}`;
 
-    const monthsMatch = prompt.match(/(?:past|last|previous)\s+(\d+)\s+months?/i);
-    if (monthsMatch) {
-      days = parseInt(monthsMatch[1]) * 21; // ~21 trading days per month
-    }
-
-    // Generate date range from today backwards
-    const dates = this.generatePastTradingDays(days);
+    console.log(`📊 Routing decision: claude-generated with ${dates?.length || 0} dates`);
 
     return {
-      strategy: 'custom-dates',
-      reason: `Date range query detected: ${days} trading days - using multi-day template`,
-      dates,
-      useTemplate: 'orb-multiday'
+      strategy: 'claude-generated',
+      reason,
+      userPrompt: prompt,
+      dates: dates,
+      assumptions: [], // Will be populated by Claude service
+      confidence: 0, // Will be populated by Claude service
     };
   }
 
   /**
-   * Generate list of past N trading days from today
+   * Save Claude-generated script permanently with metadata
    */
-  private generatePastTradingDays(days: number): string[] {
-    const dates: string[] = [];
+  private async saveClaudeScript(
+    claudeResponse: any,
+    userPrompt: string,
+    params: ScriptGenerationParams,
+    tempFilepath: string
+  ): Promise<void> {
+    try {
+      const fs = await import('fs/promises');
+      const path = await import('path');
 
-    // Use UTC to avoid timezone issues
-    // Get current UTC date at midnight
-    const now = new Date();
-    const current = new Date(Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate()
-    ));
+      const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0];
+      const ticker = params.ticker || 'UNKNOWN';
+      const filename = `claude-${timestamp}-${ticker}.ts`;
+      const metadataFilename = `claude-${timestamp}-${ticker}.json`;
 
-    // Start from today - with real-time data subscription, we can backtest
-    // trades that have already completed today (e.g., morning trades that exited)
-    // The backtest will use whatever data is available up to the current time
+      const scriptsDir = path.join(__dirname, '../../claude-generated-scripts');
+      const scriptPath = path.join(scriptsDir, filename);
+      const metadataPath = path.join(scriptsDir, metadataFilename);
 
-    while (dates.length < days) {
-      const dayOfWeek = current.getUTCDay();
-      // Exclude weekends (0 = Sunday, 6 = Saturday)
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        dates.push(current.toISOString().split('T')[0]);
-      }
-      // Go back one day in UTC
-      current.setUTCDate(current.getUTCDate() - 1);
-    }
+      // Save the script
+      await fs.copyFile(tempFilepath, scriptPath);
 
-    // Reverse to get chronological order
-    return dates.reverse();
-  }
-
-  private handleSpecificDatesQuery(prompt: string, params?: Partial<ScriptGenerationParams>): RoutingDecision {
-    // Extract dates from prompt (simplified - would need more robust parsing)
-    const datePattern = /\d{4}-\d{2}-\d{2}/g;
-    const dates = prompt.match(datePattern) || [];
-
-    if (dates.length > 0) {
-      return {
-        strategy: 'custom-dates',
-        reason: `Specific dates provided: ${dates.join(', ')} - using multi-day template`,
-        dates,
-        useTemplate: 'orb-multiday'
+      // Save metadata
+      const metadata = {
+        timestamp: new Date().toISOString(),
+        userPrompt,
+        ticker: params.ticker,
+        timeframe: params.timeframe,
+        strategyType: params.strategyType,
+        dates: params.specificDates || params.dateRange,
+        confidence: claudeResponse.confidence,
+        assumptions: claudeResponse.assumptions,
+        indicators: claudeResponse.indicators,
+        explanation: claudeResponse.explanation,
+        scriptFilename: filename
       };
+
+      await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2), 'utf8');
+
+      console.log(`💾 Saved Claude-generated script: ${filename}`);
+      console.log(`📄 Saved metadata: ${metadataFilename}`);
+    } catch (error: any) {
+      console.error('Error saving Claude script:', error);
+      // Don't throw - this is a nice-to-have feature
     }
-
-    return {
-      strategy: 'template-api',
-      reason: 'Could not parse specific dates - falling back to template API',
-      useTemplate: params?.strategyType || 'orb'
-    };
-  }
-
-  private handleCustomExitTime(prompt: string, params?: Partial<ScriptGenerationParams>): RoutingDecision {
-    // Extract exit time from prompt
-    let exitTime = '16:00'; // default market close
-
-    // Check for "noon" or "12:00"
-    if (prompt.includes('noon') || prompt.includes('12:00')) {
-      exitTime = '12:00';
-    }
-
-    // Check for other times
-    const timeMatch = prompt.match(/(?:exit|close)(?:\s+at)?\s+(\d{1,2}):?(\d{2})/i);
-    if (timeMatch) {
-      const hours = timeMatch[1].padStart(2, '0');
-      const minutes = timeMatch[2] || '00';
-      exitTime = `${hours}:${minutes}`;
-    }
-
-    // Check if this is also a multi-day query
-    if (this.isDateRangeQuery(prompt) || this.isSpecificDatesQuery(prompt)) {
-      return {
-        strategy: 'custom-dates',
-        reason: `Multi-day backtest with custom exit time (${exitTime}) - using multi-day template`,
-        useTemplate: 'orb-multiday'
-      };
-    }
-
-    return {
-      strategy: 'template-api',
-      reason: `Single-day backtest with custom exit time (${exitTime}) - template API can handle`,
-      useTemplate: params?.strategyType || 'orb'
-    };
-  }
-
-  private handleSingleDayQuery(prompt: string, params?: Partial<ScriptGenerationParams>): RoutingDecision {
-    return {
-      strategy: 'template-api',
-      reason: 'Single-day backtest - using standard template API',
-      useTemplate: params?.strategyType || 'orb'
-    };
   }
 }
 

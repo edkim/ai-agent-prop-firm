@@ -14,6 +14,7 @@ import {
   ScriptTrade,
   ScriptMetrics,
 } from '../types/script.types';
+import logger from './logger.service';
 
 const execAsync = promisify(exec);
 
@@ -26,17 +27,22 @@ export class ScriptExecutionService {
    */
   async executeScript(scriptPath: string, timeout?: number): Promise<ScriptExecutionResult> {
     const startTime = Date.now();
+    const absolutePath = path.resolve(scriptPath);
+    const command = `npx ts-node "${absolutePath}"`;
+
+    await logger.info('Starting script execution', {
+      scriptPath: absolutePath,
+      command,
+      timeout: timeout || this.defaultTimeout,
+    });
 
     try {
       // Verify script exists
       await fs.access(scriptPath);
 
-      // Get absolute path
-      const absolutePath = path.resolve(scriptPath);
-
       // Execute with timeout
       const { stdout, stderr } = await execAsync(
-        `npx ts-node "${absolutePath}"`,
+        command,
         {
           cwd: path.join(__dirname, '../..'), // Run from backend directory
           timeout: timeout || this.defaultTimeout,
@@ -52,10 +58,22 @@ export class ScriptExecutionService {
 
       if (stderr && stderr.trim().length > 0) {
         console.warn('Script stderr:', stderr);
+        await logger.warn('Script execution stderr output', { stderr });
       }
 
       // Parse output
       const result = this.parseScriptOutput(stdout);
+
+      await logger.info('Script execution completed successfully', {
+        executionTime: `${executionTime}ms`,
+        stdout: stdout.substring(0, 500), // Log first 500 chars
+        resultSummary: result ? {
+          trades: result.trades?.length || 0,
+          totalPnL: result.metrics?.total_pnl,
+          ticker: result.backtest?.ticker,
+          date: result.backtest?.date,
+        } : 'No result data',
+      });
 
       return {
         success: true,
@@ -69,6 +87,14 @@ export class ScriptExecutionService {
       const executionTime = Date.now() - startTime;
 
       console.error('Script execution failed:', error.message);
+
+      await logger.error('Script execution failed', {
+        error: error.message,
+        executionTime: `${executionTime}ms`,
+        stdout: error.stdout || '',
+        stderr: error.stderr || '',
+        scriptPath: absolutePath,
+      });
 
       return {
         success: false,

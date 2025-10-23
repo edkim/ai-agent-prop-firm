@@ -13,6 +13,7 @@ import ScriptGeneratorService from '../../services/script-generator.service';
 import ScriptExecutionService from '../../services/script-execution.service';
 import BacktestRouterService from '../../services/backtest-router.service';
 import PolygonService from '../../services/polygon.service';
+import logger from '../../services/logger.service';
 import crypto from 'crypto';
 
 const router = Router();
@@ -326,6 +327,13 @@ router.post('/execute-intelligent', async (req: Request, res: Response) => {
       });
     }
 
+    await logger.info('Intelligent backtest request received', {
+      prompt,
+      ticker,
+      timeframe,
+      strategyType,
+    });
+
     console.log(`Analyzing request: "${prompt}"`);
 
     // Use router to analyze request
@@ -337,6 +345,31 @@ router.post('/execute-intelligent', async (req: Request, res: Response) => {
     });
 
     console.log(`Routing decision: ${decision.strategy} - ${decision.reason}`);
+
+    await logger.info('Routing decision made', {
+      strategy: decision.strategy,
+      reason: decision.reason,
+      dates: decision.dates,
+      assumptions: decision.assumptions,
+      confidence: decision.confidence,
+    });
+
+    // Validate that we have dates to test
+    if (decision.strategy === 'claude-generated' && (!decision.dates || decision.dates.length === 0)) {
+      console.error('❌ No dates provided for claude-generated strategy');
+      await logger.error('Backtest failed - no dates to test', {
+        strategy: decision.strategy,
+        prompt,
+        ticker,
+      });
+      return res.status(400).json({
+        success: false,
+        error: 'No dates to test',
+        message: 'Please specify a date range in your prompt (e.g., "for the last 10 trading days") or check the logs for date detection issues.',
+        routing: decision,
+        executionId: crypto.randomUUID(),
+      });
+    }
 
     // Build script generation params
     const params: any = {
@@ -475,6 +508,12 @@ router.post('/execute-intelligent', async (req: Request, res: Response) => {
     console.log(`Generated script: ${filepath}`);
     console.log(`Running backtest...`);
 
+    await logger.info('Script generated successfully', {
+      filepath,
+      strategy: decision.strategy,
+      scriptLength: script.length,
+    });
+
     // Execute script
     const startTime = Date.now();
     const result = await ScriptExecutionService.executeScript(filepath);
@@ -482,6 +521,11 @@ router.post('/execute-intelligent', async (req: Request, res: Response) => {
 
     if (!result.success) {
       console.error('Script execution failed:', result.error);
+      await logger.error('Backtest execution failed', {
+        error: result.error,
+        stderr: result.stderr,
+        filepath,
+      });
       return res.status(500).json({
         success: false,
         error: result.error,
@@ -493,17 +537,53 @@ router.post('/execute-intelligent', async (req: Request, res: Response) => {
 
     console.log(`Script completed in ${executionTime}ms`);
 
+    // Build detailed execution metadata for UI
+    const metadata = {
+      routing: {
+        strategy: decision.strategy,
+        reason: decision.reason,
+      },
+      dates: decision.dates || [],
+      parameters: {
+        ticker,
+        timeframe,
+        allowLong: params.config.allowLong,
+        allowShort: params.config.allowShort,
+        takeProfitPct: params.config.takeProfitPct,
+        stopLossPct: params.config.stopLossPct,
+        exitTime: params.config.exitTime,
+        openingRangeMinutes: params.config.openingRangeMinutes,
+      },
+      claude: decision.strategy === 'claude-generated' ? {
+        assumptions: decision.assumptions || [],
+        confidence: decision.confidence || 0,
+      } : undefined,
+    };
+
+    await logger.info('Backtest completed successfully', {
+      ticker,
+      executionTime: `${executionTime}ms`,
+      totalTrades: result.data?.metrics?.total_trades || 0,
+      totalPnL: result.data?.metrics?.total_pnl || 0,
+      strategy: decision.strategy,
+      dates: decision.dates?.length || 0,
+    });
+
     res.json({
       success: true,
       executionId: crypto.randomUUID(),
       results: result.data,
       executionTime,
-      routing: decision, // Include routing decision for transparency
+      metadata,
       scriptPath: filepath, // For debugging
     });
 
   } catch (error: any) {
     console.error('Error executing intelligent backtest:', error);
+    await logger.error('Intelligent backtest execution failed with exception', {
+      error: error.message,
+      stack: error.stack,
+    });
     res.status(500).json({
       success: false,
       error: 'Failed to execute backtest',
