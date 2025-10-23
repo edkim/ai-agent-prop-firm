@@ -39,7 +39,7 @@ export class BacktestRouterService {
 
     // Priority 2: Simple ORB queries (use fast template)
     if (this.isSimpleORB(lowercasePrompt)) {
-      return this.handleSimpleORB(userPrompt, params);
+      return await this.handleSimpleORB(userPrompt, params);
     }
 
     // Default: Everything else goes to Claude for intelligent generation
@@ -218,11 +218,62 @@ export class BacktestRouterService {
   /**
    * Handle simple ORB queries using the fast template
    */
-  private handleSimpleORB(prompt: string, params?: Partial<ScriptGenerationParams>): RoutingDecision {
+  private async handleSimpleORB(prompt: string, params?: Partial<ScriptGenerationParams>): Promise<RoutingDecision> {
+    const lowercasePrompt = prompt.toLowerCase();
+
+    // Check if the prompt mentions dates
+    const hasDateRange = this.isDateRangeQuery(lowercasePrompt);
+    const hasSpecificDates = this.isSpecificDatesQuery(lowercasePrompt);
+    const hasSingleDay = this.isSingleDayQuery(lowercasePrompt);
+    const hasDateInfo = hasDateRange || hasSpecificDates || hasSingleDay;
+
+    let dates: string[] | undefined;
+
+    // Extract dates if mentioned in the prompt
+    if (hasDateRange && !hasSpecificDates) {
+      // Extract date range manually if explicitly mentioned
+      const match = lowercasePrompt.match(/(?:last|past|previous)\s+(\d+)\s+(?:trading\s+)?days?/i);
+      const days = match ? parseInt(match[1]) : 10;
+
+      try {
+        const filter: DateQueryFilter = {
+          type: 'trading',
+          limit: days,
+          order: 'desc'
+        };
+        dates = await this.dateQueryService.queryDates(filter);
+
+        // Fallback to Claude if DateQueryService returns empty
+        if (!dates || dates.length === 0) {
+          const ticker = params?.ticker || 'UNKNOWN';
+          const claudeResult = await this.claudeService.extractDatesFromPrompt(prompt, ticker);
+          if (claudeResult && claudeResult.dates && claudeResult.dates.length > 0) {
+            dates = claudeResult.dates;
+          }
+        }
+      } catch (error: any) {
+        console.error('❌ Error getting dates:', error.message);
+        dates = [];
+      }
+    } else if (!hasDateInfo) {
+      // No date info - use Claude to suggest dates
+      try {
+        const ticker = params?.ticker || 'UNKNOWN';
+        const claudeResult = await this.claudeService.extractDatesFromPrompt(prompt, ticker);
+        if (claudeResult && claudeResult.dates && claudeResult.dates.length > 0) {
+          dates = claudeResult.dates;
+        }
+      } catch (error: any) {
+        console.error('❌ Claude date extraction failed:', error.message);
+        dates = [];
+      }
+    }
+
     return {
       strategy: 'template-api',
       reason: 'Simple ORB query detected - using fast template',
-      useTemplate: params?.strategyType || 'orb'
+      useTemplate: params?.strategyType || 'orb',
+      dates: dates
     };
   }
 

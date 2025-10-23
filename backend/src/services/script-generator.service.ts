@@ -17,7 +17,8 @@ export class ScriptGeneratorService {
    */
   async generateScript(params: ScriptGenerationParams): Promise<string> {
     // Determine which template to use based on date params
-    const useMultiDay = params.dateRange || params.specificDates;
+    // Always use multi-day template when no explicit single date is provided
+    const useMultiDay = params.dateRange || params.specificDates || !params.date;
     const templateType = useMultiDay ? 'orb-multiday' : params.strategyType;
 
     // Load appropriate template
