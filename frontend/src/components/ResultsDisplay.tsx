@@ -43,8 +43,25 @@ export default function ResultsDisplay({ results }: ResultsDisplayProps) {
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
         <h3 className="font-semibold text-blue-900 mb-4 text-lg">Execution Details</h3>
 
-        {/* Warning if dates were auto-populated */}
-        {routing?.reason && routing.reason.includes('defaulting to last 10 trading days') && (
+        {/* Blue info badge if Claude suggested dates */}
+        {routing?.reason && routing.reason.includes('Claude suggested') && (
+          <div className="bg-blue-50 border border-blue-300 rounded-lg p-4 mb-4">
+            <div className="flex items-start">
+              <svg className="w-5 h-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <p className="font-semibold text-blue-800">AI-Suggested Date Range</p>
+                <p className="text-sm text-blue-700 mt-1">
+                  {routing.reason.match(/Claude suggested.*?\)/)?.[0] || 'Claude analyzed your prompt and suggested appropriate testing dates based on strategy complexity.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Amber warning if dates were auto-populated (fallback) */}
+        {routing?.reason && routing.reason.includes('defaulting to last 10 trading days') && !routing.reason.includes('Claude suggested') && (
           <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 mb-4">
             <div className="flex items-start">
               <svg className="w-5 h-5 text-amber-600 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

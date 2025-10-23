@@ -146,9 +146,23 @@ export interface DateQueryFilter {
  * Routing decision from BacktestRouter
  */
 export interface RoutingDecision {
-  strategy: 'template-api' | 'custom-dates' | 'fully-custom';
+  strategy: 'template-api' | 'custom-dates' | 'claude-generated' | 'fully-custom';
   reason: string;
   dates?: string[];
   useTemplate?: string;
   customScript?: string;
+  assumptions?: string[];        // List of assumptions made during script generation
+  confidence?: number;            // Confidence level (0-1) in the generated script
+  userPrompt?: string;            // Original user prompt for Claude-generated scripts
+}
+
+/**
+ * Claude script generation response
+ */
+export interface ClaudeScriptGenerationResponse {
+  script: string;
+  assumptions: string[];
+  confidence: number;
+  indicators?: string[];          // List of indicators used in the script
+  explanation?: string;           // Human-readable explanation of the strategy
 }

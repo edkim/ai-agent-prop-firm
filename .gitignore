@@ -38,6 +38,7 @@ coverage/
 # Generated scripts
 backend/backtest-*.ts
 backend/scripts-output/
+backend/claude-generated-scripts/
 
 # Temporary files
 /tmp/

@@ -15,10 +15,13 @@ import  claudeService from './claude.service';
 export class BacktestRouterService {
   private dateQueryService: DateQueryService;
   private scriptGenerator: ScriptGeneratorService;
+  private claudeService: any; // ClaudeService
 
   constructor() {
     this.dateQueryService = new DateQueryService();
     this.scriptGenerator = new ScriptGeneratorService();
+    // Lazy import to avoid circular dependency
+    this.claudeService = require('./claude.service').default;
   }
 
   /**
@@ -277,29 +280,54 @@ export class BacktestRouterService {
     console.log(`   - Has any date info: ${hasDateInfo}`);
 
     let dates: string[] | undefined;
+    let claudeReasoning: string | undefined;
+    let complexity: string | undefined;
 
-    // If no date info, default to last 10 trading days
+    // Always use Claude for date extraction if no explicit dates found
     if (!hasDateInfo) {
-      console.log('📅 No dates specified in custom strategy - defaulting to last 10 trading days');
-      try {
-        const filter: DateQueryFilter = {
-          type: 'trading',
-          limit: 10,
-          order: 'desc'
-        };
-        dates = await this.dateQueryService.queryDates(filter);
-        console.log(`✅ Retrieved ${dates.length} default dates: ${dates.join(', ')}`);
+      console.log('📅 No explicit dates - asking Claude to analyze prompt and suggest dates...');
 
-        if (dates.length === 0) {
-          console.warn('⚠️  DateQueryService returned empty array for default dates!');
+      try {
+        // Call Claude to extract/suggest dates based on the prompt
+        const ticker = params?.ticker || 'UNKNOWN';
+        const claudeResult = await this.claudeService.extractDatesFromPrompt(prompt, ticker);
+
+        if (claudeResult && claudeResult.dates && claudeResult.dates.length > 0) {
+          console.log(`✅ Claude suggested ${claudeResult.dates.length} dates (${claudeResult.complexity} complexity)`);
+          console.log(`   Reasoning: ${claudeResult.reasoning}`);
+          dates = claudeResult.dates;
+          claudeReasoning = claudeResult.reasoning;
+          complexity = claudeResult.complexity;
+        } else {
+          console.log('⚠️  Claude returned empty dates - falling back to last 10 trading days');
+          const filter: DateQueryFilter = {
+            type: 'trading',
+            limit: 10,
+            order: 'desc'
+          };
+          dates = await this.dateQueryService.queryDates(filter);
+          console.log(`✅ Fallback: Retrieved ${dates.length} dates from DateQueryService`);
         }
       } catch (error: any) {
-        console.error('❌ Error getting default dates from DateQueryService:', error.message);
-        dates = [];
+        console.error('❌ Claude date extraction failed:', error.message);
+        console.log('   Falling back to last 10 trading days via DateQueryService');
+
+        try {
+          const filter: DateQueryFilter = {
+            type: 'trading',
+            limit: 10,
+            order: 'desc'
+          };
+          dates = await this.dateQueryService.queryDates(filter);
+          console.log(`✅ Fallback: Retrieved ${dates.length} dates`);
+        } catch (fallbackError: any) {
+          console.error('❌ DateQueryService fallback also failed:', fallbackError.message);
+          dates = [];
+        }
       }
     } else if (hasDateRange) {
-      // Extract date range
-      console.log('📅 Extracting date range from prompt...');
+      // Extract date range manually if explicitly mentioned
+      console.log('📅 Extracting date range from prompt (explicit mention)...');
       const match = lowercasePrompt.match(/(?:last|past|previous)\s+(\d+)\s+(?:trading\s+)?days?/i);
       const days = match ? parseInt(match[1]) : 10;
       console.log(`   - Detected ${days} days`);
@@ -312,13 +340,41 @@ export class BacktestRouterService {
         };
         dates = await this.dateQueryService.queryDates(filter);
         console.log(`✅ Retrieved ${dates.length} dates from range: ${dates.join(', ')}`);
+
+        // Fallback to Claude if DateQueryService returns empty
+        if (!dates || dates.length === 0) {
+          console.log('⚠️  DateQueryService returned empty - falling back to Claude for date extraction');
+          try {
+            const ticker = params?.ticker || 'UNKNOWN';
+            const claudeResult = await this.claudeService.extractDatesFromPrompt(prompt, ticker);
+
+            if (claudeResult && claudeResult.dates && claudeResult.dates.length > 0) {
+              console.log(`✅ Claude fallback successful: ${claudeResult.dates.length} dates`);
+              dates = claudeResult.dates;
+              claudeReasoning = claudeResult.reasoning;
+              complexity = claudeResult.complexity;
+            } else {
+              console.log('⚠️  Claude also returned empty - using empty array');
+              dates = [];
+            }
+          } catch (claudeError: any) {
+            console.error('❌ Claude fallback failed:', claudeError.message);
+            dates = [];
+          }
+        }
       } catch (error: any) {
         console.error('❌ Error getting dates from DateQueryService:', error.message);
         dates = [];
       }
     }
 
-    const reason = `Custom strategy detected (VWAP, SMA, crossovers, etc.) - using Claude AI for script generation${!hasDateInfo ? ' (defaulting to last 10 trading days)' : ''}`;
+    // Build reason string
+    let reason = 'Custom strategy detected (VWAP, SMA, crossovers, etc.) - using Claude AI for script generation';
+    if (claudeReasoning) {
+      reason += ` (Claude suggested ${dates?.length || 0} days: ${claudeReasoning})`;
+    } else if (!hasDateInfo) {
+      reason += ' (defaulting to last 10 trading days)';
+    }
 
     console.log(`📊 Routing decision: claude-generated with ${dates?.length || 0} dates`);
 

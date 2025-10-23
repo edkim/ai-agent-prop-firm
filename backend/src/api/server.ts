@@ -12,8 +12,8 @@ import strategyRoutes from './routes/strategies';
 import backtestRoutes from './routes/backtests';
 
 // Load environment variables
-// Resolve to project root regardless of where the script is run from
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+// Resolve to project root (one level up from backend/)
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;

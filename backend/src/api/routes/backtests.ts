@@ -354,23 +354,6 @@ router.post('/execute-intelligent', async (req: Request, res: Response) => {
       confidence: decision.confidence,
     });
 
-    // Validate that we have dates to test
-    if (decision.strategy === 'claude-generated' && (!decision.dates || decision.dates.length === 0)) {
-      console.error('❌ No dates provided for claude-generated strategy');
-      await logger.error('Backtest failed - no dates to test', {
-        strategy: decision.strategy,
-        prompt,
-        ticker,
-      });
-      return res.status(400).json({
-        success: false,
-        error: 'No dates to test',
-        message: 'Please specify a date range in your prompt (e.g., "for the last 10 trading days") or check the logs for date detection issues.',
-        routing: decision,
-        executionId: crypto.randomUUID(),
-      });
-    }
-
     // Build script generation params
     const params: any = {
       strategyType,
