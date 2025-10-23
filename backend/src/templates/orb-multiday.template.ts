@@ -118,7 +118,7 @@ async function runMultiDayBacktest() {
 
     // Find opening range start (9:30 AM)
     const openingRangeStartIndex = bars.findIndex(bar =>
-      bar.timeOfDay === '09:30' || bar.timeOfDay === '13:30'
+      bar.timeOfDay.startsWith('09:30') || bar.timeOfDay.startsWith('13:30')
     );
 
     if (openingRangeStartIndex === -1) {
@@ -160,9 +160,10 @@ async function runMultiDayBacktest() {
     // Find exit bar based on configured exit time
     const exitBarIndex = bars.findIndex(bar => {
       // Convert exit time to match format (handle both local "12:00" and UTC "16:00")
-      return bar.timeOfDay === exitTime ||
-             bar.timeOfDay === '16:00' || // Default market close
-             bar.timeOfDay === '20:00';   // UTC market close
+      // Use startsWith to handle both HH:MM and HH:MM:SS formats
+      return bar.timeOfDay.startsWith(exitTime) ||
+             bar.timeOfDay.startsWith('16:00') || // Default market close
+             bar.timeOfDay.startsWith('20:00');   // UTC market close
     });
     const endIndex = exitBarIndex !== -1 ? exitBarIndex : bars.length - 1;
 
@@ -176,30 +177,48 @@ async function runMultiDayBacktest() {
     let longExitReason = '';
     let shortExitReason = '';
 
+    // Signal tracking for next-bar entry (more realistic execution)
+    let longSignalDetected = false;
+    let shortSignalDetected = false;
+
     // Look for breakout/breakdown AFTER opening range period
     for (let i = openingRangeEndIndex + 1; i <= endIndex; i++) {
       const bar = bars[i];
 
-      // LONG Entry logic - breakout above opening range high
-      if (allowLong && !longPosition && bar.high > openingRangeHigh) {
+      // Execute pending LONG entry from previous bar's signal
+      if (allowLong && !longPosition && longSignalDetected) {
         longPosition = {
-          entry: bar.close,
+          entry: bar.open,  // Enter at OPEN of this bar
           entryTime: bar.timeOfDay,
           entryBar: bar,
           highestPrice: bar.high
         };
-        console.log(`🚀 LONG BREAKOUT at ${bar.timeOfDay}: Entry at $${longPosition.entry.toFixed(2)}`);
+        console.log(`🚀 LONG entry executed at ${bar.timeOfDay}: $${longPosition.entry.toFixed(2)}`);
+        longSignalDetected = false; // Clear signal
       }
 
-      // SHORT Entry logic - breakdown below opening range low
-      if (allowShort && !shortPosition && bar.low < openingRangeLow) {
+      // Execute pending SHORT entry from previous bar's signal
+      if (allowShort && !shortPosition && shortSignalDetected) {
         shortPosition = {
-          entry: bar.close,
+          entry: bar.open,  // Enter at OPEN of this bar
           entryTime: bar.timeOfDay,
           entryBar: bar,
           lowestPrice: bar.low
         };
-        console.log(`🔻 SHORT BREAKDOWN at ${bar.timeOfDay}: Entry at $${shortPosition.entry.toFixed(2)}`);
+        console.log(`🚀 SHORT entry executed at ${bar.timeOfDay}: $${shortPosition.entry.toFixed(2)}`);
+        shortSignalDetected = false; // Clear signal
+      }
+
+      // Detect LONG signal (breakout above opening range high)
+      if (allowLong && !longPosition && !longSignalDetected && bar.high > openingRangeHigh) {
+        longSignalDetected = true;
+        console.log(`🔔 LONG signal detected at ${bar.timeOfDay} (high: $${bar.high.toFixed(2)} > $${openingRangeHigh.toFixed(2)})`);
+      }
+
+      // Detect SHORT signal (breakdown below opening range low)
+      if (allowShort && !shortPosition && !shortSignalDetected && bar.low < openingRangeLow) {
+        shortSignalDetected = true;
+        console.log(`🔔 SHORT signal detected at ${bar.timeOfDay} (low: $${bar.low.toFixed(2)} < $${openingRangeLow.toFixed(2)})`);
       }
 
       // Track highest/lowest prices for analysis
@@ -253,11 +272,11 @@ async function runMultiDayBacktest() {
       }
 
       // Exit at configured time if positions still open
-      if (longPosition && !longExitBar && bar.timeOfDay === exitTime) {
+      if (longPosition && !longExitBar && bar.timeOfDay.startsWith(exitTime)) {
         longExitBar = bar;
         longExitReason = `Exit at ${exitTime}`;
       }
-      if (shortPosition && !shortExitBar && bar.timeOfDay === exitTime) {
+      if (shortPosition && !shortExitBar && bar.timeOfDay.startsWith(exitTime)) {
         shortExitBar = bar;
         shortExitReason = `Exit at ${exitTime}`;
       }
