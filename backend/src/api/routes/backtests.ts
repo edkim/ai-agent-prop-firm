@@ -486,20 +486,41 @@ router.post('/execute-intelligent', async (req: Request, res: Response) => {
     }
 
     // Execute the routing decision
-    const { script, filepath } = await BacktestRouterService.executeDecision(decision, params);
+    const scriptResult = await BacktestRouterService.executeDecision(decision, params);
 
-    console.log(`Generated script: ${filepath}`);
+    console.log(`Generated script: ${scriptResult.filepath}`);
+
+    // Fetch data for Claude-selected dates before running the script
+    if (scriptResult.dates && scriptResult.dates.length > 0) {
+      console.log(`\n📊 Fetching data for ${scriptResult.dates.length} Claude-selected date(s)...`);
+      const dataCheck = await ensureDataExists(ticker, timeframe, scriptResult.dates);
+
+      if (!dataCheck.success) {
+        return res.status(500).json({
+          success: false,
+          error: 'Data fetch failed',
+          message: dataCheck.message,
+          routing: decision,
+          executionId: crypto.randomUUID(),
+        });
+      }
+
+      if (dataCheck.fetchedDates && dataCheck.fetchedDates.length > 0) {
+        console.log(`✅ Fetched data for ${dataCheck.fetchedDates.length} new date(s)`);
+      }
+    }
+
     console.log(`Running backtest...`);
 
     await logger.info('Script generated successfully', {
-      filepath,
+      filepath: scriptResult.filepath,
       strategy: decision.strategy,
-      scriptLength: script.length,
+      scriptLength: scriptResult.script.length,
     });
 
     // Execute script
     const startTime = Date.now();
-    const result = await ScriptExecutionService.executeScript(filepath);
+    const result = await ScriptExecutionService.executeScript(scriptResult.filepath);
     const executionTime = Date.now() - startTime;
 
     if (!result.success) {
@@ -507,7 +528,7 @@ router.post('/execute-intelligent', async (req: Request, res: Response) => {
       await logger.error('Backtest execution failed', {
         error: result.error,
         stderr: result.stderr,
-        filepath,
+        filepath: scriptResult.filepath,
       });
       return res.status(500).json({
         success: false,
@@ -558,7 +579,7 @@ router.post('/execute-intelligent', async (req: Request, res: Response) => {
       results: result.data,
       executionTime,
       metadata,
-      scriptPath: filepath, // For debugging
+      scriptPath: scriptResult.filepath, // For debugging
     });
 
   } catch (error: any) {

@@ -37,7 +37,7 @@ export class BacktestRouterService {
   /**
    * Execute the routing decision and generate/run script
    */
-  async executeDecision(decision: RoutingDecision, params: ScriptGenerationParams): Promise<{ script: string; filepath: string; assumptions?: string[]; confidence?: number }> {
+  async executeDecision(decision: RoutingDecision, params: ScriptGenerationParams): Promise<{ script: string; filepath: string; assumptions?: string[]; confidence?: number; dates?: string[] }> {
     // Always use Claude AI to generate custom strategy script
     if (!decision.userPrompt) {
       throw new Error('User prompt is required for Claude-generated scripts');
@@ -70,6 +70,7 @@ export class BacktestRouterService {
       filepath,
       assumptions: claudeResponse.assumptions,
       confidence: claudeResponse.confidence,
+      dates: claudeResponse.dates,
     };
   }
 
