@@ -10,6 +10,7 @@ import { initializeDatabase } from '../database/db';
 import dataRoutes from './routes/data';
 import strategyRoutes from './routes/strategies';
 import backtestRoutes from './routes/backtests';
+import scriptRoutes from './routes/scripts';
 
 // Load environment variables
 // Resolve to project root (one level up from backend/)
@@ -38,6 +39,7 @@ app.get('/health', (_req: Request, res: Response) => {
 app.use('/api/data', dataRoutes);
 app.use('/api/strategies', strategyRoutes);
 app.use('/api/backtests', backtestRoutes);
+app.use('/api/scripts', scriptRoutes);
 
 // Error handling middleware
 app.use((err: Error, _req: Request, res: Response, _next: any) => {

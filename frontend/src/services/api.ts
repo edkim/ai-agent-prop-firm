@@ -120,10 +120,21 @@ export interface IntelligentBacktestResponse {
   executionId: string;
   results: BacktestResults;
   executionTime: number;
-  routing: RoutingDecision;
+  routing?: RoutingDecision;
   scriptPath?: string;
   error?: string;
   stderr?: string;
+  metadata?: {
+    routing?: RoutingDecision;
+    dates?: string[];
+    parameters?: Record<string, any>;
+    claude?: {
+      assumptions?: string[];
+      confidence?: number;
+      indicators?: string[];
+      explanation?: string;
+    };
+  };
 }
 
 /**
