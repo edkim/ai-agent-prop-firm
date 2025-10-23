@@ -135,24 +135,111 @@ export class ScriptExecutionService {
    * Try to extract and parse JSON from output
    */
   private tryParseJSON(stdout: string): BacktestScriptOutput | null {
-    // Look for JSON object in output
-    const jsonMatch = stdout.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return null;
-    }
+    console.log('[DEBUG] Attempting to parse JSON from stdout (length:', stdout.length, ')');
 
-    try {
-      const parsed = JSON.parse(jsonMatch[0]);
+    // Try to find JSON array first (Claude-generated format)
+    const arrayMatch = stdout.match(/\[[\s\S]*\]/);
+    if (arrayMatch) {
+      try {
+        const parsed = JSON.parse(arrayMatch[0]);
 
-      // Validate it has the expected structure
-      if (parsed.backtest || parsed.trades || parsed.metrics) {
-        return parsed as BacktestScriptOutput;
+        // If it's an array of trades, convert to expected format
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].date) {
+          console.log('[DEBUG] Found JSON array with', parsed.length, 'trades');
+
+          // Calculate metrics from trades
+          const trades = parsed;
+          const winningTrades = trades.filter(t => t.pnl > 0);
+          const losingTrades = trades.filter(t => t.pnl < 0);
+          const totalPnl = trades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+          const totalPnlPercent = trades.reduce((sum, t) => sum + (t.pnlPercent || 0), 0);
+
+          const result: BacktestScriptOutput = {
+            backtest: {
+              ticker: trades[0].ticker || '',
+              date: trades[0].date || '',
+              strategy: 'Custom Strategy',
+              config: {},
+            },
+            trades: trades.map(t => ({
+              date: t.date,
+              side: t.side,
+              entry_time: t.entryTime,
+              entry_price: t.entryPrice,
+              exit_time: t.exitTime,
+              exit_price: t.exitPrice,
+              pnl: t.pnl,
+              pnl_percent: t.pnlPercent,
+              exit_reason: t.exitReason,
+              highest_price: t.highestPrice,
+              lowest_price: t.lowestPrice,
+            })),
+            metrics: {
+              total_trades: trades.length,
+              winning_trades: winningTrades.length,
+              losing_trades: losingTrades.length,
+              win_rate: trades.length > 0 ? (winningTrades.length / trades.length) * 100 : 0,
+              total_pnl: totalPnl,
+              total_pnl_percent: totalPnlPercent,
+              avg_pnl: trades.length > 0 ? totalPnl / trades.length : 0,
+              avg_winner: winningTrades.length > 0
+                ? winningTrades.reduce((sum, t) => sum + t.pnl, 0) / winningTrades.length
+                : 0,
+              avg_loser: losingTrades.length > 0
+                ? losingTrades.reduce((sum, t) => sum + t.pnl, 0) / losingTrades.length
+                : 0,
+            },
+            summary: this.generateSummaryFromTrades(trades),
+          };
+
+          console.log('[DEBUG] Converted array to BacktestScriptOutput with', result.trades.length, 'trades');
+          return result;
+        }
+      } catch (error: any) {
+        console.error('[DEBUG] Failed to parse JSON array:', error.message);
       }
-
-      return null;
-    } catch {
-      return null;
     }
+
+    // Try to find JSON object (template format)
+    const objectMatch = stdout.match(/\{[\s\S]*\}/);
+    if (objectMatch) {
+      try {
+        const parsed = JSON.parse(objectMatch[0]);
+
+        // Validate it has the expected structure
+        if (parsed.backtest || parsed.trades || parsed.metrics) {
+          console.log('[DEBUG] Found JSON object with expected structure');
+          return parsed as BacktestScriptOutput;
+        }
+      } catch (error: any) {
+        console.error('[DEBUG] Failed to parse JSON object:', error.message);
+      }
+    }
+
+    console.log('[DEBUG] No valid JSON found in output');
+    return null;
+  }
+
+  /**
+   * Generate summary from array of trades
+   */
+  private generateSummaryFromTrades(trades: any[]): string {
+    if (trades.length === 0) {
+      return 'No trades were executed.';
+    }
+
+    const winningTrades = trades.filter(t => t.pnl > 0);
+    const losingTrades = trades.filter(t => t.pnl < 0);
+    const totalPnl = trades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+    const winRate = (winningTrades.length / trades.length) * 100;
+
+    const lines: string[] = [];
+    lines.push(`Executed ${trades.length} trade(s)`);
+    lines.push(`Winning: ${winningTrades.length} | Losing: ${losingTrades.length}`);
+    lines.push(`Win Rate: ${winRate.toFixed(1)}%`);
+    lines.push(`Total P&L: $${totalPnl.toFixed(2)}`);
+
+    return lines.join('\n');
   }
 
   /**

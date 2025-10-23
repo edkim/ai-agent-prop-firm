@@ -20,11 +20,11 @@ export default function BacktestForm({ onResults, onError }: BacktestFormProps) 
 
   // Example prompts for user guidance
   const examplePrompts = [
-    'Test opening range breakout for the past 10 trading days',
-    'Backtest ORB strategy for past 5 days, exit at noon',
     'Enter when VWAP is crossed. If crossing below then only enter if below 5-period SMA. Stop loss 1%. Test for the last 15 days.',
     'Short at successful retest of low of day for the past 20 trading days',
-    'Test 5 minute ORB with 2% take profit and 1% stop loss for the last 10 days',
+    'Enter long when price breaks above 5-period SMA. Exit at 2% take profit or 1% stop loss. Test for the last 10 days.',
+    'Test mean reversion: enter when price is 2 standard deviations below VWAP, exit when it crosses back above VWAP. Past 15 days.',
+    'Momentum strategy: enter when RSI crosses above 50 and price is above 20-period SMA. Exit when RSI falls below 40. Last 20 days.',
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,7 +49,7 @@ export default function BacktestForm({ onResults, onError }: BacktestFormProps) 
       const request: IntelligentBacktestRequest = {
         prompt: prompt.trim(),
         ticker: ticker.trim().toUpperCase(),
-        strategyType: 'orb', // Default to opening range breakout
+        strategyType: 'orb',
         timeframe: timeframe,
         config: {},
       };
@@ -131,13 +131,13 @@ export default function BacktestForm({ onResults, onError }: BacktestFormProps) 
             id="prompt"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="E.g., 'Test opening range breakout for the past 10 days, exit at noon'"
+            placeholder="E.g., 'Enter long when price breaks above 5-period SMA for the past 10 days'"
             rows={3}
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             disabled={loading}
           />
           <p className="text-xs text-gray-500 mt-1">
-            Strategy: Opening Range Breakout (ORB) • Options: date ranges, custom exit times
+            AI-powered strategy generation • Supports: VWAP, SMA, RSI, custom indicators, date ranges, exit conditions
           </p>
         </div>
 

@@ -394,9 +394,102 @@ if (results.filter(r => r.date === date).length === 0) {
 }
 \`\`\`
 
+## Trade Limiting (Max Trades Per Day)
+
+If the user specifies trade limits like "take at most 1 trade per day" or "max 2 trades per day", you MUST implement a trade counter:
+
+\`\`\`typescript
+// Add this at the top of the daily loop (inside for (const date of tradingDays))
+let tradesCountToday = 0;
+const maxTradesPerDay = 1; // Extract this from user's constraint
+
+// ... fetch bars ...
+
+let longSignalDetected = false;
+let shortSignalDetected = false;
+let position: { ... } | null = null;
+
+for (let i = 0; i < bars.length; i++) {
+  const bar = bars[i];
+
+  // Execute pending long entry (ONLY if we haven't exceeded trade limit)
+  if (longSignalDetected && !position && tradesCountToday < maxTradesPerDay) {
+    position = {
+      entry: bar.open,
+      entryTime: bar.timeOfDay,
+      highestPrice: bar.high
+    };
+    tradesCountToday++; // Increment counter AFTER entering position
+    longSignalDetected = false;
+  }
+
+  // Execute pending short entry (ONLY if we haven't exceeded trade limit)
+  if (shortSignalDetected && !position && tradesCountToday < maxTradesPerDay) {
+    position = {
+      entry: bar.open,
+      entryTime: bar.timeOfDay,
+      lowestPrice: bar.low
+    };
+    tradesCountToday++; // Increment counter AFTER entering position
+    shortSignalDetected = false;
+  }
+
+  // Detect signals (ONLY if we haven't exceeded trade limit)
+  if (!position && !longSignalDetected && !shortSignalDetected && tradesCountToday < maxTradesPerDay) {
+    if (/* long condition */) {
+      longSignalDetected = true;
+    } else if (/* short condition */) {
+      shortSignalDetected = true;
+    }
+  }
+
+  // Exit logic (same as before)
+  if (position) {
+    // ... exit conditions ...
+    if (/* exit triggered */) {
+      results.push({ ... });
+      position = null; // tradesCountToday is NOT reset here!
+    }
+  }
+}
+
+// At the end of the day, tradesCountToday is reset by the next iteration of the date loop
+\`\`\`
+
+**Key points for trade limiting:**
+1. Add \`tradesCountToday\` counter at the TOP of each daily loop (after fetching bars)
+2. Extract \`maxTradesPerDay\` from user's constraint (e.g., "at most 1 trade" → maxTradesPerDay = 1)
+3. Check \`tradesCountToday < maxTradesPerDay\` in THREE places:
+   - Before entering long position
+   - Before entering short position
+   - Before detecting new signals
+4. Increment \`tradesCountToday++\` AFTER entering a position (not after detecting signal)
+5. Do NOT reset \`tradesCountToday\` when exiting a position (it resets naturally at the start of next day's loop)
+6. If user says "max 1 trade", this means TOTAL trades per day (long + short combined)
+7. If user says "max 1 long and 1 short", you need separate counters: \`longTradesCountToday\` and \`shortTradesCountToday\`
+
+## Date Selection
+
+You must determine appropriate testing dates based on the user's strategy description.
+
+**Guidelines:**
+1. If the prompt explicitly mentions dates (e.g., "last 10 days", "past 20 trading days", "from Oct 1 to Oct 22"), extract them
+2. If no dates specified, consider strategy complexity:
+   - Simple strategies (basic ORB, single indicator): 10 trading days
+   - Medium complexity (multiple conditions, VWAP + SMA, conditional logic): 15 trading days
+   - Complex strategies (multi-timeframe, advanced logic, many conditions): 20 trading days
+3. Return dates in YYYY-MM-DD format
+4. Only return trading days (Mon-Fri, excluding major US holidays)
+5. Return dates in descending order (most recent first)
+6. Today's date is ${new Date().toISOString().split('T')[0]}
+
 ## Response Format
 
 Return your response in this exact format:
+
+DATES: ["2025-10-22", "2025-10-21", ...]
+
+DATE_REASONING: Brief explanation of why these dates were chosen
 
 SCRIPT:
 \`\`\`typescript
@@ -416,7 +509,7 @@ EXPLANATION: [Brief description of the strategy logic]
 
 ## Guidelines
 
-1. Use TEMPLATE_TICKER and TEMPLATE_TIMEFRAME as placeholders, but use the ACTUAL dates provided in the user message for tradingDays array (e.g., const tradingDays = ['2024-01-02', '2024-01-03'])
+1. Use TEMPLATE_TICKER and TEMPLATE_TIMEFRAME as placeholders, and use the dates you determined in the DATES section for the tradingDays array (e.g., const tradingDays = ['2024-01-02', '2024-01-03'])
 2. Include ALL necessary imports and type definitions
 3. Use realistic next-bar execution (signal detection → next bar entry)
 4. Always handle the "no trade" case
@@ -441,9 +534,6 @@ PARAMETERS:
 - Timeframe: ${params.timeframe}
 - Strategy Type: ${params.strategyType}
 
-${params.specificDates ? `Specific Dates: ${params.specificDates.join(', ')}` : ''}
-${params.date ? `Single Date: ${params.date}` : ''}
-
 Please generate a complete, runnable TypeScript backtest script following the structure and guidelines provided.`;
   }
 
@@ -456,6 +546,25 @@ Please generate a complete, runnable TypeScript backtest script following the st
     let confidence = 0.8; // default
     let indicators: string[] = [];
     let explanation = '';
+    let dates: string[] = [];
+    let dateReasoning = '';
+
+    // Extract dates (JSON array format)
+    const datesMatch = responseText.match(/DATES:\s*(\[[\s\S]*?\])/);
+    if (datesMatch) {
+      try {
+        dates = JSON.parse(datesMatch[1]);
+      } catch (error) {
+        console.error('Failed to parse dates from Claude response:', error);
+        dates = [];
+      }
+    }
+
+    // Extract date reasoning
+    const dateReasoningMatch = responseText.match(/DATE_REASONING:\s*(.+)/);
+    if (dateReasoningMatch) {
+      dateReasoning = dateReasoningMatch[1].trim();
+    }
 
     // Extract script (between ```typescript and ```)
     const scriptMatch = responseText.match(/```typescript\n([\s\S]*?)\n```/);
@@ -501,6 +610,8 @@ Please generate a complete, runnable TypeScript backtest script following the st
       confidence,
       indicators,
       explanation,
+      dates,
+      dateReasoning,
     };
   }
 }

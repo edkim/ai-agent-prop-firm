@@ -55,6 +55,9 @@ export interface ScriptMetrics {
   win_rate: number;
   total_pnl: number;
   total_pnl_percent: number;
+  avg_pnl?: number;
+  avg_winner?: number;
+  avg_loser?: number;
   profit_factor?: number;
   max_favorable_excursion?: number;
   max_adverse_excursion?: number;
@@ -165,4 +168,6 @@ export interface ClaudeScriptGenerationResponse {
   confidence: number;
   indicators?: string[];          // List of indicators used in the script
   explanation?: string;           // Human-readable explanation of the strategy
+  dates: string[];                // Dates to test (determined by Claude based on prompt)
+  dateReasoning?: string;         // Explanation of why these dates were chosen
 }

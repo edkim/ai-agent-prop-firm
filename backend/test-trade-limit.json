@@ -1,0 +1,6 @@
+{
+  "prompt": "Test 5 minute opening range breakout/breakdown for the past 10 days. Exit when price crosses prior bar low (for long) or prior bar high (for short). Take at most 1 trade per day",
+  "ticker": "BETR",
+  "timeframe": "5min",
+  "strategyType": "orb"
+}
