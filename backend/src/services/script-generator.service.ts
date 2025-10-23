@@ -67,6 +67,22 @@ export class ScriptGeneratorService {
     const exitTime = ('exitTime' in params.config) ? params.config.exitTime : '16:00'; // Default to market close
     script = script.replace(/TEMPLATE_EXIT_TIME/g, exitTime);
 
+    // Handle position direction (long, short, or both)
+    const allowLong = ('allowLong' in params.config) ? params.config.allowLong : true; // Default to long only
+    const allowShort = ('allowShort' in params.config) ? params.config.allowShort : false; // Default to no shorts
+    script = script.replace(/TEMPLATE_ALLOW_LONG/g, String(allowLong));
+    script = script.replace(/TEMPLATE_ALLOW_SHORT/g, String(allowShort));
+
+    // Handle take profit and stop loss
+    const takeProfitPct = ('takeProfitPct' in params.config) ? params.config.takeProfitPct || 0 : 0;
+    const stopLossPct = ('stopLossPct' in params.config) ? params.config.stopLossPct || 0 : 0;
+    script = script.replace(/TEMPLATE_TAKE_PROFIT_PCT/g, String(takeProfitPct));
+    script = script.replace(/TEMPLATE_STOP_LOSS_PCT/g, String(stopLossPct));
+
+    // Handle opening range duration
+    const openingRangeMinutes = ('openingRangeMinutes' in params.config) ? params.config.openingRangeMinutes || 5 : 5;
+    script = script.replace(/TEMPLATE_OPENING_RANGE_MINUTES/g, String(openingRangeMinutes));
+
     return script;
   }
 
@@ -202,7 +218,7 @@ export class ScriptGeneratorService {
     }
 
     // Validate timeframe
-    const validTimeframes = ['1min', '5min', '15min', '30min', '1hour', '1day'];
+    const validTimeframes = ['10sec', '1min', '5min', '15min', '30min', '1hour', '1day'];
     if (params.timeframe && !validTimeframes.includes(params.timeframe)) {
       errors.push(`Invalid timeframe (must be one of: ${validTimeframes.join(', ')})`);
     }

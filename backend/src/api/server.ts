@@ -5,13 +5,15 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import { initializeDatabase } from '../database/db';
 import dataRoutes from './routes/data';
 import strategyRoutes from './routes/strategies';
 import backtestRoutes from './routes/backtests';
 
 // Load environment variables
-dotenv.config({ path: '../../.env' });
+// Resolve to project root regardless of where the script is run from
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;

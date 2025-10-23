@@ -47,7 +47,7 @@ export class PolygonService {
   async fetchAggregates(
     ticker: string,
     multiplier: number,
-    timespan: 'minute' | 'hour' | 'day' | 'week' | 'month',
+    timespan: 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month',
     from: string,
     to: string,
     limit: number = 50000
@@ -114,7 +114,7 @@ export class PolygonService {
    */
   async fetchAndStore(
     ticker: string,
-    timeframe: '1min' | '5min' | '15min' | '30min' | '1hour' | '1day' | '1week' | '1month',
+    timeframe: '10sec' | '1min' | '5min' | '15min' | '30min' | '1hour' | '1day' | '1week' | '1month',
     from: string,
     to: string
   ): Promise<number> {
@@ -204,8 +204,9 @@ export class PolygonService {
   /**
    * Parse timeframe string into multiplier and timespan
    */
-  private parseTimeframe(timeframe: string): { multiplier: number; timespan: 'minute' | 'hour' | 'day' | 'week' | 'month' } {
-    const map: Record<string, { multiplier: number; timespan: 'minute' | 'hour' | 'day' | 'week' | 'month' }> = {
+  private parseTimeframe(timeframe: string): { multiplier: number; timespan: 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month' } {
+    const map: Record<string, { multiplier: number; timespan: 'second' | 'minute' | 'hour' | 'day' | 'week' | 'month' }> = {
+      '10sec': { multiplier: 10, timespan: 'second' },
       '1min': { multiplier: 1, timespan: 'minute' },
       '5min': { multiplier: 5, timespan: 'minute' },
       '15min': { multiplier: 15, timespan: 'minute' },

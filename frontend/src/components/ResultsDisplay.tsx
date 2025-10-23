@@ -115,28 +115,40 @@ export default function ResultsDisplay({ results }: ResultsDisplayProps) {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Side</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entry</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Exit</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P&L</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P&L %</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Exit Reason</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {trades.map((trade: Trade, index: number) => (
                   <tr key={index} className={trade.noTrade ? 'bg-gray-50' : ''}>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">{trade.date || '-'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">{trade.date || '-'}</td>
                     {trade.noTrade ? (
-                      <td colSpan={5} className="px-4 py-3 text-sm text-gray-500">
+                      <td colSpan={6} className="px-4 py-3 text-sm text-gray-500">
                         No trade - {trade.noTradeReason}
                       </td>
                     ) : (
                       <>
                         <td className="px-4 py-3 whitespace-nowrap text-sm">
-                          {trade.entryTime && `${trade.entryTime} @ `}${trade.entryPrice?.toFixed(2)}
+                          <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${
+                            trade.side === 'LONG'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {trade.side || '-'}
+                          </span>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm">
-                          {trade.exitTime && `${trade.exitTime} @ `}${trade.exitPrice?.toFixed(2)}
+                          <div className="text-gray-900 font-medium">${trade.entryPrice?.toFixed(2) || '-'}</div>
+                          {trade.entryTime && <div className="text-gray-500 text-xs">{trade.entryTime}</div>}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm">
+                          <div className="text-gray-900 font-medium">${trade.exitPrice?.toFixed(2) || '-'}</div>
+                          {trade.exitTime && <div className="text-gray-500 text-xs">{trade.exitTime}</div>}
                         </td>
                         <td className={`px-4 py-3 whitespace-nowrap text-sm font-semibold ${getPnLColor(trade.pnl)}`}>
                           {formatCurrency(trade.pnl)}

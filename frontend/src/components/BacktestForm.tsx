@@ -15,6 +15,7 @@ interface BacktestFormProps {
 export default function BacktestForm({ onResults, onError }: BacktestFormProps) {
   const [prompt, setPrompt] = useState('');
   const [ticker, setTicker] = useState('');
+  const [timeframe, setTimeframe] = useState('10sec');
   const [loading, setLoading] = useState(false);
 
   // Example prompts for user guidance
@@ -40,7 +41,7 @@ export default function BacktestForm({ onResults, onError }: BacktestFormProps) 
         prompt: prompt.trim(),
         ticker: ticker.trim().toUpperCase(),
         strategyType: 'orb', // Default to opening range breakout
-        timeframe: '5min',
+        timeframe: timeframe,
         config: {},
       };
 
@@ -73,20 +74,43 @@ export default function BacktestForm({ onResults, onError }: BacktestFormProps) 
       <h2 className="text-2xl font-bold mb-4 text-gray-800">AI-Powered Backtest Query</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Ticker Input */}
-        <div>
-          <label htmlFor="ticker" className="block text-sm font-medium text-gray-700 mb-1">
-            Ticker Symbol
-          </label>
-          <input
-            type="text"
-            id="ticker"
-            value={ticker}
-            onChange={(e) => setTicker(e.target.value.toUpperCase())}
-            placeholder="e.g., HOOD, CRML, NVDA"
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={loading}
-          />
+        {/* Ticker Input and Timeframe Selector */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="ticker" className="block text-sm font-medium text-gray-700 mb-1">
+              Ticker Symbol
+            </label>
+            <input
+              type="text"
+              id="ticker"
+              value={ticker}
+              onChange={(e) => setTicker(e.target.value.toUpperCase())}
+              placeholder="e.g., HOOD, CRML, NVDA"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="timeframe" className="block text-sm font-medium text-gray-700 mb-1">
+              Timeframe
+            </label>
+            <select
+              id="timeframe"
+              value={timeframe}
+              onChange={(e) => setTimeframe(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              disabled={loading}
+            >
+              <option value="10sec">10 seconds (ultra-high granularity)</option>
+              <option value="1min">1 minute</option>
+              <option value="5min">5 minutes</option>
+              <option value="15min">15 minutes</option>
+              <option value="30min">30 minutes</option>
+              <option value="1hour">1 hour</option>
+              <option value="1day">1 day</option>
+            </select>
+          </div>
         </div>
 
         {/* Natural Language Prompt */}

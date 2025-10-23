@@ -36,7 +36,8 @@ export interface RoutingDecision {
 
 export interface Trade {
   date?: string;
-  ticker: string;
+  ticker?: string;
+  side?: 'LONG' | 'SHORT';
   entryTime?: string;
   entryPrice?: number;
   exitTime?: string;
@@ -46,7 +47,49 @@ export interface Trade {
   exitReason?: string;
   noTrade?: boolean;
   noTradeReason?: string;
+  highestPrice?: number;
+  lowestPrice?: number;
 }
+
+// Backend response uses snake_case
+interface BackendTrade {
+  date?: string;
+  ticker?: string;
+  side?: 'LONG' | 'SHORT';
+  entry_time?: string;
+  entry_price?: number;
+  exit_time?: string;
+  exit_price?: number;
+  pnl?: number;
+  pnl_percent?: number;
+  exit_reason?: string;
+  noTrade?: boolean;
+  noTradeReason?: string;
+  highest_price?: number;
+  lowest_price?: number;
+}
+
+/**
+ * Convert backend snake_case trade to frontend camelCase
+ */
+const transformTrade = (backendTrade: BackendTrade): Trade => {
+  return {
+    date: backendTrade.date,
+    ticker: backendTrade.ticker,
+    side: backendTrade.side,
+    entryTime: backendTrade.entry_time,
+    entryPrice: backendTrade.entry_price,
+    exitTime: backendTrade.exit_time,
+    exitPrice: backendTrade.exit_price,
+    pnl: backendTrade.pnl,
+    pnlPercent: backendTrade.pnl_percent,
+    exitReason: backendTrade.exit_reason,
+    noTrade: backendTrade.noTrade,
+    noTradeReason: backendTrade.noTradeReason,
+    highestPrice: backendTrade.highest_price,
+    lowestPrice: backendTrade.lowest_price,
+  };
+};
 
 export interface Metrics {
   total_trades?: number;
@@ -89,11 +132,18 @@ export interface IntelligentBacktestResponse {
 export const executeIntelligentBacktest = async (
   request: IntelligentBacktestRequest
 ): Promise<IntelligentBacktestResponse> => {
-  const response = await apiClient.post<IntelligentBacktestResponse>(
+  const response = await apiClient.post<any>(
     '/backtests/execute-intelligent',
     request
   );
-  return response.data;
+
+  // Transform snake_case trades to camelCase
+  const data = response.data;
+  if (data.results?.trades) {
+    data.results.trades = data.results.trades.map(transformTrade);
+  }
+
+  return data;
 };
 
 /**

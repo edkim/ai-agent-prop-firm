@@ -234,18 +234,28 @@ export class BacktestRouterService {
    */
   private generatePastTradingDays(days: number): string[] {
     const dates: string[] = [];
-    const current = new Date();
 
-    // Start from yesterday (don't include today since it's incomplete)
-    current.setDate(current.getDate() - 1);
+    // Use UTC to avoid timezone issues
+    // Get current UTC date at midnight
+    const now = new Date();
+    const current = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate()
+    ));
+
+    // Start from today - with real-time data subscription, we can backtest
+    // trades that have already completed today (e.g., morning trades that exited)
+    // The backtest will use whatever data is available up to the current time
 
     while (dates.length < days) {
-      const dayOfWeek = current.getDay();
+      const dayOfWeek = current.getUTCDay();
       // Exclude weekends (0 = Sunday, 6 = Saturday)
       if (dayOfWeek !== 0 && dayOfWeek !== 6) {
         dates.push(current.toISOString().split('T')[0]);
       }
-      current.setDate(current.getDate() - 1);
+      // Go back one day in UTC
+      current.setUTCDate(current.getUTCDate() - 1);
     }
 
     // Reverse to get chronological order

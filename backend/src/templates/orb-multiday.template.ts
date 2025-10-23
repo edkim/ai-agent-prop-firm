@@ -15,8 +15,12 @@
 
 import { initializeDatabase, getDatabase } from './src/database/db';
 import dotenv from 'dotenv';
+import path from 'path';
 
-dotenv.config();
+// Load .env from project root
+// Generated scripts are placed in backend/ directory, so __dirname is backend/
+// We need to go up one level to reach project root where .env is located
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 interface Bar {
   timestamp: number;
@@ -31,6 +35,7 @@ interface Bar {
 interface TradeResult {
   date: string;
   ticker: string;
+  side?: 'LONG' | 'SHORT';
   entryTime?: string;
   entryPrice?: number;
   exitTime?: string;
@@ -39,6 +44,7 @@ interface TradeResult {
   pnlPercent?: number;
   exitReason?: string;
   highestPrice?: number;
+  lowestPrice?: number;
   noTrade?: boolean;
   noTradeReason?: string;
 }
@@ -54,12 +60,22 @@ async function runMultiDayBacktest() {
   const timeframe = 'TEMPLATE_TIMEFRAME';
   const exitTime = 'TEMPLATE_EXIT_TIME';
   const tradingDays: string[] = TEMPLATE_TRADING_DAYS;
+  const allowLong = TEMPLATE_ALLOW_LONG;
+  const allowShort = TEMPLATE_ALLOW_SHORT;
+  const takeProfitPct = TEMPLATE_TAKE_PROFIT_PCT; // e.g., 2 for +2%
+  const stopLossPct = TEMPLATE_STOP_LOSS_PCT; // e.g., 1 for -1%
+  const openingRangeMinutes = TEMPLATE_OPENING_RANGE_MINUTES; // e.g., 5 for first 5 minutes (9:30-9:35)
+
+  const positionTypes = [];
+  if (allowLong) positionTypes.push('LONG');
+  if (allowShort) positionTypes.push('SHORT');
 
   console.log('='.repeat(70));
   console.log(`${ticker} OPENING RANGE BREAKOUT - MULTI-DAY BACKTEST`);
   console.log('='.repeat(70));
   console.log(`Ticker: ${ticker}`);
   console.log(`Strategy: ${timeframe} opening range breakout`);
+  console.log(`Positions: ${positionTypes.join(' + ')}`);
   console.log(`Exit: ${exitTime}`);
   console.log(`Trading Days: ${tradingDays.length}`);
   console.log('='.repeat(70));
@@ -100,12 +116,12 @@ async function runMultiDayBacktest() {
 
     console.log(`📊 Loaded ${bars.length} bars`);
 
-    // Find opening range bar (9:30 AM)
-    const openingRangeIndex = bars.findIndex(bar =>
+    // Find opening range start (9:30 AM)
+    const openingRangeStartIndex = bars.findIndex(bar =>
       bar.timeOfDay === '09:30' || bar.timeOfDay === '13:30'
     );
 
-    if (openingRangeIndex === -1) {
+    if (openingRangeStartIndex === -1) {
       console.log(`⚠️  No opening bar found for ${date}`);
       results.push({
         date,
@@ -116,11 +132,30 @@ async function runMultiDayBacktest() {
       continue;
     }
 
-    const openingBar = bars[openingRangeIndex];
-    const openingRangeHigh = openingBar.high;
-    const openingRangeLow = openingBar.low;
+    // Calculate opening range: get high/low across opening range period
+    // Parse timeframe to get bar duration in minutes or seconds
+    let barDurationMinutes: number;
+    if (timeframe.includes('sec')) {
+      // e.g., "10sec" -> 10/60 = 0.1667 minutes
+      const seconds = parseInt(timeframe);
+      barDurationMinutes = seconds / 60;
+    } else {
+      // e.g., "5min" -> 5, "1min" -> 1
+      barDurationMinutes = parseInt(timeframe) || 5;
+    }
+    const barsInOpeningRange = Math.ceil(openingRangeMinutes / barDurationMinutes);
+    const openingRangeEndIndex = openingRangeStartIndex + barsInOpeningRange - 1;
 
-    console.log(`📈 Opening Range: H=$${openingRangeHigh.toFixed(2)} L=$${openingRangeLow.toFixed(2)} (${openingBar.timeOfDay})`);
+    // Calculate high and low across all bars in opening range
+    let openingRangeHigh = -Infinity;
+    let openingRangeLow = Infinity;
+    for (let i = openingRangeStartIndex; i <= openingRangeEndIndex && i < bars.length; i++) {
+      openingRangeHigh = Math.max(openingRangeHigh, bars[i].high);
+      openingRangeLow = Math.min(openingRangeLow, bars[i].low);
+    }
+
+    const openingRangeEndTime = bars[Math.min(openingRangeEndIndex, bars.length - 1)].timeOfDay;
+    console.log(`📈 Opening Range (${openingRangeMinutes}min, ${bars[openingRangeStartIndex].timeOfDay}-${openingRangeEndTime}): H=$${openingRangeHigh.toFixed(2)} L=$${openingRangeLow.toFixed(2)}`);
 
     // Find exit bar based on configured exit time
     const exitBarIndex = bars.findIndex(bar => {
@@ -131,76 +166,186 @@ async function runMultiDayBacktest() {
     });
     const endIndex = exitBarIndex !== -1 ? exitBarIndex : bars.length - 1;
 
-    // Track position
-    let position: { entry: number; entryTime: string; entryBar: Bar; highestPrice: number } | null = null;
-    let entryIndex = -1;
-    let exitBar: Bar | null = null;
-    let exitReason = '';
+    // Track positions (can have both long and short)
+    let longPosition: { entry: number; entryTime: string; entryBar: Bar; highestPrice: number } | null = null;
+    let shortPosition: { entry: number; entryTime: string; entryBar: Bar; lowestPrice: number } | null = null;
+    let longExitBar: Bar | null = null;
+    let shortExitBar: Bar | null = null;
+    let longExitPrice: number | null = null; // Actual exit price (TP/SL price or bar close)
+    let shortExitPrice: number | null = null;
+    let longExitReason = '';
+    let shortExitReason = '';
 
-    // Look for breakout after opening range
-    for (let i = openingRangeIndex + 1; i <= endIndex; i++) {
+    // Look for breakout/breakdown AFTER opening range period
+    for (let i = openingRangeEndIndex + 1; i <= endIndex; i++) {
       const bar = bars[i];
 
-      // Entry logic - breakout above opening range high
-      if (!position && bar.high > openingRangeHigh) {
-        position = {
+      // LONG Entry logic - breakout above opening range high
+      if (allowLong && !longPosition && bar.high > openingRangeHigh) {
+        longPosition = {
           entry: bar.close,
           entryTime: bar.timeOfDay,
           entryBar: bar,
           highestPrice: bar.high
         };
-        entryIndex = i;
-        console.log(`🚀 BREAKOUT at ${bar.timeOfDay}: Entry at $${position.entry.toFixed(2)}`);
-        continue;
+        console.log(`🚀 LONG BREAKOUT at ${bar.timeOfDay}: Entry at $${longPosition.entry.toFixed(2)}`);
       }
 
-      // Track highest price for analysis
-      if (position && bar.high > position.highestPrice) {
-        position.highestPrice = bar.high;
+      // SHORT Entry logic - breakdown below opening range low
+      if (allowShort && !shortPosition && bar.low < openingRangeLow) {
+        shortPosition = {
+          entry: bar.close,
+          entryTime: bar.timeOfDay,
+          entryBar: bar,
+          lowestPrice: bar.low
+        };
+        console.log(`🔻 SHORT BREAKDOWN at ${bar.timeOfDay}: Entry at $${shortPosition.entry.toFixed(2)}`);
       }
 
-      // Exit at configured time if position open
-      if (position && bar.timeOfDay === exitTime) {
-        exitBar = bar;
-        exitReason = `Exit at ${exitTime}`;
+      // Track highest/lowest prices for analysis
+      if (longPosition && bar.high > longPosition.highestPrice) {
+        longPosition.highestPrice = bar.high;
+      }
+      if (shortPosition && bar.low < shortPosition.lowestPrice) {
+        shortPosition.lowestPrice = bar.low;
+      }
+
+      // LONG Take Profit / Stop Loss checks
+      if (longPosition && !longExitBar) {
+        const takeProfitPrice = longPosition.entry * (1 + takeProfitPct / 100);
+        const stopLossPrice = longPosition.entry * (1 - stopLossPct / 100);
+
+        // Check take profit (use high since we hit it during the bar)
+        if (takeProfitPct > 0 && bar.high >= takeProfitPrice) {
+          longExitBar = bar;
+          longExitPrice = takeProfitPrice; // Use actual TP price
+          longExitReason = `Take Profit (+${takeProfitPct}%)`;
+          console.log(`✅ LONG Take Profit hit at ${bar.timeOfDay}: $${takeProfitPrice.toFixed(2)}`);
+        }
+        // Check stop loss (use low since we hit it during the bar)
+        else if (stopLossPct > 0 && bar.low <= stopLossPrice) {
+          longExitBar = bar;
+          longExitPrice = stopLossPrice; // Use actual SL price
+          longExitReason = `Stop Loss (-${stopLossPct}%)`;
+          console.log(`🛑 LONG Stop Loss hit at ${bar.timeOfDay}: $${stopLossPrice.toFixed(2)}`);
+        }
+      }
+
+      // SHORT Take Profit / Stop Loss checks
+      if (shortPosition && !shortExitBar) {
+        const takeProfitPrice = shortPosition.entry * (1 - takeProfitPct / 100);
+        const stopLossPrice = shortPosition.entry * (1 + stopLossPct / 100);
+
+        // Check take profit (use low since we're short)
+        if (takeProfitPct > 0 && bar.low <= takeProfitPrice) {
+          shortExitBar = bar;
+          shortExitPrice = takeProfitPrice; // Use actual TP price
+          shortExitReason = `Take Profit (+${takeProfitPct}%)`;
+          console.log(`✅ SHORT Take Profit hit at ${bar.timeOfDay}: $${takeProfitPrice.toFixed(2)}`);
+        }
+        // Check stop loss (use high since we're short)
+        else if (stopLossPct > 0 && bar.high >= stopLossPrice) {
+          shortExitBar = bar;
+          shortExitPrice = stopLossPrice; // Use actual SL price
+          shortExitReason = `Stop Loss (-${stopLossPct}%)`;
+          console.log(`🛑 SHORT Stop Loss hit at ${bar.timeOfDay}: $${stopLossPrice.toFixed(2)}`);
+        }
+      }
+
+      // Exit at configured time if positions still open
+      if (longPosition && !longExitBar && bar.timeOfDay === exitTime) {
+        longExitBar = bar;
+        longExitReason = `Exit at ${exitTime}`;
+      }
+      if (shortPosition && !shortExitBar && bar.timeOfDay === exitTime) {
+        shortExitBar = bar;
+        shortExitReason = `Exit at ${exitTime}`;
+      }
+
+      // Early exit if both positions are closed
+      if (longPosition && longExitBar && shortPosition && shortExitBar) {
+        break;
+      }
+      if (longPosition && longExitBar && !allowShort) {
+        break;
+      }
+      if (shortPosition && shortExitBar && !allowLong) {
         break;
       }
     }
 
-    // If position still open, exit at last available bar
-    if (position && !exitBar) {
-      exitBar = bars[endIndex];
-      exitReason = 'End of data';
+    // If positions still open, exit at last available bar
+    if (longPosition && !longExitBar) {
+      longExitBar = bars[endIndex];
+      longExitReason = 'End of data';
+    }
+    if (shortPosition && !shortExitBar) {
+      shortExitBar = bars[endIndex];
+      shortExitReason = 'End of data';
     }
 
-    // Calculate results for this day
-    if (position && exitBar) {
-      const exitPrice = exitBar.close;
-      const pnl = exitPrice - position.entry;
-      const pnlPercent = (pnl / position.entry) * 100;
+    // Calculate results for LONG position
+    if (longPosition && longExitBar) {
+      // Use actual TP/SL price if set, otherwise use bar close
+      const exitPrice = longExitPrice !== null ? longExitPrice : longExitBar.close;
+      const pnl = exitPrice - longPosition.entry;
+      const pnlPercent = (pnl / longPosition.entry) * 100;
 
-      console.log(`📤 EXIT at ${exitBar.timeOfDay}: $${exitPrice.toFixed(2)}`);
-      console.log(`💰 P&L: $${pnl.toFixed(2)} (${pnlPercent > 0 ? '+' : ''}${pnlPercent.toFixed(2)}%) - ${pnl > 0 ? '✅ WIN' : pnl < 0 ? '❌ LOSS' : '⚪ BREAK-EVEN'}`);
+      console.log(`📤 LONG EXIT at ${longExitBar.timeOfDay}: $${exitPrice.toFixed(2)}`);
+      console.log(`💰 LONG P&L: $${pnl.toFixed(2)} (${pnlPercent > 0 ? '+' : ''}${pnlPercent.toFixed(2)}%) - ${pnl > 0 ? '✅ WIN' : pnl < 0 ? '❌ LOSS' : '⚪ BREAK-EVEN'}`);
 
       results.push({
         date,
         ticker,
-        entryTime: position.entryTime,
-        entryPrice: position.entry,
-        exitTime: exitBar.timeOfDay,
+        side: 'LONG',
+        entryTime: longPosition.entryTime,
+        entryPrice: longPosition.entry,
+        exitTime: longExitBar.timeOfDay,
         exitPrice,
         pnl,
         pnlPercent,
-        exitReason,
-        highestPrice: position.highestPrice
+        exitReason: longExitReason,
+        highestPrice: longPosition.highestPrice
       });
-    } else {
-      console.log(`❌ NO TRADE - No breakout above $${openingRangeHigh.toFixed(2)}`);
+    }
+
+    // Calculate results for SHORT position
+    if (shortPosition && shortExitBar) {
+      // Use actual TP/SL price if set, otherwise use bar close
+      const exitPrice = shortExitPrice !== null ? shortExitPrice : shortExitBar.close;
+      // For shorts, profit = entry - exit (opposite of longs)
+      const pnl = shortPosition.entry - exitPrice;
+      const pnlPercent = (pnl / shortPosition.entry) * 100;
+
+      console.log(`📤 SHORT EXIT at ${shortExitBar.timeOfDay}: $${exitPrice.toFixed(2)}`);
+      console.log(`💰 SHORT P&L: $${pnl.toFixed(2)} (${pnlPercent > 0 ? '+' : ''}${pnlPercent.toFixed(2)}%) - ${pnl > 0 ? '✅ WIN' : pnl < 0 ? '❌ LOSS' : '⚪ BREAK-EVEN'}`);
+
+      results.push({
+        date,
+        ticker,
+        side: 'SHORT',
+        entryTime: shortPosition.entryTime,
+        entryPrice: shortPosition.entry,
+        exitTime: shortExitBar.timeOfDay,
+        exitPrice,
+        pnl,
+        pnlPercent,
+        exitReason: shortExitReason,
+        lowestPrice: shortPosition.lowestPrice
+      });
+    }
+
+    // No trades taken
+    if (!longPosition && !shortPosition) {
+      const reasons = [];
+      if (allowLong) reasons.push(`no breakout above $${openingRangeHigh.toFixed(2)}`);
+      if (allowShort) reasons.push(`no breakdown below $${openingRangeLow.toFixed(2)}`);
+      console.log(`❌ NO TRADE - ${reasons.join(' and ')}`);
       results.push({
         date,
         ticker,
         noTrade: true,
-        noTradeReason: 'No breakout signal'
+        noTradeReason: reasons.join(' and ')
       });
     }
   }
@@ -211,6 +356,9 @@ async function runMultiDayBacktest() {
   console.log('='.repeat(70));
 
   const trades = results.filter(r => !r.noTrade);
+  const longTrades = trades.filter(r => r.side === 'LONG');
+  const shortTrades = trades.filter(r => r.side === 'SHORT');
+
   const winners = trades.filter(r => r.pnl! > 0);
   const losers = trades.filter(r => r.pnl! < 0);
   const totalPnL = trades.reduce((sum, r) => sum + (r.pnl || 0), 0);
@@ -218,27 +366,81 @@ async function runMultiDayBacktest() {
   const winRate = trades.length > 0 ? (winners.length / trades.length) * 100 : 0;
 
   console.log(`\nTotal Days Tested: ${tradingDays.length}`);
-  console.log(`Total Trades: ${trades.length}`);
+  console.log(`Total Trades: ${trades.length} (Long: ${longTrades.length}, Short: ${shortTrades.length})`);
   console.log(`No Trade Days: ${results.filter(r => r.noTrade).length}`);
   console.log('');
-  console.log(`Winners: ${winners.length}`);
-  console.log(`Losers: ${losers.length}`);
-  console.log(`Win Rate: ${winRate.toFixed(1)}%`);
+
+  // Overall stats
+  console.log(`Overall Winners: ${winners.length}`);
+  console.log(`Overall Losers: ${losers.length}`);
+  console.log(`Overall Win Rate: ${winRate.toFixed(1)}%`);
+  console.log(`Overall Total P&L: $${totalPnL.toFixed(2)}`);
+  console.log(`Overall Average P&L per trade: $${avgPnL.toFixed(2)}`);
   console.log('');
-  console.log(`Total P&L: $${totalPnL.toFixed(2)}`);
-  console.log(`Average P&L per trade: $${avgPnL.toFixed(2)}`);
-  console.log('');
+
+  // Long stats
+  if (longTrades.length > 0) {
+    const longWinners = longTrades.filter(r => r.pnl! > 0);
+    const longLosers = longTrades.filter(r => r.pnl! < 0);
+    const longPnL = longTrades.reduce((sum, r) => sum + (r.pnl || 0), 0);
+    const longWinRate = (longWinners.length / longTrades.length) * 100;
+    const longAvgPnL = longPnL / longTrades.length;
+
+    console.log(`LONG Trades: ${longTrades.length}`);
+    console.log(`LONG Winners: ${longWinners.length}`);
+    console.log(`LONG Losers: ${longLosers.length}`);
+    console.log(`LONG Win Rate: ${longWinRate.toFixed(1)}%`);
+    console.log(`LONG Total P&L: $${longPnL.toFixed(2)}`);
+    console.log(`LONG Average P&L: $${longAvgPnL.toFixed(2)}`);
+    console.log('');
+  }
+
+  // Short stats
+  if (shortTrades.length > 0) {
+    const shortWinners = shortTrades.filter(r => r.pnl! > 0);
+    const shortLosers = shortTrades.filter(r => r.pnl! < 0);
+    const shortPnL = shortTrades.reduce((sum, r) => sum + (r.pnl || 0), 0);
+    const shortWinRate = (shortWinners.length / shortTrades.length) * 100;
+    const shortAvgPnL = shortPnL / shortTrades.length;
+
+    console.log(`SHORT Trades: ${shortTrades.length}`);
+    console.log(`SHORT Winners: ${shortWinners.length}`);
+    console.log(`SHORT Losers: ${shortLosers.length}`);
+    console.log(`SHORT Win Rate: ${shortWinRate.toFixed(1)}%`);
+    console.log(`SHORT Total P&L: $${shortPnL.toFixed(2)}`);
+    console.log(`SHORT Average P&L: $${shortAvgPnL.toFixed(2)}`);
+    console.log('');
+  }
 
   // Trade-by-trade breakdown
   console.log('TRADE-BY-TRADE BREAKDOWN:');
   console.log('─'.repeat(70));
-  results.forEach((result, index) => {
-    if (result.noTrade) {
-      console.log(`${index + 1}. ${result.date}: NO TRADE (${result.noTradeReason})`);
-    } else {
-      const outcome = result.pnl! > 0 ? '✅ WIN' : result.pnl! < 0 ? '❌ LOSS' : '⚪ EVEN';
-      console.log(`${index + 1}. ${result.date}: ${outcome} - Entry: $${result.entryPrice!.toFixed(2)} (${result.entryTime}) → Exit: $${result.exitPrice!.toFixed(2)} (${result.exitTime}) = $${result.pnl!.toFixed(2)} (${result.pnlPercent!.toFixed(2)}%)`);
+
+  // Group by date to show multiple trades per day together
+  const tradesByDate = new Map<string, TradeResult[]>();
+  results.forEach(result => {
+    if (!tradesByDate.has(result.date)) {
+      tradesByDate.set(result.date, []);
     }
+    tradesByDate.get(result.date)!.push(result);
+  });
+
+  let index = 1;
+  tradingDays.forEach(date => {
+    const dayResults = tradesByDate.get(date) || [];
+    if (dayResults.length === 0 || dayResults.every(r => r.noTrade)) {
+      const noTradeResult = dayResults.find(r => r.noTrade);
+      console.log(`${index}. ${date}: NO TRADE (${noTradeResult?.noTradeReason || 'unknown'})`);
+    } else {
+      dayResults.forEach((result, i) => {
+        if (!result.noTrade) {
+          const outcome = result.pnl! > 0 ? '✅ WIN' : result.pnl! < 0 ? '❌ LOSS' : '⚪ EVEN';
+          const prefix = dayResults.length > 1 ? `${index}.${i + 1}` : `${index}`;
+          console.log(`${prefix}. ${result.date} [${result.side}]: ${outcome} - Entry: $${result.entryPrice!.toFixed(2)} (${result.entryTime}) → Exit: $${result.exitPrice!.toFixed(2)} (${result.exitTime}) = $${result.pnl!.toFixed(2)} (${result.pnlPercent!.toFixed(2)}%)`);
+        }
+      });
+    }
+    index++;
   });
 
   console.log('='.repeat(70));
@@ -252,11 +454,14 @@ async function runMultiDayBacktest() {
       config: {
         timeframe,
         exitTime,
-        daysTest: tradingDays.length
+        daysTest: tradingDays.length,
+        allowLong,
+        allowShort
       }
     },
     trades: trades.map(t => ({
       date: t.date,
+      side: t.side,
       entry_time: t.entryTime,
       entry_price: t.entryPrice,
       exit_time: t.exitTime,
@@ -264,20 +469,43 @@ async function runMultiDayBacktest() {
       pnl: t.pnl,
       pnl_percent: t.pnlPercent,
       exit_reason: t.exitReason,
-      highest_price: t.highestPrice
+      highest_price: t.highestPrice,
+      lowest_price: t.lowestPrice
     })),
     metrics: {
       total_days: tradingDays.length,
       total_trades: trades.length,
+      long_trades: longTrades.length,
+      short_trades: shortTrades.length,
       no_trade_days: results.filter(r => r.noTrade).length,
       winning_trades: winners.length,
       losing_trades: losers.length,
       win_rate: winRate,
       total_pnl: totalPnL,
       total_pnl_percent: trades.length > 0 ? (totalPnL / trades.reduce((sum, t) => sum + t.entryPrice!, 0)) * 100 : 0,
-      average_pnl: avgPnL
+      average_pnl: avgPnL,
+      ...(longTrades.length > 0 && {
+        long_metrics: {
+          trades: longTrades.length,
+          winners: longTrades.filter(r => r.pnl! > 0).length,
+          losers: longTrades.filter(r => r.pnl! < 0).length,
+          win_rate: (longTrades.filter(r => r.pnl! > 0).length / longTrades.length) * 100,
+          total_pnl: longTrades.reduce((sum, r) => sum + (r.pnl || 0), 0),
+          average_pnl: longTrades.reduce((sum, r) => sum + (r.pnl || 0), 0) / longTrades.length
+        }
+      }),
+      ...(shortTrades.length > 0 && {
+        short_metrics: {
+          trades: shortTrades.length,
+          winners: shortTrades.filter(r => r.pnl! > 0).length,
+          losers: shortTrades.filter(r => r.pnl! < 0).length,
+          win_rate: (shortTrades.filter(r => r.pnl! > 0).length / shortTrades.length) * 100,
+          total_pnl: shortTrades.reduce((sum, r) => sum + (r.pnl || 0), 0),
+          average_pnl: shortTrades.reduce((sum, r) => sum + (r.pnl || 0), 0) / shortTrades.length
+        }
+      })
     },
-    summary: `Tested ${tradingDays.length} days, took ${trades.length} trades with ${winRate.toFixed(1)}% win rate. Total P&L: $${totalPnL.toFixed(2)}`
+    summary: `Tested ${tradingDays.length} days, took ${trades.length} trades (${longTrades.length} long, ${shortTrades.length} short) with ${winRate.toFixed(1)}% win rate. Total P&L: $${totalPnL.toFixed(2)}`
   };
 
   console.log('\nJSON_OUTPUT:');

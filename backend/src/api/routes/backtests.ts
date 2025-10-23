@@ -12,6 +12,7 @@ import BacktestService from '../../services/backtest.service';
 import ScriptGeneratorService from '../../services/script-generator.service';
 import ScriptExecutionService from '../../services/script-execution.service';
 import BacktestRouterService from '../../services/backtest-router.service';
+import PolygonService from '../../services/polygon.service';
 import crypto from 'crypto';
 
 const router = Router();
@@ -256,6 +257,60 @@ router.delete('/:id', (req: Request, res: Response) => {
 });
 
 /**
+ * Helper function to check and fetch missing data
+ */
+async function ensureDataExists(
+  ticker: string,
+  timeframe: string,
+  dates: string[]
+): Promise<{ success: boolean; message?: string; fetchedDates?: string[] }> {
+  const fetchedDates: string[] = [];
+
+  for (const date of dates) {
+    // Check if data exists for this date
+    const dateStart = new Date(`${date}T00:00:00Z`).getTime();
+    const nextDate = new Date(date);
+    nextDate.setDate(nextDate.getDate() + 1);
+    const dateEnd = nextDate.getTime();
+
+    const hasData = await PolygonService.hasData(ticker, timeframe, dateStart, dateEnd);
+
+    if (!hasData) {
+      console.log(`📥 Fetching missing data for ${ticker} on ${date}...`);
+
+      try {
+        // Fetch data for this specific date
+        // Add a buffer to ensure we get pre-market and after-hours data
+        const fetchFrom = date; // Polygon uses date strings
+        const fetchTo = date;
+
+        const count = await PolygonService.fetchAndStore(ticker, timeframe as any, fetchFrom, fetchTo);
+
+        if (count > 0) {
+          fetchedDates.push(date);
+          console.log(`✅ Fetched ${count} bars for ${ticker} on ${date}`);
+        } else {
+          console.log(`⚠️  No data available for ${ticker} on ${date} (likely non-trading day)`);
+        }
+      } catch (error: any) {
+        console.error(`❌ Failed to fetch data for ${ticker} on ${date}:`, error.message);
+        return {
+          success: false,
+          message: `Failed to fetch data for ${date}: ${error.message}`
+        };
+      }
+    } else {
+      console.log(`✓ Data already exists for ${ticker} on ${date}`);
+    }
+  }
+
+  return {
+    success: true,
+    fetchedDates
+  };
+}
+
+/**
  * POST /api/backtests/execute-intelligent
  * Execute a backtest using intelligent routing
  * This endpoint analyzes the request and automatically decides whether to use
@@ -310,6 +365,107 @@ router.post('/execute-intelligent', async (req: Request, res: Response) => {
         const hours = timeMatch[1].padStart(2, '0');
         const minutes = timeMatch[2] || '00';
         params.config.exitTime = `${hours}:${minutes}`;
+      }
+    }
+
+    // Extract position direction (long, short, or both) from prompt
+    const hasShortKeywords = /\b(short|shorts|short position|short positions|breakdown|breakdowns|shorting)\b/i.test(prompt);
+    const hasLongKeywords = /\b(long|longs|long position|long positions|breakout|breakouts)\b/i.test(prompt);
+    const hasIncludingShort = /including\s+(short|shorts)/i.test(prompt);
+    const hasOnlyShort = /\b(only short|shorts only|short only)\b/i.test(prompt);
+    const hasBothKeywords = /\b(both|long and short|short and long)\b/i.test(prompt);
+
+    if (hasOnlyShort) {
+      // Only short positions
+      params.config.allowLong = false;
+      params.config.allowShort = true;
+    } else if (hasIncludingShort || hasBothKeywords || (hasShortKeywords && hasLongKeywords)) {
+      // Both long and short
+      params.config.allowLong = true;
+      params.config.allowShort = true;
+    } else if (hasShortKeywords) {
+      // Short mentioned but not "including" - still enable both to be safe
+      params.config.allowLong = true;
+      params.config.allowShort = true;
+    } else {
+      // Default: long only
+      params.config.allowLong = true;
+      params.config.allowShort = false;
+    }
+
+    // Extract take profit from prompt (e.g., "take profit at +2%", "TP +3%", "target 2%")
+    const takeProfitMatch = prompt.match(/(?:take profit|tp|target)(?:\s+at)?\s+\+?(\d+(?:\.\d+)?)%/i);
+    if (takeProfitMatch) {
+      params.config.takeProfitPct = parseFloat(takeProfitMatch[1]);
+      console.log(`Detected take profit: ${params.config.takeProfitPct}%`);
+    }
+
+    // Extract stop loss from prompt (e.g., "stop loss at -1%", "SL -2%", "stop at 1%")
+    const stopLossMatch = prompt.match(/(?:stop loss|sl|stop)(?:\s+at)?\s+-?(\d+(?:\.\d+)?)%/i);
+    if (stopLossMatch) {
+      params.config.stopLossPct = parseFloat(stopLossMatch[1]);
+      console.log(`Detected stop loss: ${params.config.stopLossPct}%`);
+    }
+
+    // Extract opening range duration from prompt (e.g., "5 minute opening range", "15 min ORB")
+    const orbDurationMatch = prompt.match(/(\d+)[\s-]?(?:minute|min|m)(?:\s+opening\s+range|\s+orb)?/i);
+    if (orbDurationMatch) {
+      params.config.openingRangeMinutes = parseInt(orbDurationMatch[1]);
+      console.log(`Detected opening range duration: ${params.config.openingRangeMinutes} minutes`);
+    } else {
+      // Default to 5 minutes
+      params.config.openingRangeMinutes = 5;
+    }
+
+    // Ensure data exists before running backtest
+    if (decision.dates && decision.dates.length > 0) {
+      console.log(`\n📊 Checking data availability for ${decision.dates.length} date(s)...`);
+      const dataCheck = await ensureDataExists(ticker, timeframe, decision.dates);
+
+      if (!dataCheck.success) {
+        return res.status(500).json({
+          success: false,
+          error: 'Data fetch failed',
+          message: dataCheck.message,
+          routing: decision,
+          executionId: crypto.randomUUID(),
+        });
+      }
+
+      if (dataCheck.fetchedDates && dataCheck.fetchedDates.length > 0) {
+        console.log(`✅ Fetched data for ${dataCheck.fetchedDates.length} date(s)`);
+      }
+    } else {
+      // If no specific dates provided, try to infer from params
+      const datesToCheck: string[] = [];
+      if (params.date) {
+        datesToCheck.push(params.date);
+      } else if (params.dateRange) {
+        // Generate dates from range
+        const current = new Date(params.dateRange.from);
+        const end = new Date(params.dateRange.to);
+        while (current <= end) {
+          const dayOfWeek = current.getDay();
+          if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+            datesToCheck.push(current.toISOString().split('T')[0]);
+          }
+          current.setDate(current.getDate() + 1);
+        }
+      }
+
+      if (datesToCheck.length > 0) {
+        console.log(`\n📊 Checking data availability for ${datesToCheck.length} date(s)...`);
+        const dataCheck = await ensureDataExists(ticker, timeframe, datesToCheck);
+
+        if (!dataCheck.success) {
+          return res.status(500).json({
+            success: false,
+            error: 'Data fetch failed',
+            message: dataCheck.message,
+            routing: decision,
+            executionId: crypto.randomUUID(),
+          });
+        }
       }
     }
 
