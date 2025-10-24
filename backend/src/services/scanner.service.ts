@@ -72,7 +72,7 @@ export class ScannerService {
     console.log('🔍 Starting scan with criteria:', JSON.stringify(criteria, null, 2));
 
     // Build SQL query from criteria
-    const { query, params } = this.buildQuery(criteria);
+    const { query, params } = await this.buildQuery(criteria);
 
     console.log('📊 Executing SQL query...');
     console.log('Query:', query);
@@ -164,16 +164,16 @@ export class ScannerService {
   /**
    * Build SQL query from scan criteria
    */
-  private buildQuery(criteria: ScanCriteria): { query: string; params: any[] } {
+  private async buildQuery(criteria: ScanCriteria): Promise<{ query: string; params: any[] }> {
     const conditions: string[] = [];
     const params: any[] = [];
 
     // Universe filter
     if (criteria.universe) {
-      const universeEntity = universeDataService.getUniverseByName(criteria.universe);
+      const universeEntity = await universeDataService.getUniverseByName(criteria.universe);
       if (universeEntity) {
         conditions.push('ticker IN (SELECT ticker FROM universe_stocks WHERE universe_id = ?)');
-        params.push((universeEntity as any).id);
+        params.push(universeEntity.id);
       }
     }
 
