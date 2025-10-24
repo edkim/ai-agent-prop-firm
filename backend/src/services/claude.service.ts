@@ -163,6 +163,48 @@ Based on the strategy complexity and any explicit date mentions, what dates shou
   }
 
   /**
+   * Generate a scanner script from a natural language query
+   */
+  async generateScannerScript(params: {
+    query: string;
+    universe: string;
+    dateRange?: { start: string; end: string };
+  }): Promise<{ script: string; explanation: string }> {
+    console.log('🔍 Claude generating scanner script for query:', params.query);
+
+    const systemPrompt = this.buildScannerSystemPrompt();
+    const userMessage = this.buildScannerUserMessage(params);
+
+    try {
+      const client = this.getClient();
+      const response = await client.messages.create({
+        model: this.model,
+        max_tokens: 4000,
+        temperature: 0.0,
+        system: systemPrompt,
+        messages: [
+          {
+            role: 'user',
+            content: userMessage,
+          },
+        ],
+      });
+
+      // Extract text from response
+      const textContent = response.content.find(c => c.type === 'text');
+      if (!textContent || textContent.type !== 'text') {
+        throw new Error('No text content in Claude response');
+      }
+
+      // Parse the response
+      return this.parseScannerResponse(textContent.text);
+    } catch (error: any) {
+      console.error('Error calling Claude API for scanner:', error);
+      throw new Error(`Claude API error: ${error.message}`);
+    }
+  }
+
+  /**
    * Build comprehensive system prompt with examples and structure
    */
   private buildSystemPrompt(): string {
@@ -612,6 +654,187 @@ Please generate a complete, runnable TypeScript backtest script following the st
       explanation,
       dates,
       dateReasoning,
+    };
+  }
+
+  /**
+   * Build scanner-specific system prompt
+   */
+  private buildScannerSystemPrompt(): string {
+    return `You are generating a stock scanner script based on user's natural language criteria.
+
+Your task is to generate a complete, runnable TypeScript scanner that queries the daily_metrics table to find matching stock patterns.
+
+## Available Data in daily_metrics Table
+
+Each row contains daily metrics for a stock ticker on a specific date:
+
+- ticker, date, open, high, low, close, volume
+- change_percent (daily % change)
+- change_5d_percent (5-day % change)
+- change_10d_percent (10-day % change)
+- volume_ratio (volume / 30-day average)
+- consecutive_up_days, consecutive_down_days
+- rsi_14 (14-day RSI)
+- sma_20, sma_50 (20-day and 50-day simple moving averages)
+- price_to_sma20_percent, price_to_sma50_percent (% distance from SMAs)
+- high_low_range_percent ((high-low)/open as %)
+
+## Scanner Script Structure
+
+\`\`\`typescript
+import { initializeDatabase, getDatabase } from './src/database/db';
+import dotenv from 'dotenv';
+import path from 'path';
+
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+interface ScanMatch {
+  ticker: string;
+  start_date: string;
+  end_date: string;
+  max_gain_pct: number;
+  avg_volume_expansion: number;
+  pattern_strength: number; // 0-100 score
+}
+
+async function runScan(): Promise<ScanMatch[]> {
+  // Initialize database
+  const dbPath = process.env.DATABASE_PATH || './backtesting.db';
+  initializeDatabase(dbPath);
+
+  const db = getDatabase();
+  const results: ScanMatch[] = [];
+
+  // Query all daily metrics for the date range, grouped by ticker
+  // Note: This queries all tickers in daily_metrics (which contains the universe data)
+  const metricsStmt = db.prepare(\`
+    SELECT ticker, date, open, high, low, close, volume,
+           change_percent, change_5d_percent, change_10d_percent,
+           volume_ratio, consecutive_up_days, consecutive_down_days,
+           rsi_14, sma_20, sma_50,
+           price_to_sma20_percent, price_to_sma50_percent,
+           high_low_range_percent
+    FROM daily_metrics
+    WHERE date >= ?
+      AND date <= ?
+    ORDER BY ticker, date ASC
+  \`);
+
+  const allRows = metricsStmt.all('START_DATE', 'END_DATE') as any[];
+
+  // Group by ticker
+  const tickerData: { [ticker: string]: any[] } = {};
+  for (const row of allRows) {
+    if (!tickerData[row.ticker]) {
+      tickerData[row.ticker] = [];
+    }
+    tickerData[row.ticker].push(row);
+  }
+
+  console.log(\`Scanning \${Object.keys(tickerData).length} tickers...\`);
+
+  for (const [ticker, rows] of Object.entries(tickerData)) {
+
+    // Implement pattern matching logic here
+    // Example: Find stocks with 2+ consecutive up days and >100% gain over 5 days
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+
+      // Check if pattern matches
+      if (/* your criteria here */) {
+        results.push({
+          ticker: row.ticker,
+          start_date: /* pattern start */,
+          end_date: row.date,
+          max_gain_pct: row.change_5d_percent || 0,
+          avg_volume_expansion: row.volume_ratio || 1,
+          pattern_strength: /* score 0-100 based on how well it matches */
+        });
+      }
+    }
+  }
+
+  // Sort by pattern strength (highest first)
+  return results.sort((a, b) => b.pattern_strength - a.pattern_strength);
+}
+
+runScan().then(results => {
+  console.log(JSON.stringify(results, null, 2));
+}).catch(console.error);
+\`\`\`
+
+## Response Format
+
+Return your response in this exact format:
+
+SCRIPT:
+\`\`\`typescript
+[your complete scanner script here]
+\`\`\`
+
+EXPLANATION: [Brief description of the pattern matching logic]
+
+## Guidelines
+
+1. Replace UNIVERSE_NAME with the actual universe parameter
+2. Replace START_DATE and END_DATE with the actual date range (default to last 90 days if not specified)
+3. Implement the pattern matching logic based on the user's query
+4. Calculate a pattern_strength score (0-100) based on how well the match fits the criteria
+5. Be flexible with natural language variations (e.g., "days in a row" = consecutive_up_days)
+6. Output results as JSON array via console.log(JSON.stringify(...))
+7. Handle edge cases (no data, invalid tickers, etc.)`;
+  }
+
+  /**
+   * Build user message for scanner generation
+   */
+  private buildScannerUserMessage(params: {
+    query: string;
+    universe: string;
+    dateRange?: { start: string; end: string };
+  }): string {
+    const today = new Date().toISOString().split('T')[0];
+    const defaultStart = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    const startDate = params.dateRange?.start || defaultStart;
+    const endDate = params.dateRange?.end || today;
+
+    return `Generate a scanner script for the following query:
+
+USER QUERY: ${params.query}
+
+PARAMETERS:
+- Universe: ${params.universe}
+- Date Range: ${startDate} to ${endDate}
+
+Please generate a complete, runnable TypeScript scanner script that finds stocks matching the user's criteria.`;
+  }
+
+  /**
+   * Parse Claude's scanner response
+   */
+  private parseScannerResponse(responseText: string): { script: string; explanation: string } {
+    let script = '';
+    let explanation = '';
+
+    // Extract script (between \`\`\`typescript and \`\`\`)
+    const scriptMatch = responseText.match(/```typescript\n([\s\S]*?)\n```/);
+    if (scriptMatch) {
+      script = scriptMatch[1].trim();
+    } else {
+      throw new Error('Could not extract script from Claude response');
+    }
+
+    // Extract explanation
+    const explanationMatch = responseText.match(/EXPLANATION:\s*(.+)/);
+    if (explanationMatch) {
+      explanation = explanationMatch[1].trim();
+    }
+
+    return {
+      script,
+      explanation,
     };
   }
 }

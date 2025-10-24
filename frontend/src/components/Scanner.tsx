@@ -4,7 +4,8 @@
  */
 
 import { useState } from 'react';
-import { scannerApi, ScanResult, Universe } from '../services/scannerApi';
+import { scannerApi } from '../services/scannerApi';
+import type { ScanResult, Universe } from '../services/scannerApi';
 
 export default function Scanner() {
   const [query, setQuery] = useState('');

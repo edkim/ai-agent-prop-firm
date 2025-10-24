@@ -16,7 +16,7 @@ const apiClient = axios.create({
 });
 
 // Types
-export interface ScanResult {
+export type ScanResult = {
   success: boolean;
   matches: ScanMatch[];
   criteria: ScanCriteria;
@@ -24,14 +24,14 @@ export interface ScanResult {
   scan_time_ms: number;
 }
 
-export interface ScanMatch {
+export type ScanMatch = {
   ticker: string;
   date: string;
   metrics: DailyMetrics;
   score?: number;
 }
 
-export interface DailyMetrics {
+export type DailyMetrics = {
   ticker: string;
   date: string;
   open: number;
@@ -48,7 +48,7 @@ export interface DailyMetrics {
   consecutive_down_days?: number;
 }
 
-export interface ScanCriteria {
+export type ScanCriteria = {
   universe?: string;
   tickers?: string[];
   start_date?: string;
@@ -66,7 +66,7 @@ export interface ScanCriteria {
   limit?: number;
 }
 
-export interface Universe {
+export type Universe = {
   id: number;
   name: string;
   description?: string;

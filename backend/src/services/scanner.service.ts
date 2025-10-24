@@ -108,22 +108,105 @@ export class ScannerService {
   }
 
   /**
-   * Natural language scan (uses Claude to parse query - simplified for now)
+   * Natural language scan (uses Claude to generate and execute scanner script)
    */
   async naturalLanguageScan(
     query: string,
     universe: string = 'russell2000',
     dateRange?: { start: string; end: string }
   ): Promise<ScanResult> {
+    const startTime = Date.now();
     console.log(`🤖 Natural language scan: "${query}"`);
 
-    // For now, use basic keyword matching to build criteria
-    // TODO: Use Claude API to parse complex natural language queries
-    const criteria = this.parseNaturalLanguageQuery(query, universe, dateRange);
+    // Import required services
+    const claudeService = (await import('./claude.service')).default;
+    const scriptExecutionService = (await import('./script-execution.service')).default;
+    const fs = await import('fs/promises');
+    const path = await import('path');
 
-    console.log('📋 Parsed criteria:', JSON.stringify(criteria, null, 2));
+    try {
+      // 1. Generate scanner script with Claude
+      console.log('📝 Generating scanner script with Claude...');
+      const { script, explanation } = await claudeService.generateScannerScript({
+        query,
+        universe,
+        dateRange
+      });
 
-    return this.scan(criteria);
+      console.log('✅ Claude generated script');
+      console.log('📄 Explanation:', explanation);
+
+      // 2. Save script to temp file
+      const scriptPath = path.join(__dirname, '../../', `scanner-${Date.now()}.ts`);
+      await fs.writeFile(scriptPath, script);
+      console.log('💾 Saved scanner script to:', scriptPath);
+
+      // 3. Execute script
+      console.log('⚙️  Executing scanner script...');
+      const executionResult = await scriptExecutionService.executeScript(scriptPath, 60000); // 60 second timeout
+
+      if (!executionResult.success) {
+        console.error('❌ Scanner script execution failed:', executionResult.error);
+        throw new Error(`Scanner script execution failed: ${executionResult.error}`);
+      }
+
+      console.log('✅ Scanner script executed successfully');
+
+      // 4. Parse matches from script output
+      let matches: any[] = [];
+      try {
+        // Try to parse JSON from stdout
+        const jsonMatch = executionResult.stdout?.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          matches = JSON.parse(jsonMatch[0]);
+          console.log(`📊 Found ${matches.length} matches`);
+        } else {
+          console.warn('⚠️  No JSON array found in script output');
+        }
+      } catch (error: any) {
+        console.error('❌ Failed to parse scanner output:', error.message);
+        throw new Error(`Failed to parse scanner output: ${error.message}`);
+      }
+
+      // 5. Convert to ScanResult format
+      const scanMatches: ScanMatch[] = [];
+
+      for (const match of matches.slice(0, 50)) { // Limit to 50 results for now
+        // Fetch the actual daily metrics for this ticker/date
+        const db = (await import('../database/db')).getDatabase();
+        const metrics = db.prepare(
+          'SELECT * FROM daily_metrics WHERE ticker = ? AND date = ?'
+        ).get(match.ticker, match.end_date) as DailyMetrics | undefined;
+
+        if (metrics) {
+          scanMatches.push({
+            ticker: match.ticker,
+            date: match.end_date,
+            metrics,
+            score: match.pattern_strength || 50
+          });
+        }
+      }
+
+      const scanTimeMs = Date.now() - startTime;
+      console.log(`⏱️  Scan completed in ${scanTimeMs}ms`);
+
+      // Clean up temp file
+      await fs.unlink(scriptPath).catch(() => {
+        // Ignore cleanup errors
+      });
+
+      return {
+        matches: scanMatches,
+        criteria: { universe }, // Store universe only
+        total_matches: scanMatches.length,
+        scan_time_ms: scanTimeMs
+      };
+
+    } catch (error: any) {
+      console.error('❌ Natural language scan failed:', error.message);
+      throw error;
+    }
   }
 
   /**
