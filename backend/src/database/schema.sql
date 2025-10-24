@@ -96,3 +96,130 @@ CREATE TABLE IF NOT EXISTS conversations (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (strategy_id) REFERENCES strategies(id) ON DELETE SET NULL
 );
+
+-- Scanner System Tables
+
+-- Universe Definitions Table
+CREATE TABLE IF NOT EXISTS universe (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE, -- e.g., 'russell2000', 'sp500', 'all-us-stocks'
+    description TEXT,
+    total_stocks INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Universe Stocks Table (maps tickers to universes)
+CREATE TABLE IF NOT EXISTS universe_stocks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    universe_id INTEGER NOT NULL,
+    ticker TEXT NOT NULL,
+    name TEXT, -- Company name
+    sector TEXT,
+    industry TEXT,
+    market_cap REAL,
+    is_active INTEGER DEFAULT 1, -- 1 = active, 0 = delisted/removed
+    added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (universe_id) REFERENCES universe(id) ON DELETE CASCADE,
+    UNIQUE(universe_id, ticker)
+);
+
+CREATE INDEX IF NOT EXISTS idx_universe_stocks_ticker ON universe_stocks(ticker);
+CREATE INDEX IF NOT EXISTS idx_universe_stocks_universe ON universe_stocks(universe_id);
+
+-- Daily Metrics Table (pre-computed metrics for efficient scanning)
+CREATE TABLE IF NOT EXISTS daily_metrics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticker TEXT NOT NULL,
+    date TEXT NOT NULL, -- YYYY-MM-DD format
+    timestamp INTEGER NOT NULL, -- Unix timestamp for the day
+
+    -- Price metrics
+    open REAL NOT NULL,
+    high REAL NOT NULL,
+    low REAL NOT NULL,
+    close REAL NOT NULL,
+    volume INTEGER NOT NULL,
+
+    -- Change metrics
+    change_percent REAL, -- Daily % change
+    change_from_open REAL, -- % change from open to close
+
+    -- Volume metrics
+    volume_ratio REAL, -- Volume / 20-day average volume
+    volume_20d_avg REAL, -- 20-day average volume
+
+    -- Range metrics
+    high_low_range_percent REAL, -- (high - low) / open * 100
+    close_to_high_percent REAL, -- Where close is relative to high
+    close_to_low_percent REAL, -- Where close is relative to low
+
+    -- Moving averages
+    sma_20 REAL,
+    sma_50 REAL,
+    sma_200 REAL,
+
+    -- Price position relative to MAs
+    price_to_sma20_percent REAL,
+    price_to_sma50_percent REAL,
+    price_to_sma200_percent REAL,
+
+    -- Momentum indicators
+    rsi_14 REAL, -- 14-day RSI
+    consecutive_up_days INTEGER, -- Number of consecutive up days (0 if down day)
+    consecutive_down_days INTEGER, -- Number of consecutive down days (0 if up day)
+
+    -- Multi-day metrics
+    change_5d_percent REAL, -- 5-day % change
+    change_10d_percent REAL, -- 10-day % change
+    change_20d_percent REAL, -- 20-day % change
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(ticker, date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_daily_metrics_ticker_date ON daily_metrics(ticker, date);
+CREATE INDEX IF NOT EXISTS idx_daily_metrics_date ON daily_metrics(date);
+CREATE INDEX IF NOT EXISTS idx_daily_metrics_volume_ratio ON daily_metrics(ticker, volume_ratio);
+CREATE INDEX IF NOT EXISTS idx_daily_metrics_change ON daily_metrics(ticker, change_percent);
+
+-- Sample Sets Table (user-created collections of patterns)
+CREATE TABLE IF NOT EXISTS sample_sets (
+    id TEXT PRIMARY KEY, -- UUID
+    name TEXT NOT NULL,
+    description TEXT,
+    pattern_type TEXT, -- e.g., 'capitulatory', 'breakout', 'reversal'
+    total_samples INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Scan Results Table (individual pattern occurrences saved to sample sets)
+CREATE TABLE IF NOT EXISTS scan_results (
+    id TEXT PRIMARY KEY, -- UUID
+    sample_set_id TEXT NOT NULL,
+    ticker TEXT NOT NULL,
+    start_date TEXT NOT NULL, -- Pattern start date (YYYY-MM-DD)
+    end_date TEXT NOT NULL, -- Pattern end date (YYYY-MM-DD)
+    peak_date TEXT, -- Date of peak price during pattern
+
+    -- Pattern metrics
+    total_change_percent REAL, -- Total % change during pattern
+    peak_change_percent REAL, -- % change from start to peak
+    volume_spike_ratio REAL, -- Max volume / average volume
+    pattern_duration_days INTEGER, -- Number of days in pattern
+
+    -- Additional metadata
+    notes TEXT, -- User notes
+    tags TEXT, -- JSON array of tags
+
+    -- Chart data (optional, for quick access)
+    daily_bars TEXT, -- JSON array of daily OHLCV data
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (sample_set_id) REFERENCES sample_sets(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_scan_results_sample_set ON scan_results(sample_set_id);
+CREATE INDEX IF NOT EXISTS idx_scan_results_ticker ON scan_results(ticker);
+CREATE INDEX IF NOT EXISTS idx_scan_results_date_range ON scan_results(start_date, end_date);
