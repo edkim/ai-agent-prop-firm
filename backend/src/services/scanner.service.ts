@@ -8,6 +8,7 @@
 import { getDatabase } from '../database/db';
 import { DailyMetrics } from './universe-data.service';
 import universeDataService from './universe-data.service';
+import crypto from 'crypto';
 
 export interface ScanCriteria {
   universe?: string;
@@ -60,6 +61,7 @@ export interface ScanResult {
   criteria: ScanCriteria;
   total_matches: number;
   scan_time_ms: number;
+  scan_history_id?: string; // ID of the scan_history record
 }
 
 export class ScannerService {
@@ -99,11 +101,29 @@ export class ScannerService {
 
     console.log(`⏱️  Scan completed in ${scanTimeMs}ms`);
 
+    // Get universe_id if universe was specified
+    let universeId: string | undefined;
+    if (criteria.universe) {
+      const universeEntity = await universeDataService.getUniverseByName(criteria.universe);
+      universeId = universeEntity?.id?.toString();
+    }
+
+    // Save scan to history (Phase 3)
+    const scanHistoryId = this.saveScanHistory(
+      JSON.stringify(criteria), // Convert criteria to JSON as "user prompt"
+      universeId,
+      criteria.start_date,
+      criteria.end_date,
+      matches.length,
+      scanTimeMs
+    );
+
     return {
       matches,
       criteria,
       total_matches: matches.length,
-      scan_time_ms: scanTimeMs
+      scan_time_ms: scanTimeMs,
+      scan_history_id: scanHistoryId
     };
   }
 
@@ -191,6 +211,21 @@ export class ScannerService {
       const scanTimeMs = Date.now() - startTime;
       console.log(`⏱️  Scan completed in ${scanTimeMs}ms`);
 
+      // Get universe_id
+      let universeId: string | undefined;
+      const universeEntity = await universeDataService.getUniverseByName(universe);
+      universeId = universeEntity?.id?.toString();
+
+      // Save scan to history (Phase 3)
+      const scanHistoryId = this.saveScanHistory(
+        query,
+        universeId,
+        dateRange?.start,
+        dateRange?.end,
+        scanMatches.length,
+        scanTimeMs
+      );
+
       // Clean up temp file
       await fs.unlink(scriptPath).catch(() => {
         // Ignore cleanup errors
@@ -200,7 +235,8 @@ export class ScannerService {
         matches: scanMatches,
         criteria: { universe }, // Store universe only
         total_matches: scanMatches.length,
-        scan_time_ms: scanTimeMs
+        scan_time_ms: scanTimeMs,
+        scan_history_id: scanHistoryId
       };
 
     } catch (error: any) {
@@ -460,6 +496,47 @@ export class ScannerService {
 
     // Cap at 100
     return Math.min(score, 100);
+  }
+
+  /**
+   * Save scan execution to scan_history table (Phase 3)
+   */
+  private saveScanHistory(
+    userPrompt: string,
+    universeId: string | undefined,
+    dateRangeStart: string | undefined,
+    dateRangeEnd: string | undefined,
+    matchesFound: number,
+    executionTimeMs: number
+  ): string {
+    const scanId = crypto.randomUUID();
+    const db = getDatabase();
+
+    try {
+      const stmt = db.prepare(`
+        INSERT INTO scan_history (
+          id, user_prompt, universe_id, date_range_start, date_range_end,
+          matches_found, execution_time_ms, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      `);
+
+      stmt.run(
+        scanId,
+        userPrompt,
+        universeId || null,
+        dateRangeStart || null,
+        dateRangeEnd || null,
+        matchesFound,
+        executionTimeMs
+      );
+
+      console.log(`💾 Saved scan to history: ${scanId}`);
+    } catch (error: any) {
+      console.error('❌ Failed to save scan history:', error.message);
+      // Don't throw - scan results are still valid even if history save fails
+    }
+
+    return scanId;
   }
 }
 

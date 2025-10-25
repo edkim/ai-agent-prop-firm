@@ -273,3 +273,37 @@ CREATE TABLE IF NOT EXISTS portfolio_backtests (
 CREATE INDEX IF NOT EXISTS idx_portfolio_backtests_universe ON portfolio_backtests(universe);
 CREATE INDEX IF NOT EXISTS idx_portfolio_backtests_created ON portfolio_backtests(created_at);
 CREATE INDEX IF NOT EXISTS idx_portfolio_backtests_win_rate ON portfolio_backtests(win_rate);
+
+-- Individual samples (Phase 3: curated pattern collections)
+CREATE TABLE IF NOT EXISTS samples (
+    id TEXT PRIMARY KEY, -- UUID
+    ticker TEXT NOT NULL,
+    start_date TEXT NOT NULL, -- Pattern start date (YYYY-MM-DD)
+    end_date TEXT NOT NULL, -- Pattern end date (YYYY-MM-DD)
+    sample_set_id TEXT,
+    source_scan_id TEXT, -- Optional: which scan found this
+    notes TEXT,
+    metadata TEXT, -- JSON: Store max_gain, peak_date, etc.
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (sample_set_id) REFERENCES sample_sets(id) ON DELETE CASCADE,
+    FOREIGN KEY (source_scan_id) REFERENCES scan_history(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_samples_sample_set ON samples(sample_set_id);
+CREATE INDEX IF NOT EXISTS idx_samples_ticker ON samples(ticker);
+CREATE INDEX IF NOT EXISTS idx_samples_date_range ON samples(start_date, end_date);
+
+-- Scan history (Phase 3: track all scanner executions)
+CREATE TABLE IF NOT EXISTS scan_history (
+    id TEXT PRIMARY KEY, -- UUID
+    user_prompt TEXT NOT NULL,
+    universe_id TEXT,
+    date_range_start TEXT, -- YYYY-MM-DD
+    date_range_end TEXT, -- YYYY-MM-DD
+    matches_found INTEGER,
+    execution_time_ms INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_scan_history_created ON scan_history(created_at);
+CREATE INDEX IF NOT EXISTS idx_scan_history_universe ON scan_history(universe_id);
