@@ -223,3 +223,53 @@ CREATE TABLE IF NOT EXISTS scan_results (
 CREATE INDEX IF NOT EXISTS idx_scan_results_sample_set ON scan_results(sample_set_id);
 CREATE INDEX IF NOT EXISTS idx_scan_results_ticker ON scan_results(ticker);
 CREATE INDEX IF NOT EXISTS idx_scan_results_date_range ON scan_results(start_date, end_date);
+
+-- Portfolio Backtests Table (scan-and-backtest workflow results)
+CREATE TABLE IF NOT EXISTS portfolio_backtests (
+    id TEXT PRIMARY KEY, -- UUID
+    scan_query TEXT NOT NULL, -- Natural language scan query
+    strategy_prompt TEXT NOT NULL, -- Natural language strategy description
+    universe TEXT NOT NULL, -- Universe scanned (e.g., 'russell2000')
+
+    -- Scan results summary
+    total_matches INTEGER, -- Total stocks matched by scanner
+    tested_count INTEGER, -- Number of stocks backtested
+    skipped_count INTEGER, -- Number of matches skipped
+    scan_time_ms INTEGER, -- Scanner execution time
+
+    -- Portfolio-level metrics
+    total_stocks_tested INTEGER,
+    total_trades INTEGER,
+    successful_backtests INTEGER, -- Number of successful backtest executions
+    failed_backtests INTEGER, -- Number of failed backtest executions
+
+    winning_trades INTEGER,
+    losing_trades INTEGER,
+    win_rate REAL, -- Percentage (0-100)
+
+    total_pnl REAL,
+    total_pnl_percent REAL,
+    avg_pnl_per_trade REAL,
+    avg_pnl_percent_per_trade REAL,
+    median_pnl_percent REAL,
+
+    -- Best/worst performers (JSON strings)
+    best_trade TEXT, -- JSON: { ticker, date, pnl_percent, ... }
+    worst_trade TEXT, -- JSON: { ticker, date, pnl_percent, ... }
+    best_stock TEXT, -- JSON: { ticker, win_rate, avg_pnl_percent }
+    worst_stock TEXT, -- JSON: { ticker, win_rate, avg_pnl_percent }
+
+    -- Full results (JSON array)
+    individual_results TEXT, -- JSON array of IndividualBacktestResult[]
+
+    -- Execution metadata
+    execution_time_ms INTEGER, -- Total workflow execution time
+    status TEXT DEFAULT 'COMPLETED', -- 'RUNNING', 'COMPLETED', 'FAILED'
+    error TEXT, -- Error message if failed
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_portfolio_backtests_universe ON portfolio_backtests(universe);
+CREATE INDEX IF NOT EXISTS idx_portfolio_backtests_created ON portfolio_backtests(created_at);
+CREATE INDEX IF NOT EXISTS idx_portfolio_backtests_win_rate ON portfolio_backtests(win_rate);

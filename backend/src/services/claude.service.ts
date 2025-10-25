@@ -837,6 +837,128 @@ Please generate a complete, runnable TypeScript scanner script that finds stocks
       explanation,
     };
   }
+
+  /**
+   * Generate a daily backtest script that works with daily_metrics table
+   * Used by portfolio backtest to test strategies across multiple stocks
+   */
+  async generateDailyBacktestScript(
+    ticker: string,
+    signalDate: string,
+    strategyPrompt: string
+  ): Promise<{ script: string; explanation: string }> {
+    console.log(`📝 Generating daily backtest script for ${ticker} on ${signalDate}`);
+
+    const systemPrompt = `You are an expert TypeScript developer specializing in algorithmic trading backtesting.
+
+Generate a backtest script that works with DAILY price data from the daily_metrics table in a SQLite database.
+
+## Database Setup
+Use better-sqlite3 for database access:
+\`\`\`typescript
+import Database from 'better-sqlite3';
+const db = new Database('./backtesting.db', { readonly: true });
+\`\`\`
+
+## Database Schema
+The daily_metrics table has these columns:
+- ticker (TEXT), date (TEXT in YYYY-MM-DD format)
+- open, high, low, close (REAL), volume (INTEGER)
+- change_percent, volume_ratio, high_low_range_percent (REAL)
+- sma_20, sma_50, sma_200, rsi_14 (REAL)
+- consecutive_up_days, consecutive_down_days (INTEGER)
+- change_5d_percent, change_10d_percent, change_20d_percent (REAL)
+
+## Script Requirements
+1. Use better-sqlite3 to query daily_metrics for the ticker starting from signal date
+2. Implement the strategy logic using daily close-to-close prices
+3. Output JSON array of TradeResult objects with: ticker, date, side, entry_price, exit_price, pnl, pnl_percent
+4. If no trades taken, output empty array []
+5. Output ONLY the script - no markdown, no explanations
+
+## Example Template Structure
+\`\`\`typescript
+import Database from 'better-sqlite3';
+
+interface DailyMetric {
+  ticker: string;
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  change_percent: number | null;
+  volume_ratio: number | null;
+  sma_20: number | null;
+  sma_50: number | null;
+  rsi_14: number | null;
+}
+
+const db = new Database('./backtesting.db', { readonly: true });
+
+// Query daily metrics with proper typing
+const rows = db.prepare(\`
+  SELECT * FROM daily_metrics
+  WHERE ticker = ? AND date >= ?
+  ORDER BY date ASC
+\`).all(ticker, startDate) as DailyMetric[];
+
+// Strategy logic here...
+const results: any[] = [];
+
+// Output results as JSON
+console.log(JSON.stringify(results));
+\`\`\`
+
+IMPORTANT: Always cast database query results with 'as DailyMetric[]' to avoid TypeScript type errors.
+Output ONLY executable TypeScript code, no markdown formatting.`;
+
+    const userMessage = `Generate a daily backtest script for:
+
+Ticker: ${ticker}
+Signal Date: ${signalDate}
+Strategy: ${strategyPrompt}
+
+The script should:
+1. Fetch daily metrics from the database starting near the signal date
+2. Implement the strategy logic based on daily prices
+3. Track positions across multiple days if needed
+4. Return results as JSON array
+
+Output ONLY the TypeScript code, no markdown formatting.`;
+
+    try {
+      const client = this.getClient();
+      const response = await client.messages.create({
+        model: this.model,
+        max_tokens: 3000,
+        temperature: 0.0,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMessage }],
+      });
+
+      const textContent = response.content.find(c => c.type === 'text');
+      if (!textContent || textContent.type !== 'text') {
+        throw new Error('No text content in Claude response');
+      }
+
+      // Extract script from response
+      let script = textContent.text;
+
+      // Remove markdown code blocks if present
+      script = script.replace(/```typescript\n?/g, '').replace(/```\n?/g, '');
+      script = script.trim();
+
+      return {
+        script,
+        explanation: 'Daily backtest script for portfolio testing'
+      };
+    } catch (error: any) {
+      console.error('Error generating daily backtest script:', error);
+      throw new Error(`Claude API error: ${error.message}`);
+    }
+  }
 }
 
 // Export singleton instance
