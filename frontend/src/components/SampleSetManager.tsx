@@ -1,15 +1,15 @@
 /**
- * Sample Set Manager Component (Phase 3)
+ * Backtest Set Manager Component (Phase 3)
  * Manage sample sets and their samples
  */
 
 import { useState, useEffect } from 'react';
-import { sampleSetsApi } from '../services/sampleSetsApi';
-import type { SampleSet, Sample } from '../services/sampleSetsApi';
+import { backtestSetsApi } from '../services/backtestSetsApi';
+import type { BacktestSet, Sample } from '../services/backtestSetsApi';
 
-export default function SampleSetManager() {
-  const [sampleSets, setSampleSets] = useState<SampleSet[]>([]);
-  const [selectedSet, setSelectedSet] = useState<SampleSet | null>(null);
+export default function BacktestSetManager() {
+  const [backtestSets, setBacktestSets] = useState<BacktestSet[]>([]);
+  const [selectedSet, setSelectedSet] = useState<BacktestSet | null>(null);
   const [samples, setSamples] = useState<Sample[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +20,7 @@ export default function SampleSetManager() {
 
   // Load sample sets on mount
   useEffect(() => {
-    loadSampleSets();
+    loadBacktestSets();
   }, []);
 
   // Load samples when a set is selected
@@ -30,12 +30,12 @@ export default function SampleSetManager() {
     }
   }, [selectedSet]);
 
-  const loadSampleSets = async () => {
+  const loadBacktestSets = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await sampleSetsApi.getSampleSets();
-      setSampleSets(response.sample_sets);
+      const response = await backtestSetsApi.getBacktestSets();
+      setBacktestSets(response.backtest_sets);
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Failed to load sample sets');
     } finally {
@@ -47,7 +47,7 @@ export default function SampleSetManager() {
     setLoading(true);
     setError(null);
     try {
-      const response = await sampleSetsApi.getSamples(setId);
+      const response = await backtestSetsApi.getSamples(setId);
       setSamples(response.samples);
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Failed to load samples');
@@ -63,12 +63,12 @@ export default function SampleSetManager() {
     setLoading(true);
     setError(null);
     try {
-      const newSet = await sampleSetsApi.createSampleSet({
+      const newSet = await backtestSetsApi.createBacktestSet({
         name: newSetName,
         description: newSetDescription || undefined,
         pattern_type: newSetPatternType || undefined,
       });
-      setSampleSets([...sampleSets, newSet]);
+      setBacktestSets([...backtestSets, newSet]);
       setShowCreateModal(false);
       setNewSetName('');
       setNewSetDescription('');
@@ -88,8 +88,8 @@ export default function SampleSetManager() {
     setLoading(true);
     setError(null);
     try {
-      await sampleSetsApi.deleteSampleSet(setId);
-      setSampleSets(sampleSets.filter((s) => s.id !== setId));
+      await backtestSetsApi.deleteBacktestSet(setId);
+      setBacktestSets(backtestSets.filter((s) => s.id !== setId));
       if (selectedSet?.id === setId) {
         setSelectedSet(null);
         setSamples([]);
@@ -109,7 +109,7 @@ export default function SampleSetManager() {
     setLoading(true);
     setError(null);
     try {
-      await sampleSetsApi.deleteSample(selectedSet.id, sampleId);
+      await backtestSetsApi.deleteSample(selectedSet.id, sampleId);
       setSamples(samples.filter((s) => s.id !== sampleId));
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Failed to delete sample');
@@ -121,12 +121,12 @@ export default function SampleSetManager() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Sample Sets</h2>
+        <h2 className="text-2xl font-bold text-gray-900">Backtest Sets</h2>
         <button
           onClick={() => setShowCreateModal(true)}
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
         >
-          Create Sample Set
+          Create Backtest Set
         </button>
       </div>
 
@@ -137,17 +137,17 @@ export default function SampleSetManager() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Sample Sets List */}
+        {/* Backtest Sets List */}
         <div className="md:col-span-1">
           <div className="bg-white shadow-md rounded-lg p-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Sets</h3>
-            {loading && sampleSets.length === 0 ? (
+            {loading && backtestSets.length === 0 ? (
               <p className="text-gray-500 text-sm">Loading...</p>
-            ) : sampleSets.length === 0 ? (
+            ) : backtestSets.length === 0 ? (
               <p className="text-gray-500 text-sm">No sample sets yet. Create one to get started.</p>
             ) : (
               <div className="space-y-2">
-                {sampleSets.map((set) => (
+                {backtestSets.map((set) => (
                   <div
                     key={set.id}
                     className={`p-3 rounded-md cursor-pointer transition-colors ${
@@ -188,7 +188,7 @@ export default function SampleSetManager() {
         <div className="md:col-span-2">
           <div className="bg-white shadow-md rounded-lg p-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {selectedSet ? `Samples in "${selectedSet.name}"` : 'Select a Sample Set'}
+              {selectedSet ? `Samples in "${selectedSet.name}"` : 'Select a Backtest Set'}
             </h3>
             {!selectedSet ? (
               <p className="text-gray-500 text-sm">Select a sample set from the list to view its samples.</p>
@@ -248,11 +248,11 @@ export default function SampleSetManager() {
         </div>
       </div>
 
-      {/* Create Sample Set Modal */}
+      {/* Create Backtest Set Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Create Sample Set</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Create Backtest Set</h3>
             <form onSubmit={handleCreateSet} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>

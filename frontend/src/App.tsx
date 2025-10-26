@@ -12,7 +12,7 @@ import type { IntelligentBacktestResponse } from './services/api';
 type Tab = 'backtest' | 'scanner';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('backtest');
+  const [activeTab, setActiveTab] = useState<Tab>('scanner');
   const [results, setResults] = useState<IntelligentBacktestResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,10 +39,10 @@ function App() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                AI Backtest Platform
+                AI Trading Pattern Discovery
               </h1>
               <p className="mt-1 text-sm text-gray-600">
-                Natural language-powered algorithmic trading backtests
+                Natural language pattern scanning and strategy backtesting
               </p>
             </div>
             <div className="flex items-center space-x-2">
@@ -58,19 +58,6 @@ function App() {
             <nav className="-mb-px flex space-x-8">
               <button
                 onClick={() => {
-                  setActiveTab('backtest');
-                  clearResults();
-                }}
-                className={`${
-                  activeTab === 'backtest'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
-              >
-                Backtest
-              </button>
-              <button
-                onClick={() => {
                   setActiveTab('scanner');
                   clearResults();
                 }}
@@ -81,6 +68,19 @@ function App() {
                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
               >
                 Scanner
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('backtest');
+                  clearResults();
+                }}
+                className={`${
+                  activeTab === 'backtest'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+              >
+                Backtest
               </button>
             </nav>
           </div>

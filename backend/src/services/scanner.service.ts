@@ -8,6 +8,7 @@
 import { getDatabase } from '../database/db';
 import { DailyMetrics } from './universe-data.service';
 import universeDataService from './universe-data.service';
+import dataBackfillService from './data-backfill.service';
 import crypto from 'crypto';
 
 export interface ScanCriteria {
@@ -73,6 +74,9 @@ export class ScannerService {
 
     console.log('🔍 Starting scan with criteria:', JSON.stringify(criteria, null, 2));
 
+    // Trigger automatic data backfill in parallel (non-blocking)
+    dataBackfillService.backfillLatestData();
+
     // Validate query before execution
     this.validateQuery(criteria);
 
@@ -132,14 +136,15 @@ export class ScannerService {
       universeId = universeEntity?.id?.toString();
     }
 
-    // Save scan to history (Phase 3)
+    // Save scan to history (Phase 3 + Phase 4)
     const scanHistoryId = this.saveScanHistory(
       JSON.stringify(criteria), // Convert criteria to JSON as "user prompt"
       universeId,
       criteria.start_date,
       criteria.end_date,
       matches.length,
-      scanTimeMs
+      scanTimeMs,
+      matches // Phase 4: cache full results
     );
 
     return {
@@ -161,6 +166,9 @@ export class ScannerService {
   ): Promise<ScanResult> {
     const startTime = Date.now();
     console.log(`🤖 Natural language scan: "${query}"`);
+
+    // Trigger automatic data backfill in parallel (non-blocking)
+    dataBackfillService.backfillLatestData();
 
     // Import required services
     const claudeService = (await import('./claude.service')).default;
@@ -213,9 +221,28 @@ export class ScannerService {
       }
 
       // 5. Convert to ScanResult format
+      // First, deduplicate by ticker+date, keeping only the highest scoring match
+      const deduplicatedMap = new Map<string, any>();
+
+      for (const match of matches) {
+        const key = `${match.ticker}:${match.end_date}`;
+        const existing = deduplicatedMap.get(key);
+
+        // Keep the match with the highest pattern_strength
+        if (!existing || (match.pattern_strength || 0) > (existing.pattern_strength || 0)) {
+          deduplicatedMap.set(key, match);
+        }
+      }
+
+      const uniqueMatches = Array.from(deduplicatedMap.values())
+        .sort((a, b) => (b.pattern_strength || 0) - (a.pattern_strength || 0))
+        .slice(0, 50); // Limit to 50 results
+
+      console.log(`📊 After deduplication: ${uniqueMatches.length} unique matches (from ${matches.length} total)`);
+
       const scanMatches: ScanMatch[] = [];
 
-      for (const match of matches.slice(0, 50)) { // Limit to 50 results for now
+      for (const match of uniqueMatches) {
         // Fetch the actual daily metrics for this ticker/date
         const db = (await import('../database/db')).getDatabase();
         const metrics = db.prepare(
@@ -240,14 +267,15 @@ export class ScannerService {
       const universeEntity = await universeDataService.getUniverseByName(universe);
       universeId = universeEntity?.id?.toString();
 
-      // Save scan to history (Phase 3)
+      // Save scan to history (Phase 3 + Phase 4)
       const scanHistoryId = this.saveScanHistory(
         query,
         universeId,
         dateRange?.start,
         dateRange?.end,
         scanMatches.length,
-        scanTimeMs
+        scanTimeMs,
+        scanMatches // Phase 4: cache full results
       );
 
       // Save scanner script permanently before cleanup
@@ -584,7 +612,7 @@ export class ScannerService {
   }
 
   /**
-   * Save scan execution to scan_history table (Phase 3)
+   * Save scan execution to scan_history table (Phase 3 + Phase 4)
    */
   private saveScanHistory(
     userPrompt: string,
@@ -592,17 +620,21 @@ export class ScannerService {
     dateRangeStart: string | undefined,
     dateRangeEnd: string | undefined,
     matchesFound: number,
-    executionTimeMs: number
+    executionTimeMs: number,
+    matches: ScanMatch[] // Phase 4: store full results for caching
   ): string {
     const scanId = crypto.randomUUID();
     const db = getDatabase();
 
     try {
+      // Serialize matches to JSON
+      const resultsJson = JSON.stringify(matches);
+
       const stmt = db.prepare(`
         INSERT INTO scan_history (
           id, user_prompt, universe_id, date_range_start, date_range_end,
-          matches_found, execution_time_ms, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+          matches_found, results_json, execution_time_ms, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       `);
 
       stmt.run(
@@ -612,10 +644,11 @@ export class ScannerService {
         dateRangeStart || null,
         dateRangeEnd || null,
         matchesFound,
+        resultsJson,
         executionTimeMs
       );
 
-      console.log(`💾 Saved scan to history: ${scanId}`);
+      console.log(`💾 Saved scan to history: ${scanId} (${matchesFound} matches, ${resultsJson.length} bytes)`);
     } catch (error: any) {
       console.error('❌ Failed to save scan history:', error.message);
       // Don't throw - scan results are still valid even if history save fails

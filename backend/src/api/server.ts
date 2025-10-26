@@ -13,7 +13,8 @@ import backtestRoutes from './routes/backtests';
 import scriptRoutes from './routes/scripts';
 import scannerRoutes from './routes/scanner';
 import portfolioBacktestsRoutes from './routes/portfolio-backtests';
-import sampleSetsRoutes from './routes/sample-sets';
+import backtestSetsRoutes from './routes/backtest-sets';
+import chartsRoutes from './routes/charts';
 
 // Load environment variables
 // Resolve to project root (one level up from backend/)
@@ -45,7 +46,8 @@ app.use('/api/backtests', backtestRoutes);
 app.use('/api/scripts', scriptRoutes);
 app.use('/api/scanner', scannerRoutes);
 app.use('/api/portfolio-backtests', portfolioBacktestsRoutes);
-app.use('/api/sample-sets', sampleSetsRoutes);
+app.use('/api/backtest-sets', backtestSetsRoutes);
+app.use('/api/charts', chartsRoutes);
 
 // Error handling middleware
 app.use((err: Error, _req: Request, res: Response, _next: any) => {
