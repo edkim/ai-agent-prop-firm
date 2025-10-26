@@ -427,6 +427,37 @@ export class UniverseDataService {
     return stmt.all(ticker, startDate, endDate) as DailyMetrics[];
   }
 
+  /**
+   * Get daily OHLCV bars for chart generation
+   * Returns minimal data needed for charting (no computed metrics)
+   */
+  async getDailyBarsForChart(ticker: string, startDate: string, endDate: string): Promise<Array<{
+    date: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    volume: number;
+  }>> {
+    const db = getDatabase();
+
+    const stmt = db.prepare(`
+      SELECT date, open, high, low, close, volume
+      FROM daily_metrics
+      WHERE ticker = ? AND date >= ? AND date <= ?
+      ORDER BY date ASC
+    `);
+
+    return stmt.all(ticker, startDate, endDate) as Array<{
+      date: string;
+      open: number;
+      high: number;
+      low: number;
+      close: number;
+      volume: number;
+    }>;
+  }
+
   // Helper methods
 
   private calculateSMA(values: number[]): number | null {

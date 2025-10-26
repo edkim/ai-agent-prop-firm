@@ -5,7 +5,7 @@
 
 import { Router, Request, Response } from 'express';
 import ScannerService from '../../services/scanner.service';
-import SampleSetService from '../../services/sample-set.service';
+import BacktestSetService from '../../services/backtest-set.service';
 import UniverseDataService from '../../services/universe-data.service';
 import logger from '../../services/logger.service';
 
@@ -161,16 +161,16 @@ router.post('/similar', async (req: Request, res: Response) => {
 // ============================================================================
 
 /**
- * GET /api/scanner/sample-sets
+ * GET /api/scanner/backtest-sets
  * Get all sample sets
  */
-router.get('/sample-sets', async (_req: Request, res: Response) => {
+router.get('/backtest-sets', async (_req: Request, res: Response) => {
   try {
-    const sampleSets = await SampleSetService.getSampleSets();
+    const backtestSets = await BacktestSetService.getBacktestSets();
 
     res.json({
       success: true,
-      sampleSets
+      backtestSets
     });
   } catch (error: any) {
     logger.error('Error fetching sample sets:', error);
@@ -183,15 +183,15 @@ router.get('/sample-sets', async (_req: Request, res: Response) => {
 });
 
 /**
- * GET /api/scanner/sample-sets/:id
+ * GET /api/scanner/backtest-sets/:id
  * Get a specific sample set by ID
  */
-router.get('/sample-sets/:id', async (req: Request, res: Response) => {
+router.get('/backtest-sets/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const sampleSet = await SampleSetService.getSampleSet(id);
+    const backtestSet = await BacktestSetService.getBacktestSet(id);
 
-    if (!sampleSet) {
+    if (!backtestSet) {
       return res.status(404).json({
         success: false,
         error: 'Sample set not found'
@@ -200,7 +200,7 @@ router.get('/sample-sets/:id', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      sampleSet
+      backtestSet
     });
   } catch (error: any) {
     logger.error('Error fetching sample set:', error);
@@ -213,7 +213,7 @@ router.get('/sample-sets/:id', async (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/scanner/sample-sets
+ * POST /api/scanner/backtest-sets
  * Create a new sample set
  *
  * Request body:
@@ -223,7 +223,7 @@ router.get('/sample-sets/:id', async (req: Request, res: Response) => {
  *   pattern_type?: string;
  * }
  */
-router.post('/sample-sets', async (req: Request, res: Response) => {
+router.post('/backtest-sets', async (req: Request, res: Response) => {
   try {
     const { name, description, pattern_type } = req.body;
 
@@ -234,7 +234,7 @@ router.post('/sample-sets', async (req: Request, res: Response) => {
       });
     }
 
-    const sampleSet = await SampleSetService.createSampleSet({
+    const backtestSet = await BacktestSetService.createBacktestSet({
       name,
       description,
       pattern_type
@@ -242,7 +242,7 @@ router.post('/sample-sets', async (req: Request, res: Response) => {
 
     res.status(201).json({
       success: true,
-      sampleSet
+      backtestSet
     });
   } catch (error: any) {
     logger.error('Error creating sample set:', error);
@@ -255,7 +255,7 @@ router.post('/sample-sets', async (req: Request, res: Response) => {
 });
 
 /**
- * PUT /api/scanner/sample-sets/:id
+ * PUT /api/scanner/backtest-sets/:id
  * Update a sample set
  *
  * Request body:
@@ -265,18 +265,18 @@ router.post('/sample-sets', async (req: Request, res: Response) => {
  *   pattern_type?: string;
  * }
  */
-router.put('/sample-sets/:id', async (req: Request, res: Response) => {
+router.put('/backtest-sets/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { name, description, pattern_type } = req.body;
 
-    const sampleSet = await SampleSetService.updateSampleSet(id, {
+    const backtestSet = await BacktestSetService.updateBacktestSet(id, {
       name,
       description,
       pattern_type
     });
 
-    if (!sampleSet) {
+    if (!backtestSet) {
       return res.status(404).json({
         success: false,
         error: 'Sample set not found'
@@ -285,7 +285,7 @@ router.put('/sample-sets/:id', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      sampleSet
+      backtestSet
     });
   } catch (error: any) {
     logger.error('Error updating sample set:', error);
@@ -298,13 +298,13 @@ router.put('/sample-sets/:id', async (req: Request, res: Response) => {
 });
 
 /**
- * DELETE /api/scanner/sample-sets/:id
+ * DELETE /api/scanner/backtest-sets/:id
  * Delete a sample set and all its scan results
  */
-router.delete('/sample-sets/:id', async (req: Request, res: Response) => {
+router.delete('/backtest-sets/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const deleted = await SampleSetService.deleteSampleSet(id);
+    const deleted = await BacktestSetService.deleteBacktestSet(id);
 
     if (!deleted) {
       return res.status(404).json({
@@ -332,13 +332,13 @@ router.delete('/sample-sets/:id', async (req: Request, res: Response) => {
 // ============================================================================
 
 /**
- * GET /api/scanner/sample-sets/:id/results
+ * GET /api/scanner/backtest-sets/:id/results
  * Get all scan results for a sample set
  */
-router.get('/sample-sets/:id/results', async (req: Request, res: Response) => {
+router.get('/backtest-sets/:id/results', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const results = await SampleSetService.getScanResults(id);
+    const results = await BacktestSetService.getScanResults(id);
 
     res.json({
       success: true,
@@ -355,7 +355,7 @@ router.get('/sample-sets/:id/results', async (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/scanner/sample-sets/:id/results
+ * POST /api/scanner/backtest-sets/:id/results
  * Add a scan result to a sample set
  *
  * Request body:
@@ -368,7 +368,7 @@ router.get('/sample-sets/:id/results', async (req: Request, res: Response) => {
  *   tags?: string[];
  * }
  */
-router.post('/sample-sets/:id/results', async (req: Request, res: Response) => {
+router.post('/backtest-sets/:id/results', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { ticker, start_date, end_date, peak_date, notes, tags } = req.body;
@@ -380,8 +380,8 @@ router.post('/sample-sets/:id/results', async (req: Request, res: Response) => {
       });
     }
 
-    const result = await SampleSetService.addScanResult({
-      sample_set_id: id,
+    const result = await BacktestSetService.addScanResult({
+      backtest_set_id: id,
       ticker,
       start_date,
       end_date,
@@ -411,7 +411,7 @@ router.post('/sample-sets/:id/results', async (req: Request, res: Response) => {
 router.get('/results/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const result = await SampleSetService.getScanResult(id);
+    const result = await BacktestSetService.getScanResult(id);
 
     if (!result) {
       return res.status(404).json({
@@ -450,7 +450,7 @@ router.put('/results/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
     const { peak_date, notes, tags } = req.body;
 
-    const result = await SampleSetService.updateScanResult(id, {
+    const result = await BacktestSetService.updateScanResult(id, {
       peak_date,
       notes,
       tags
@@ -484,7 +484,7 @@ router.put('/results/:id', async (req: Request, res: Response) => {
 router.delete('/results/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const deleted = await SampleSetService.deleteScanResult(id);
+    const deleted = await BacktestSetService.deleteScanResult(id);
 
     if (!deleted) {
       return res.status(404).json({
@@ -699,6 +699,99 @@ router.post('/universes/:name/intraday', async (req: Request, res: Response) => 
       success: false,
       error: 'Failed to fetch intraday data',
       message: error.message
+    });
+  }
+});
+
+// ============================================================================
+// SCAN HISTORY ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /api/scanner/history
+ * Get recent scan history with cached results
+ *
+ * Query params:
+ * - limit?: number (default: 20, max: 50)
+ *
+ * Response:
+ * {
+ *   history: Array<{
+ *     id: string;
+ *     user_prompt: string;
+ *     universe_id?: string;
+ *     date_range_start?: string;
+ *     date_range_end?: string;
+ *     matches_found: number;
+ *     results: ScanMatch[]; // Parsed from results_json
+ *     execution_time_ms: number;
+ *     created_at: string;
+ *   }>
+ * }
+ */
+router.get('/history', async (req: Request, res: Response) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+
+    const { getDatabase } = await import('../../database/db');
+    const db = getDatabase();
+
+    // Only return natural language scans (user_prompt doesn't start with '{')
+    // and only those with saved results (results_json is not null)
+    const stmt = db.prepare(`
+      SELECT
+        id,
+        user_prompt,
+        universe_id,
+        date_range_start,
+        date_range_end,
+        matches_found,
+        results_json,
+        execution_time_ms,
+        created_at
+      FROM scan_history
+      WHERE results_json IS NOT NULL
+        AND substr(user_prompt, 1, 1) != '{'
+      ORDER BY created_at DESC
+      LIMIT ?
+    `);
+
+    const rows = stmt.all(limit) as Array<{
+      id: string;
+      user_prompt: string;
+      universe_id: string | null;
+      date_range_start: string | null;
+      date_range_end: string | null;
+      matches_found: number;
+      results_json: string | null;
+      execution_time_ms: number;
+      created_at: string;
+    }>;
+
+    // Parse results_json for each scan
+    const history = rows.map(row => ({
+      id: row.id,
+      user_prompt: row.user_prompt,
+      universe_id: row.universe_id || undefined,
+      date_range_start: row.date_range_start || undefined,
+      date_range_end: row.date_range_end || undefined,
+      matches_found: row.matches_found,
+      results: row.results_json ? JSON.parse(row.results_json) : [],
+      execution_time_ms: row.execution_time_ms,
+      created_at: row.created_at,
+    }));
+
+    res.json({
+      history,
+      total: history.length,
+    });
+
+  } catch (error: any) {
+    logger.error('Error fetching scan history:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch scan history',
+      message: error.message,
     });
   }
 });

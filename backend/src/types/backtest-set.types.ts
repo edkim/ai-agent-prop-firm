@@ -1,11 +1,11 @@
 /**
- * Sample Set Types (Phase 3)
+ * Backtest Set Types (Phase 3)
  *
  * Sample sets are curated collections of trading patterns found through scanner results.
  * Users can save interesting patterns to sample sets for later analysis with Claude.
  */
 
-export interface SampleSet {
+export interface BacktestSet {
   id: string; // UUID
   name: string;
   description?: string;
@@ -20,7 +20,7 @@ export interface Sample {
   ticker: string;
   start_date: string; // YYYY-MM-DD
   end_date: string; // YYYY-MM-DD
-  sample_set_id?: string;
+  backtest_set_id?: string;
   source_scan_id?: string; // Optional: which scan found this
   notes?: string;
   metadata?: SampleMetadata;
@@ -48,13 +48,13 @@ export interface ScanHistory {
 
 // Request/Response types for API
 
-export interface CreateSampleSetRequest {
+export interface CreateBacktestSetRequest {
   name: string;
   description?: string;
   pattern_type?: string;
 }
 
-export interface UpdateSampleSetRequest {
+export interface UpdateBacktestSetRequest {
   name?: string;
   description?: string;
   pattern_type?: string;
@@ -64,7 +64,7 @@ export interface CreateSampleRequest {
   ticker: string;
   start_date: string; // YYYY-MM-DD
   end_date: string; // YYYY-MM-DD
-  sample_set_id?: string;
+  backtest_set_id?: string;
   source_scan_id?: string;
   notes?: string;
   metadata?: SampleMetadata;
@@ -80,7 +80,7 @@ export interface GetSamplesResponse {
   total: number;
 }
 
-export interface GetSampleSetsResponse {
-  sample_sets: SampleSet[];
+export interface GetBacktestSetsResponse {
+  backtest_sets: BacktestSet[];
   total: number;
 }

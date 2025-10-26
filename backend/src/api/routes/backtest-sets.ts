@@ -1,24 +1,24 @@
 /**
- * Sample Sets API Routes (Phase 3)
+ * Backtest Sets API Routes (Phase 3)
  *
  * Endpoints for managing sample sets and scan results
  */
 
 import express, { Request, Response } from 'express';
-import sampleSetService from '../../services/sample-set.service';
+import backtestSetService from '../../services/backtest-set.service';
 
 const router = express.Router();
 
-// ============ Sample Sets ============
+// ============ Backtest Sets ============
 
 /**
- * GET /api/sample-sets
+ * GET /api/backtest-sets
  * Get all sample sets
  */
 router.get('/', async (_req: Request, res: Response) => {
   try {
-    const sampleSets = await sampleSetService.getSampleSets();
-    res.json({ sample_sets: sampleSets, total: sampleSets.length });
+    const backtestSets = await backtestSetService.getBacktestSets();
+    res.json({ backtest_sets: backtestSets, total: backtestSets.length });
   } catch (error: any) {
     console.error('Error getting sample sets:', error);
     res.status(500).json({ error: 'Failed to get sample sets', message: error.message });
@@ -26,18 +26,18 @@ router.get('/', async (_req: Request, res: Response) => {
 });
 
 /**
- * GET /api/sample-sets/:id
+ * GET /api/backtest-sets/:id
  * Get a specific sample set
  */
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const sampleSet = await sampleSetService.getSampleSet(req.params.id);
+    const backtestSet = await backtestSetService.getBacktestSet(req.params.id);
 
-    if (!sampleSet) {
+    if (!backtestSet) {
       return res.status(404).json({ error: 'Sample set not found' });
     }
 
-    res.json(sampleSet);
+    res.json(backtestSet);
   } catch (error: any) {
     console.error('Error getting sample set:', error);
     res.status(500).json({ error: 'Failed to get sample set', message: error.message });
@@ -45,7 +45,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/sample-sets
+ * POST /api/backtest-sets
  * Create a new sample set
  */
 router.post('/', async (req: Request, res: Response) => {
@@ -56,13 +56,13 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Name is required' });
     }
 
-    const sampleSet = await sampleSetService.createSampleSet({
+    const backtestSet = await backtestSetService.createBacktestSet({
       name,
       description,
       pattern_type
     });
 
-    res.status(201).json(sampleSet);
+    res.status(201).json(backtestSet);
   } catch (error: any) {
     console.error('Error creating sample set:', error);
     res.status(500).json({ error: 'Failed to create sample set', message: error.message });
@@ -70,24 +70,24 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 /**
- * PATCH /api/sample-sets/:id
+ * PATCH /api/backtest-sets/:id
  * Update a sample set
  */
 router.patch('/:id', async (req: Request, res: Response) => {
   try {
     const { name, description, pattern_type } = req.body;
 
-    const sampleSet = await sampleSetService.updateSampleSet(req.params.id, {
+    const backtestSet = await backtestSetService.updateBacktestSet(req.params.id, {
       name,
       description,
       pattern_type
     });
 
-    if (!sampleSet) {
+    if (!backtestSet) {
       return res.status(404).json({ error: 'Sample set not found' });
     }
 
-    res.json(sampleSet);
+    res.json(backtestSet);
   } catch (error: any) {
     console.error('Error updating sample set:', error);
     res.status(500).json({ error: 'Failed to update sample set', message: error.message });
@@ -95,12 +95,12 @@ router.patch('/:id', async (req: Request, res: Response) => {
 });
 
 /**
- * DELETE /api/sample-sets/:id
+ * DELETE /api/backtest-sets/:id
  * Delete a sample set
  */
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    const deleted = await sampleSetService.deleteSampleSet(req.params.id);
+    const deleted = await backtestSetService.deleteBacktestSet(req.params.id);
 
     if (!deleted) {
       return res.status(404).json({ error: 'Sample set not found' });
@@ -116,12 +116,12 @@ router.delete('/:id', async (req: Request, res: Response) => {
 // ============ Scan Results (Samples) ============
 
 /**
- * GET /api/sample-sets/:setId/samples
+ * GET /api/backtest-sets/:setId/samples
  * Get all scan results for a sample set
  */
 router.get('/:setId/samples', async (req: Request, res: Response) => {
   try {
-    const samples = await sampleSetService.getScanResults(req.params.setId);
+    const samples = await backtestSetService.getScanResults(req.params.setId);
     res.json({ samples, total: samples.length });
   } catch (error: any) {
     console.error('Error getting scan results:', error);
@@ -130,19 +130,19 @@ router.get('/:setId/samples', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/sample-sets/:setId/samples/:sampleId
+ * GET /api/backtest-sets/:setId/samples/:sampleId
  * Get a specific scan result
  */
 router.get('/:setId/samples/:sampleId', async (req: Request, res: Response) => {
   try {
-    const sample = await sampleSetService.getScanResult(req.params.sampleId);
+    const sample = await backtestSetService.getScanResult(req.params.sampleId);
 
     if (!sample) {
       return res.status(404).json({ error: 'Sample not found' });
     }
 
     // Verify the sample belongs to the specified sample set
-    if (sample.sample_set_id !== req.params.setId) {
+    if (sample.backtest_set_id !== req.params.setId) {
       return res.status(404).json({ error: 'Sample not found in this sample set' });
     }
 
@@ -154,7 +154,7 @@ router.get('/:setId/samples/:sampleId', async (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/sample-sets/:setId/samples
+ * POST /api/backtest-sets/:setId/samples
  * Add a scan result to a sample set
  */
 router.post('/:setId/samples', async (req: Request, res: Response) => {
@@ -168,8 +168,8 @@ router.post('/:setId/samples', async (req: Request, res: Response) => {
       });
     }
 
-    const sample = await sampleSetService.addScanResult({
-      sample_set_id: req.params.setId,
+    const sample = await backtestSetService.addScanResult({
+      backtest_set_id: req.params.setId,
       ticker,
       start_date,
       end_date,
@@ -186,14 +186,14 @@ router.post('/:setId/samples', async (req: Request, res: Response) => {
 });
 
 /**
- * PATCH /api/sample-sets/:setId/samples/:sampleId
+ * PATCH /api/backtest-sets/:setId/samples/:sampleId
  * Update a scan result
  */
 router.patch('/:setId/samples/:sampleId', async (req: Request, res: Response) => {
   try {
     const { notes, tags, peak_date } = req.body;
 
-    const sample = await sampleSetService.updateScanResult(req.params.sampleId, {
+    const sample = await backtestSetService.updateScanResult(req.params.sampleId, {
       notes,
       tags,
       peak_date
@@ -204,7 +204,7 @@ router.patch('/:setId/samples/:sampleId', async (req: Request, res: Response) =>
     }
 
     // Verify the sample belongs to the specified sample set
-    if (sample.sample_set_id !== req.params.setId) {
+    if (sample.backtest_set_id !== req.params.setId) {
       return res.status(404).json({ error: 'Sample not found in this sample set' });
     }
 
@@ -216,23 +216,23 @@ router.patch('/:setId/samples/:sampleId', async (req: Request, res: Response) =>
 });
 
 /**
- * DELETE /api/sample-sets/:setId/samples/:sampleId
+ * DELETE /api/backtest-sets/:setId/samples/:sampleId
  * Delete a scan result
  */
 router.delete('/:setId/samples/:sampleId', async (req: Request, res: Response) => {
   try {
     // Verify the sample exists and belongs to this sample set
-    const sample = await sampleSetService.getScanResult(req.params.sampleId);
+    const sample = await backtestSetService.getScanResult(req.params.sampleId);
 
     if (!sample) {
       return res.status(404).json({ error: 'Sample not found' });
     }
 
-    if (sample.sample_set_id !== req.params.setId) {
+    if (sample.backtest_set_id !== req.params.setId) {
       return res.status(404).json({ error: 'Sample not found in this sample set' });
     }
 
-    const deleted = await sampleSetService.deleteScanResult(req.params.sampleId);
+    const deleted = await backtestSetService.deleteScanResult(req.params.sampleId);
 
     if (!deleted) {
       return res.status(404).json({ error: 'Sample not found' });

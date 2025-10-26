@@ -1,6 +1,6 @@
 /**
- * Sample Sets API Client (Phase 3)
- * Handles communication with sample-sets backend endpoints
+ * Backtest Sets API Client (Phase 3)
+ * Handles communication with backtest-sets backend endpoints
  */
 
 import axios from 'axios';
@@ -20,7 +20,7 @@ const apiClient: AxiosInstance = axios.create({
 
 // Type definitions matching backend types
 
-export interface SampleSet {
+export interface BacktestSet {
   id: string;
   name: string;
   description?: string;
@@ -35,7 +35,7 @@ export interface Sample {
   ticker: string;
   start_date: string;
   end_date: string;
-  sample_set_id?: string;
+  backtest_set_id?: string;
   source_scan_id?: string;
   notes?: string;
   metadata?: SampleMetadata;
@@ -50,13 +50,13 @@ export interface SampleMetadata {
   [key: string]: any;
 }
 
-export interface CreateSampleSetRequest {
+export interface CreateBacktestSetRequest {
   name: string;
   description?: string;
   pattern_type?: string;
 }
 
-export interface UpdateSampleSetRequest {
+export interface UpdateBacktestSetRequest {
   name?: string;
   description?: string;
   pattern_type?: string;
@@ -77,8 +77,8 @@ export interface UpdateSampleRequest {
   peak_date?: string;
 }
 
-export interface GetSampleSetsResponse {
-  sample_sets: SampleSet[];
+export interface GetBacktestSetsResponse {
+  backtest_sets: BacktestSet[];
   total: number;
 }
 
@@ -87,48 +87,48 @@ export interface GetSamplesResponse {
   total: number;
 }
 
-// Sample Sets API functions
+// Backtest Sets API functions
 
-export const sampleSetsApi = {
-  // ============ Sample Sets ============
+export const backtestSetsApi = {
+  // ============ Backtest Sets ============
 
   /**
    * Get all sample sets
    */
-  async getSampleSets(): Promise<GetSampleSetsResponse> {
-    const response = await apiClient.get<GetSampleSetsResponse>('/sample-sets');
+  async getBacktestSets(): Promise<GetBacktestSetsResponse> {
+    const response = await apiClient.get<GetBacktestSetsResponse>('/backtest-sets');
     return response.data;
   },
 
   /**
    * Get a specific sample set
    */
-  async getSampleSet(id: string): Promise<SampleSet> {
-    const response = await apiClient.get<SampleSet>(`/sample-sets/${id}`);
+  async getBacktestSet(id: string): Promise<BacktestSet> {
+    const response = await apiClient.get<BacktestSet>(`/backtest-sets/${id}`);
     return response.data;
   },
 
   /**
    * Create a new sample set
    */
-  async createSampleSet(data: CreateSampleSetRequest): Promise<SampleSet> {
-    const response = await apiClient.post<SampleSet>('/sample-sets', data);
+  async createBacktestSet(data: CreateBacktestSetRequest): Promise<BacktestSet> {
+    const response = await apiClient.post<BacktestSet>('/backtest-sets', data);
     return response.data;
   },
 
   /**
    * Update a sample set
    */
-  async updateSampleSet(id: string, data: UpdateSampleSetRequest): Promise<SampleSet> {
-    const response = await apiClient.patch<SampleSet>(`/sample-sets/${id}`, data);
+  async updateBacktestSet(id: string, data: UpdateBacktestSetRequest): Promise<BacktestSet> {
+    const response = await apiClient.patch<BacktestSet>(`/backtest-sets/${id}`, data);
     return response.data;
   },
 
   /**
    * Delete a sample set
    */
-  async deleteSampleSet(id: string): Promise<void> {
-    await apiClient.delete(`/sample-sets/${id}`);
+  async deleteBacktestSet(id: string): Promise<void> {
+    await apiClient.delete(`/backtest-sets/${id}`);
   },
 
   // ============ Samples ============
@@ -137,7 +137,7 @@ export const sampleSetsApi = {
    * Get all samples in a sample set
    */
   async getSamples(setId: string): Promise<GetSamplesResponse> {
-    const response = await apiClient.get<GetSamplesResponse>(`/sample-sets/${setId}/samples`);
+    const response = await apiClient.get<GetSamplesResponse>(`/backtest-sets/${setId}/samples`);
     return response.data;
   },
 
@@ -145,7 +145,7 @@ export const sampleSetsApi = {
    * Get a specific sample
    */
   async getSample(setId: string, sampleId: string): Promise<Sample> {
-    const response = await apiClient.get<Sample>(`/sample-sets/${setId}/samples/${sampleId}`);
+    const response = await apiClient.get<Sample>(`/backtest-sets/${setId}/samples/${sampleId}`);
     return response.data;
   },
 
@@ -153,7 +153,7 @@ export const sampleSetsApi = {
    * Add a sample to a sample set
    */
   async addSample(setId: string, data: CreateSampleRequest): Promise<Sample> {
-    const response = await apiClient.post<Sample>(`/sample-sets/${setId}/samples`, data);
+    const response = await apiClient.post<Sample>(`/backtest-sets/${setId}/samples`, data);
     return response.data;
   },
 
@@ -162,7 +162,7 @@ export const sampleSetsApi = {
    */
   async updateSample(setId: string, sampleId: string, data: UpdateSampleRequest): Promise<Sample> {
     const response = await apiClient.patch<Sample>(
-      `/sample-sets/${setId}/samples/${sampleId}`,
+      `/backtest-sets/${setId}/samples/${sampleId}`,
       data
     );
     return response.data;
@@ -172,8 +172,8 @@ export const sampleSetsApi = {
    * Delete a sample
    */
   async deleteSample(setId: string, sampleId: string): Promise<void> {
-    await apiClient.delete(`/sample-sets/${setId}/samples/${sampleId}`);
+    await apiClient.delete(`/backtest-sets/${setId}/samples/${sampleId}`);
   },
 };
 
-export default sampleSetsApi;
+export default backtestSetsApi;
