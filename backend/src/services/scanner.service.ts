@@ -132,14 +132,15 @@ export class ScannerService {
       universeId = universeEntity?.id?.toString();
     }
 
-    // Save scan to history (Phase 3)
+    // Save scan to history (Phase 3 + Phase 4)
     const scanHistoryId = this.saveScanHistory(
       JSON.stringify(criteria), // Convert criteria to JSON as "user prompt"
       universeId,
       criteria.start_date,
       criteria.end_date,
       matches.length,
-      scanTimeMs
+      scanTimeMs,
+      matches // Phase 4: cache full results
     );
 
     return {
@@ -240,14 +241,15 @@ export class ScannerService {
       const universeEntity = await universeDataService.getUniverseByName(universe);
       universeId = universeEntity?.id?.toString();
 
-      // Save scan to history (Phase 3)
+      // Save scan to history (Phase 3 + Phase 4)
       const scanHistoryId = this.saveScanHistory(
         query,
         universeId,
         dateRange?.start,
         dateRange?.end,
         scanMatches.length,
-        scanTimeMs
+        scanTimeMs,
+        scanMatches // Phase 4: cache full results
       );
 
       // Save scanner script permanently before cleanup
@@ -584,7 +586,7 @@ export class ScannerService {
   }
 
   /**
-   * Save scan execution to scan_history table (Phase 3)
+   * Save scan execution to scan_history table (Phase 3 + Phase 4)
    */
   private saveScanHistory(
     userPrompt: string,
@@ -592,17 +594,21 @@ export class ScannerService {
     dateRangeStart: string | undefined,
     dateRangeEnd: string | undefined,
     matchesFound: number,
-    executionTimeMs: number
+    executionTimeMs: number,
+    matches: ScanMatch[] // Phase 4: store full results for caching
   ): string {
     const scanId = crypto.randomUUID();
     const db = getDatabase();
 
     try {
+      // Serialize matches to JSON
+      const resultsJson = JSON.stringify(matches);
+
       const stmt = db.prepare(`
         INSERT INTO scan_history (
           id, user_prompt, universe_id, date_range_start, date_range_end,
-          matches_found, execution_time_ms, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+          matches_found, results_json, execution_time_ms, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       `);
 
       stmt.run(
@@ -612,10 +618,11 @@ export class ScannerService {
         dateRangeStart || null,
         dateRangeEnd || null,
         matchesFound,
+        resultsJson,
         executionTimeMs
       );
 
-      console.log(`💾 Saved scan to history: ${scanId}`);
+      console.log(`💾 Saved scan to history: ${scanId} (${matchesFound} matches, ${resultsJson.length} bytes)`);
     } catch (error: any) {
       console.error('❌ Failed to save scan history:', error.message);
       // Don't throw - scan results are still valid even if history save fails

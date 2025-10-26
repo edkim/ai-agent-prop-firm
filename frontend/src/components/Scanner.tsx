@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { scannerApi } from '../services/scannerApi';
 import { chartsApi } from '../services/chartsApi';
 import { sampleSetsApi } from '../services/sampleSetsApi';
+import RecentScans from './RecentScans';
 import type { ScanResult, ScanMatch } from '../services/scannerApi';
 import type { ChartThumbnailResponse } from '../services/chartsApi';
 import type { SampleSet } from '../services/sampleSetsApi';
@@ -144,10 +145,33 @@ export default function Scanner() {
     }
   };
 
+  // Load cached results from scan history (Phase 4)
+  const handleRecentScanClick = (scanHistory: any) => {
+    // Load cached results without calling Claude API
+    setResults({
+      matches: scanHistory.results,
+      criteria: { universe: scanHistory.universe_id || 'russell2000' },
+      total_matches: scanHistory.matches_found,
+      scan_time_ms: scanHistory.execution_time_ms,
+      scan_history_id: scanHistory.id,
+    });
+
+    // Update query to show what scan was run
+    setQuery(scanHistory.user_prompt);
+    setError(null);
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Scanner Form */}
-      <div className="bg-white shadow-md rounded-lg p-6">
+    <div className="flex gap-6 h-full">
+      {/* Recent Scans Sidebar */}
+      <div className="w-80 flex-shrink-0">
+        <RecentScans onScanClick={handleRecentScanClick} />
+      </div>
+
+      {/* Main Scanner Content */}
+      <div className="flex-1 space-y-6">
+        {/* Scanner Form */}
+        <div className="bg-white shadow-md rounded-lg p-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Stock Scanner</h2>
 
         <form onSubmit={handleScan} className="space-y-4">
@@ -375,6 +399,7 @@ export default function Scanner() {
           )}
         </div>
       )}
+    </div>
     </div>
   );
 }

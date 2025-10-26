@@ -301,6 +301,7 @@ CREATE TABLE IF NOT EXISTS scan_history (
     date_range_start TEXT, -- YYYY-MM-DD
     date_range_end TEXT, -- YYYY-MM-DD
     matches_found INTEGER,
+    results_json TEXT, -- Full scan results as JSON (Phase 4: for cached results)
     execution_time_ms INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );

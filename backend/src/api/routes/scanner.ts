@@ -703,4 +703,97 @@ router.post('/universes/:name/intraday', async (req: Request, res: Response) => 
   }
 });
 
+// ============================================================================
+// SCAN HISTORY ENDPOINTS
+// ============================================================================
+
+/**
+ * GET /api/scanner/history
+ * Get recent scan history with cached results
+ *
+ * Query params:
+ * - limit?: number (default: 20, max: 50)
+ *
+ * Response:
+ * {
+ *   history: Array<{
+ *     id: string;
+ *     user_prompt: string;
+ *     universe_id?: string;
+ *     date_range_start?: string;
+ *     date_range_end?: string;
+ *     matches_found: number;
+ *     results: ScanMatch[]; // Parsed from results_json
+ *     execution_time_ms: number;
+ *     created_at: string;
+ *   }>
+ * }
+ */
+router.get('/history', async (req: Request, res: Response) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+
+    const { getDatabase } = await import('../../database/db');
+    const db = getDatabase();
+
+    // Only return natural language scans (user_prompt doesn't start with '{')
+    // and only those with saved results (results_json is not null)
+    const stmt = db.prepare(`
+      SELECT
+        id,
+        user_prompt,
+        universe_id,
+        date_range_start,
+        date_range_end,
+        matches_found,
+        results_json,
+        execution_time_ms,
+        created_at
+      FROM scan_history
+      WHERE results_json IS NOT NULL
+        AND substr(user_prompt, 1, 1) != '{'
+      ORDER BY created_at DESC
+      LIMIT ?
+    `);
+
+    const rows = stmt.all(limit) as Array<{
+      id: string;
+      user_prompt: string;
+      universe_id: string | null;
+      date_range_start: string | null;
+      date_range_end: string | null;
+      matches_found: number;
+      results_json: string | null;
+      execution_time_ms: number;
+      created_at: string;
+    }>;
+
+    // Parse results_json for each scan
+    const history = rows.map(row => ({
+      id: row.id,
+      user_prompt: row.user_prompt,
+      universe_id: row.universe_id || undefined,
+      date_range_start: row.date_range_start || undefined,
+      date_range_end: row.date_range_end || undefined,
+      matches_found: row.matches_found,
+      results: row.results_json ? JSON.parse(row.results_json) : [],
+      execution_time_ms: row.execution_time_ms,
+      created_at: row.created_at,
+    }));
+
+    res.json({
+      history,
+      total: history.length,
+    });
+
+  } catch (error: any) {
+    logger.error('Error fetching scan history:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch scan history',
+      message: error.message,
+    });
+  }
+});
+
 export default router;
