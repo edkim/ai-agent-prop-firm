@@ -875,69 +875,6 @@ export class ChartGeneratorService {
 
     // ... implementation similar to above
   }
-
-  /**
-   * Generate volume profile (volume distribution at price levels)
-   */
-  private async generateVolumeProfile(
-    bars: Bar[],
-    ticker: string
-  ): Promise<Buffer> {
-
-    // Calculate volume at each price level
-    const priceRange = {
-      min: Math.min(...bars.map(b => b.low)),
-      max: Math.max(...bars.map(b => b.high))
-    };
-
-    const numBins = 30;
-    const binSize = (priceRange.max - priceRange.min) / numBins;
-    const volumeByPrice = new Array(numBins).fill(0);
-
-    for (const bar of bars) {
-      const avgPrice = (bar.high + bar.low + bar.close) / 3;
-      const bin = Math.floor((avgPrice - priceRange.min) / binSize);
-      if (bin >= 0 && bin < numBins) {
-        volumeByPrice[bin] += bar.volume;
-      }
-    }
-
-    const config = {
-      type: 'bar',
-      data: {
-        labels: volumeByPrice.map((_, i) => {
-          const price = priceRange.min + (i * binSize);
-          return `$${price.toFixed(2)}`;
-        }),
-        datasets: [{
-          label: 'Volume at Price',
-          data: volumeByPrice,
-          backgroundColor: 'rgba(54, 162, 235, 0.6)',
-          orientation: 'horizontal'
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: false,
-        plugins: {
-          title: {
-            display: true,
-            text: `${ticker} - Volume Profile`,
-            color: 'white'
-          }
-        }
-      }
-    };
-
-    const canvas = new ChartJSNodeCanvas({
-      width: 600,
-      height: 800,
-      backgroundColour: '#1a1a2e'
-    });
-
-    return await canvas.renderToBuffer(config);
-  }
-}
 ```
 
 ### 4.2 Chart Storage

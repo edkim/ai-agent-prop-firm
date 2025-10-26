@@ -307,3 +307,19 @@ CREATE TABLE IF NOT EXISTS scan_history (
 
 CREATE INDEX IF NOT EXISTS idx_scan_history_created ON scan_history(created_at);
 CREATE INDEX IF NOT EXISTS idx_scan_history_universe ON scan_history(universe_id);
+
+-- Chart Thumbnails Table (Phase 4: on-demand chart generation)
+CREATE TABLE IF NOT EXISTS chart_thumbnails (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticker TEXT NOT NULL,
+    start_date TEXT NOT NULL, -- YYYY-MM-DD format
+    end_date TEXT NOT NULL, -- YYYY-MM-DD format
+    chart_data TEXT NOT NULL, -- Base64-encoded PNG image
+    width INTEGER DEFAULT 300,
+    height INTEGER DEFAULT 150,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(ticker, start_date, end_date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_chart_thumbnails_ticker ON chart_thumbnails(ticker);
+CREATE INDEX IF NOT EXISTS idx_chart_thumbnails_date_range ON chart_thumbnails(start_date, end_date);

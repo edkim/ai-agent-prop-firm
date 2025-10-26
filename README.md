@@ -15,31 +15,29 @@ This platform enables traders to discover, backtest, and validate trading strate
 - 💾 **Script Persistence** - All AI-generated code saved with metadata for audit trail and reuse
 - 📈 **Real Market Data** - Polygon.io integration for intraday and daily data
 
-## ✨ What's New (Phase 3)
+## ✨ What's New (Phase 4)
 
-### Scanner Script Persistence (2025-10-26)
-- All Claude-generated scanner scripts now saved permanently
-- Metadata JSON files track query, explanation, and results
-- Full transparency into AI-generated pattern detection logic
-- Aligned with backtest script persistence pattern
+### Chart Thumbnails (2025-10-26)
+- **On-demand chart generation** for all scan results
+- Server-side rendering with ChartJS (300x150px thumbnails)
+- SQLite caching for instant chart retrieval
+- Click "Chart" button in results table to view price charts
+- 30-day historical view for pattern analysis
+- ~100-200ms generation, <10ms cached lookups
 
-### Sample Sets Management
-- CRUD operations for organizing discovered patterns
-- Scan history tracking with performance metrics
-- Frontend UI for managing pattern collections
-- API endpoints for programmatic access
+### Enhanced Scanner UI
+- Actions column in results table
+- Inline chart display (expand/collapse)
+- One-click "Save to Sample Set" dropdown
+- Real-time chart loading with progress indicators
+- Seamless integration with existing scanner workflow
 
-### Memory-Safe Scanner
-- Streaming query execution prevents heap overflow
-- Defensive 10,000 row limit on large result sets
-- Query validation warnings for potentially expensive operations
-- Production-ready for Russell 2000+ universe scans
-
-### Claude Integration
-- Natural language scanner script generation
-- Intelligent backtest script creation with date selection
-- Automatic assumption documentation
-- Confidence scoring
+### Phase 3 Features (Completed)
+- Scanner script persistence with metadata
+- Sample sets management (CRUD operations)
+- Memory-safe streaming (10K default limit)
+- Natural language scanner and backtest generation
+- Full audit trail for AI-generated code
 
 ## 📋 Features
 
@@ -504,9 +502,9 @@ npm run dev
 
 ## 🗺️ Roadmap
 
-### Current Status: Phase 3 Complete ✅
+### Current Status: Phase 4 In Progress ⚡
 
-**Completed:**
+**Phase 3 Complete:**
 - ✅ Dual-mode scanner (SQL + AI)
 - ✅ Scanner script persistence
 - ✅ Sample sets management
@@ -515,9 +513,16 @@ npm run dev
 - ✅ Natural language backtesting
 - ✅ Script metadata and audit trail
 
-### Phase 4: Quality & Reliability
+**Phase 4 Progress:**
+- ✅ **Chart Thumbnails** - On-demand chart generation for scan results
+  - Server-side chart rendering with ChartJS
+  - SQLite caching for instant retrieval
+  - Inline chart display in scanner results
+  - One-click save to sample sets
 
-**Priorities:**
+### Phase 4: Quality & Reliability (Remaining)
+
+**Next Priorities:**
 1. **Script Generation Improvements**
    - Reduce 25% failure rate
    - TypeScript validation before execution
@@ -541,7 +546,7 @@ npm run dev
 - Strategy comparison framework
 - Interactive parameter optimization
 - WebSocket for live updates
-- Chart visualization
+- Multi-timeframe chart analysis
 - Export to CSV/PDF
 - Dark mode
 

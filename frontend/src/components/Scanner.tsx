@@ -3,9 +3,13 @@
  * Natural language stock pattern scanner
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { scannerApi } from '../services/scannerApi';
-import type { ScanResult, Universe } from '../services/scannerApi';
+import { chartsApi } from '../services/chartsApi';
+import { sampleSetsApi } from '../services/sampleSetsApi';
+import type { ScanResult, ScanMatch } from '../services/scannerApi';
+import type { ChartThumbnailResponse } from '../services/chartsApi';
+import type { SampleSet } from '../services/sampleSetsApi';
 
 export default function Scanner() {
   const [query, setQuery] = useState('');
@@ -14,6 +18,15 @@ export default function Scanner() {
   const [results, setResults] = useState<ScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [backfillStatus, setBackfillStatus] = useState<string | null>(null);
+
+  // Chart state
+  const [charts, setCharts] = useState<Record<string, ChartThumbnailResponse>>({});
+  const [loadingCharts, setLoadingCharts] = useState<Record<string, boolean>>({});
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+
+  // Sample sets state
+  const [sampleSets, setSampleSets] = useState<SampleSet[]>([]);
+  const [savingToSet, setSavingToSet] = useState<Record<string, boolean>>({});
 
   const handleScan = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +58,89 @@ export default function Scanner() {
       setBackfillStatus(response.message);
     } catch (err: any) {
       setBackfillStatus(`Error: ${err.response?.data?.message || err.message}`);
+    }
+  };
+
+  // Load sample sets on mount
+  useEffect(() => {
+    const loadSampleSets = async () => {
+      try {
+        const response = await sampleSetsApi.getSampleSets();
+        setSampleSets(response.sample_sets);
+      } catch (err) {
+        console.error('Failed to load sample sets:', err);
+      }
+    };
+    loadSampleSets();
+  }, []);
+
+  // View chart for a result
+  const handleViewChart = async (match: ScanMatch) => {
+    const key = `${match.ticker}-${match.date}`;
+
+    // If already loaded and expanded, just collapse
+    if (expandedRows[key] && charts[key]) {
+      setExpandedRows(prev => ({ ...prev, [key]: false }));
+      return;
+    }
+
+    // If already loaded but collapsed, just expand
+    if (charts[key]) {
+      setExpandedRows(prev => ({ ...prev, [key]: true }));
+      return;
+    }
+
+    // Generate date range (30 days before match date)
+    const endDate = match.date;
+    const startDate = new Date(new Date(match.date).getTime() - 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split('T')[0];
+
+    setLoadingCharts(prev => ({ ...prev, [key]: true }));
+
+    try {
+      const chart = await chartsApi.generateThumbnail({
+        ticker: match.ticker,
+        startDate,
+        endDate,
+      });
+      setCharts(prev => ({ ...prev, [key]: chart }));
+      setExpandedRows(prev => ({ ...prev, [key]: true }));
+    } catch (err: any) {
+      console.error('Failed to load chart:', err);
+      alert(`Failed to load chart: ${err.response?.data?.error || err.message}`);
+    } finally {
+      setLoadingCharts(prev => ({ ...prev, [key]: false }));
+    }
+  };
+
+  // Save result to sample set
+  const handleSaveToSampleSet = async (match: ScanMatch, sampleSetId: string) => {
+    const key = `${match.ticker}-${match.date}`;
+
+    setSavingToSet(prev => ({ ...prev, [key]: true }));
+
+    try {
+      // Calculate date range (use 30 days before match date as start)
+      const endDate = match.date;
+      const startDate = new Date(new Date(match.date).getTime() - 30 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0];
+
+      await sampleSetsApi.addSample(sampleSetId, {
+        ticker: match.ticker,
+        start_date: startDate,
+        end_date: endDate,
+        peak_date: match.date,
+        notes: `Scanner match: ${match.metrics.change_percent?.toFixed(2)}% change, ${match.metrics.volume_ratio?.toFixed(2)}x volume`,
+      });
+
+      alert(`Successfully added ${match.ticker} to sample set`);
+    } catch (err: any) {
+      console.error('Failed to save to sample set:', err);
+      alert(`Failed to save: ${err.response?.data?.error || err.message}`);
+    } finally {
+      setSavingToSet(prev => ({ ...prev, [key]: false }));
     }
   };
 
@@ -188,35 +284,91 @@ export default function Scanner() {
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
                       Score
                     </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {results.matches.map((match, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                        {match.ticker}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {match.date}
-                      </td>
-                      <td className={`px-4 py-3 text-sm text-right font-medium ${
-                        (match.metrics.change_percent || 0) >= 0
-                          ? 'text-green-600'
-                          : 'text-red-600'
-                      }`}>
-                        {match.metrics.change_percent?.toFixed(2) || 'N/A'}%
-                      </td>
-                      <td className="px-4 py-3 text-sm text-right text-gray-700">
-                        {match.metrics.volume_ratio?.toFixed(2) || 'N/A'}x
-                      </td>
-                      <td className="px-4 py-3 text-sm text-right text-gray-700">
-                        {match.metrics.rsi_14?.toFixed(1) || 'N/A'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-right font-medium text-blue-600">
-                        {match.score || 50}
-                      </td>
-                    </tr>
-                  ))}
+                  {results.matches.map((match, idx) => {
+                    const key = `${match.ticker}-${match.date}`;
+                    const isExpanded = expandedRows[key];
+                    const chart = charts[key];
+                    const isLoadingChart = loadingCharts[key];
+                    const isSaving = savingToSet[key];
+
+                    return (
+                      <>
+                        <tr key={idx} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                            {match.ticker}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700">
+                            {match.date}
+                          </td>
+                          <td className={`px-4 py-3 text-sm text-right font-medium ${
+                            (match.metrics.change_percent || 0) >= 0
+                              ? 'text-green-600'
+                              : 'text-red-600'
+                          }`}>
+                            {match.metrics.change_percent?.toFixed(2) || 'N/A'}%
+                          </td>
+                          <td className="px-4 py-3 text-sm text-right text-gray-700">
+                            {match.metrics.volume_ratio?.toFixed(2) || 'N/A'}x
+                          </td>
+                          <td className="px-4 py-3 text-sm text-right text-gray-700">
+                            {match.metrics.rsi_14?.toFixed(1) || 'N/A'}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-right font-medium text-blue-600">
+                            {match.score || 50}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <div className="flex items-center justify-center space-x-2">
+                              <button
+                                onClick={() => handleViewChart(match)}
+                                disabled={isLoadingChart}
+                                className="text-blue-600 hover:text-blue-800 disabled:text-gray-400 text-sm font-medium"
+                                title="View chart"
+                              >
+                                {isLoadingChart ? '...' : isExpanded ? 'Hide' : 'Chart'}
+                              </button>
+                              <select
+                                onChange={(e) => {
+                                  if (e.target.value) {
+                                    handleSaveToSampleSet(match, e.target.value);
+                                    e.target.value = ''; // Reset selection
+                                  }
+                                }}
+                                disabled={isSaving}
+                                className="text-xs border border-gray-300 rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+                              >
+                                <option value="">Save to...</option>
+                                {sampleSets.map(set => (
+                                  <option key={set.id} value={set.id}>
+                                    {set.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </td>
+                        </tr>
+                        {/* Chart row */}
+                        {isExpanded && chart && (
+                          <tr key={`${idx}-chart`}>
+                            <td colSpan={7} className="px-4 py-3 bg-gray-50">
+                              <div className="flex justify-center">
+                                <img
+                                  src={`data:image/png;base64,${chart.chartData}`}
+                                  alt={`${chart.ticker} chart`}
+                                  className="border border-gray-300 rounded shadow-sm"
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
