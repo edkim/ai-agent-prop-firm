@@ -549,7 +549,7 @@ export function ScanResults({ scanId }: ScanResultsProps) {
           <ScanResultCard
             key={match.id}
             match={match}
-            onSaveToSampleSet={(sampleSetId) => saveToSampleSet(match, sampleSetId)}
+            onSaveToBacktestSet={(backtestSetId) => saveToBacktestSet(match, backtestSetId)}
           />
         ))}
       </div>
@@ -557,7 +557,7 @@ export function ScanResults({ scanId }: ScanResultsProps) {
   );
 }
 
-function ScanResultCard({ match, onSaveToSampleSet }) {
+function ScanResultCard({ match, onSaveToBacktestSet }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -583,8 +583,8 @@ function ScanResultCard({ match, onSaveToSampleSet }) {
 
       {/* Actions */}
       <div className="actions">
-        <SampleSetSelector
-          onSelect={(setId) => onSaveToSampleSet(setId)}
+        <BacktestSetSelector
+          onSelect={(setId) => onSaveToBacktestSet(setId)}
           placeholder="Save to..."
         />
         <button onClick={() => setExpanded(!expanded)}>
@@ -605,18 +605,18 @@ function ScanResultCard({ match, onSaveToSampleSet }) {
 }
 ```
 
-### 3.2 Sample Set Management
+### 3.2 Backtest Set Management
 
 ```typescript
 // API endpoints for sample sets
 
-POST /api/sample-sets
+POST /api/backtest-sets
 {
   "name": "Capitulatory Moves - Q3 2024",
   "description": "40 explosive moves from July-October 2024"
 }
 
-POST /api/sample-sets/:setId/samples
+POST /api/backtest-sets/:setId/samples
 {
   "ticker": "BYND",
   "start_date": "2024-10-10",
@@ -625,7 +625,7 @@ POST /api/sample-sets/:setId/samples
   "notes": "10x move in 8 days, volume peaked on day 5"
 }
 
-GET /api/sample-sets/:setId/samples
+GET /api/backtest-sets/:setId/samples
 Response: [
   {
     "id": "sample-1",
@@ -642,7 +642,7 @@ Response: [
 
 ```sql
 -- Sample sets (collections of patterns)
-CREATE TABLE sample_sets (
+CREATE TABLE backtest_sets (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   description TEXT,
@@ -656,12 +656,12 @@ CREATE TABLE samples (
   ticker TEXT NOT NULL,
   start_date TEXT NOT NULL,
   end_date TEXT NOT NULL,
-  sample_set_id TEXT,
+  backtest_set_id TEXT,
   source_scan_id TEXT, -- Optional: which scan found this
   notes TEXT,
   metadata JSON, -- Store max_gain, peak_date, etc.
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (sample_set_id) REFERENCES sample_sets(id),
+  FOREIGN KEY (backtest_set_id) REFERENCES backtest_sets(id),
   FOREIGN KEY (source_scan_id) REFERENCES scan_history(id)
 );
 
@@ -898,10 +898,10 @@ return {
 ### 5.1 User Workflow
 
 ```tsx
-// frontend/src/components/SampleSetAnalysis.tsx
+// frontend/src/components/BacktestSetAnalysis.tsx
 
-export function SampleSetAnalysis({ sampleSetId }: Props) {
-  const { data: samples } = useSampleSet(sampleSetId);
+export function BacktestSetAnalysis({ backtestSetId }: Props) {
+  const { data: samples } = useBacktestSet(backtestSetId);
   const [selectedSamples, setSelectedSamples] = useState<string[]>([]);
   const [analysisResult, setAnalysisResult] = useState(null);
 
@@ -917,7 +917,7 @@ export function SampleSetAnalysis({ sampleSetId }: Props) {
 
     // Send to Claude
     const result = await analyzeChartsWithClaude({
-      sampleSetId,
+      backtestSetId,
       selectedSamples,
       charts
     });
@@ -926,7 +926,7 @@ export function SampleSetAnalysis({ sampleSetId }: Props) {
   };
 
   return (
-    <div className="sample-set-analysis">
+    <div className="backtest-set-analysis">
       <h2>Select Samples for Claude Analysis</h2>
       <p>Choose up to 3 representative examples</p>
 
@@ -966,7 +966,7 @@ export class ClaudeChartAnalysisService {
    * Analyze charts and suggest strategies
    */
   async analyzeCharts(request: {
-    sampleSetId: string;
+    backtestSetId: string;
     selectedSampleIds: string[];
   }): Promise<StrategyRecommendations> {
 
@@ -1001,7 +1001,7 @@ export class ClaudeChartAnalysisService {
     // 5. Parse and store strategies
     const strategies = await this.parseAndStoreStrategies(
       claudeResponse,
-      request.sampleSetId
+      request.backtestSetId
     );
 
     return strategies;
@@ -1156,7 +1156,7 @@ Return your analysis as JSON:
    */
   private async parseAndStoreStrategies(
     claudeResponse: any,
-    sampleSetId: string
+    backtestSetId: string
   ): Promise<StrategyRecommendations> {
 
     const analysisId = crypto.randomUUID();
@@ -1164,9 +1164,9 @@ Return your analysis as JSON:
     // Store analysis
     await db.run(`
       INSERT INTO claude_analyses
-      (id, sample_set_id, visual_insights, created_at)
+      (id, backtest_set_id, visual_insights, created_at)
       VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-    `, [analysisId, sampleSetId, JSON.stringify(claudeResponse.visual_insights)]);
+    `, [analysisId, backtestSetId, JSON.stringify(claudeResponse.visual_insights)]);
 
     // Store suggested strategies
     const allStrategies = [
@@ -1206,11 +1206,11 @@ Return your analysis as JSON:
 -- Claude chart analyses
 CREATE TABLE claude_analyses (
   id TEXT PRIMARY KEY,
-  sample_set_id TEXT NOT NULL,
+  backtest_set_id TEXT NOT NULL,
   selected_samples JSON, -- Array of sample IDs
   visual_insights JSON,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (sample_set_id) REFERENCES sample_sets(id)
+  FOREIGN KEY (backtest_set_id) REFERENCES backtest_sets(id)
 );
 
 -- Suggested strategies from Claude
@@ -1297,7 +1297,7 @@ Important: Translate visual conditions like "doji candle" or "volume >3x" into a
    */
   async batchBacktestStrategies(request: {
     analysisId: string;
-    sampleSetId: string;
+    backtestSetId: string;
   }): Promise<BatchBacktestResults> {
 
     // 1. Get all strategies from this analysis
@@ -1309,8 +1309,8 @@ Important: Translate visual conditions like "doji candle" or "volume >3x" into a
     // 2. Get all samples from the sample set
     const samples = await db.query(`
       SELECT * FROM samples
-      WHERE sample_set_id = ?
-    `, [request.sampleSetId]);
+      WHERE backtest_set_id = ?
+    `, [request.backtestSetId]);
 
     // 3. Ensure data exists for all samples
     for (const sample of samples) {
@@ -1388,7 +1388,7 @@ Important: Translate visual conditions like "doji candle" or "volume >3x" into a
 ```tsx
 // frontend/src/components/StrategyBacktest.tsx
 
-export function StrategyBacktest({ analysisId, sampleSetId }: Props) {
+export function StrategyBacktest({ analysisId, backtestSetId }: Props) {
   const { data: strategies } = useStrategies(analysisId);
   const [backtesting, setBacktesting] = useState(false);
   const [results, setResults] = useState(null);
@@ -1399,7 +1399,7 @@ export function StrategyBacktest({ analysisId, sampleSetId }: Props) {
     try {
       const response = await api.post('/api/backtests/batch-strategies', {
         analysisId,
-        sampleSetId
+        backtestSetId
       });
 
       setResults(response.data);
@@ -1497,9 +1497,9 @@ System: Generates scanner, finds 47 matches
 UI: Shows grid of chart thumbnails with metrics
 ```
 
-**Step 2: Curate Sample Set**
+**Step 2: Curate Backtest Set**
 ```
-User: Clicks "Save to Sample Set" on 40 interesting matches
+User: Clicks "Save to Backtest Set" on 40 interesting matches
 User: Creates new set: "Capitulatory Moves - Q3 2024"
 System: Saves 40 samples with thumbnails
 ```
@@ -1585,11 +1585,11 @@ POST   /api/scans                                // Execute natural language sca
 GET    /api/scans/:id                            // Get scan results
 GET    /api/scans/:id/matches                    // Get matches with thumbnails
 
-// Sample Sets
-POST   /api/sample-sets                          // Create sample set
-POST   /api/sample-sets/:id/samples              // Add sample to set
-GET    /api/sample-sets/:id/samples              // Get all samples
-DELETE /api/sample-sets/:setId/samples/:sampleId // Remove sample
+// Backtest Sets
+POST   /api/backtest-sets                          // Create sample set
+POST   /api/backtest-sets/:id/samples              // Add sample to set
+GET    /api/backtest-sets/:id/samples              // Get all samples
+DELETE /api/backtest-sets/:setId/samples/:sampleId // Remove sample
 
 // Chart Generation
 POST   /api/charts/thumbnail                     // Generate thumbnail
@@ -1624,7 +1624,7 @@ POST   /api/backtests/refine                     // Refine strategy based on fai
 - [ ] Build scan history tracking
 - [ ] Create scan results UI with thumbnails
 - [ ] Implement sample set management
-- [ ] Build "Save to Sample Set" workflow
+- [ ] Build "Save to Backtest Set" workflow
 
 ### Week 5-6: Chart Generation
 - [ ] Implement thumbnail generator

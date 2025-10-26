@@ -5,7 +5,7 @@
 
 import { Router, Request, Response } from 'express';
 import ScannerService from '../../services/scanner.service';
-import SampleSetService from '../../services/sample-set.service';
+import BacktestSetService from '../../services/backtest-set.service';
 import UniverseDataService from '../../services/universe-data.service';
 import logger from '../../services/logger.service';
 
@@ -161,16 +161,16 @@ router.post('/similar', async (req: Request, res: Response) => {
 // ============================================================================
 
 /**
- * GET /api/scanner/sample-sets
+ * GET /api/scanner/backtest-sets
  * Get all sample sets
  */
-router.get('/sample-sets', async (_req: Request, res: Response) => {
+router.get('/backtest-sets', async (_req: Request, res: Response) => {
   try {
-    const sampleSets = await SampleSetService.getSampleSets();
+    const backtestSets = await BacktestSetService.getBacktestSets();
 
     res.json({
       success: true,
-      sampleSets
+      backtestSets
     });
   } catch (error: any) {
     logger.error('Error fetching sample sets:', error);
@@ -183,15 +183,15 @@ router.get('/sample-sets', async (_req: Request, res: Response) => {
 });
 
 /**
- * GET /api/scanner/sample-sets/:id
+ * GET /api/scanner/backtest-sets/:id
  * Get a specific sample set by ID
  */
-router.get('/sample-sets/:id', async (req: Request, res: Response) => {
+router.get('/backtest-sets/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const sampleSet = await SampleSetService.getSampleSet(id);
+    const backtestSet = await BacktestSetService.getBacktestSet(id);
 
-    if (!sampleSet) {
+    if (!backtestSet) {
       return res.status(404).json({
         success: false,
         error: 'Sample set not found'
@@ -200,7 +200,7 @@ router.get('/sample-sets/:id', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      sampleSet
+      backtestSet
     });
   } catch (error: any) {
     logger.error('Error fetching sample set:', error);
@@ -213,7 +213,7 @@ router.get('/sample-sets/:id', async (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/scanner/sample-sets
+ * POST /api/scanner/backtest-sets
  * Create a new sample set
  *
  * Request body:
@@ -223,7 +223,7 @@ router.get('/sample-sets/:id', async (req: Request, res: Response) => {
  *   pattern_type?: string;
  * }
  */
-router.post('/sample-sets', async (req: Request, res: Response) => {
+router.post('/backtest-sets', async (req: Request, res: Response) => {
   try {
     const { name, description, pattern_type } = req.body;
 
@@ -234,7 +234,7 @@ router.post('/sample-sets', async (req: Request, res: Response) => {
       });
     }
 
-    const sampleSet = await SampleSetService.createSampleSet({
+    const backtestSet = await BacktestSetService.createBacktestSet({
       name,
       description,
       pattern_type
@@ -242,7 +242,7 @@ router.post('/sample-sets', async (req: Request, res: Response) => {
 
     res.status(201).json({
       success: true,
-      sampleSet
+      backtestSet
     });
   } catch (error: any) {
     logger.error('Error creating sample set:', error);
@@ -255,7 +255,7 @@ router.post('/sample-sets', async (req: Request, res: Response) => {
 });
 
 /**
- * PUT /api/scanner/sample-sets/:id
+ * PUT /api/scanner/backtest-sets/:id
  * Update a sample set
  *
  * Request body:
@@ -265,18 +265,18 @@ router.post('/sample-sets', async (req: Request, res: Response) => {
  *   pattern_type?: string;
  * }
  */
-router.put('/sample-sets/:id', async (req: Request, res: Response) => {
+router.put('/backtest-sets/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { name, description, pattern_type } = req.body;
 
-    const sampleSet = await SampleSetService.updateSampleSet(id, {
+    const backtestSet = await BacktestSetService.updateBacktestSet(id, {
       name,
       description,
       pattern_type
     });
 
-    if (!sampleSet) {
+    if (!backtestSet) {
       return res.status(404).json({
         success: false,
         error: 'Sample set not found'
@@ -285,7 +285,7 @@ router.put('/sample-sets/:id', async (req: Request, res: Response) => {
 
     res.json({
       success: true,
-      sampleSet
+      backtestSet
     });
   } catch (error: any) {
     logger.error('Error updating sample set:', error);
@@ -298,13 +298,13 @@ router.put('/sample-sets/:id', async (req: Request, res: Response) => {
 });
 
 /**
- * DELETE /api/scanner/sample-sets/:id
+ * DELETE /api/scanner/backtest-sets/:id
  * Delete a sample set and all its scan results
  */
-router.delete('/sample-sets/:id', async (req: Request, res: Response) => {
+router.delete('/backtest-sets/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const deleted = await SampleSetService.deleteSampleSet(id);
+    const deleted = await BacktestSetService.deleteBacktestSet(id);
 
     if (!deleted) {
       return res.status(404).json({
@@ -332,13 +332,13 @@ router.delete('/sample-sets/:id', async (req: Request, res: Response) => {
 // ============================================================================
 
 /**
- * GET /api/scanner/sample-sets/:id/results
+ * GET /api/scanner/backtest-sets/:id/results
  * Get all scan results for a sample set
  */
-router.get('/sample-sets/:id/results', async (req: Request, res: Response) => {
+router.get('/backtest-sets/:id/results', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const results = await SampleSetService.getScanResults(id);
+    const results = await BacktestSetService.getScanResults(id);
 
     res.json({
       success: true,
@@ -355,7 +355,7 @@ router.get('/sample-sets/:id/results', async (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/scanner/sample-sets/:id/results
+ * POST /api/scanner/backtest-sets/:id/results
  * Add a scan result to a sample set
  *
  * Request body:
@@ -368,7 +368,7 @@ router.get('/sample-sets/:id/results', async (req: Request, res: Response) => {
  *   tags?: string[];
  * }
  */
-router.post('/sample-sets/:id/results', async (req: Request, res: Response) => {
+router.post('/backtest-sets/:id/results', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { ticker, start_date, end_date, peak_date, notes, tags } = req.body;
@@ -380,8 +380,8 @@ router.post('/sample-sets/:id/results', async (req: Request, res: Response) => {
       });
     }
 
-    const result = await SampleSetService.addScanResult({
-      sample_set_id: id,
+    const result = await BacktestSetService.addScanResult({
+      backtest_set_id: id,
       ticker,
       start_date,
       end_date,
@@ -411,7 +411,7 @@ router.post('/sample-sets/:id/results', async (req: Request, res: Response) => {
 router.get('/results/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const result = await SampleSetService.getScanResult(id);
+    const result = await BacktestSetService.getScanResult(id);
 
     if (!result) {
       return res.status(404).json({
@@ -450,7 +450,7 @@ router.put('/results/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
     const { peak_date, notes, tags } = req.body;
 
-    const result = await SampleSetService.updateScanResult(id, {
+    const result = await BacktestSetService.updateScanResult(id, {
       peak_date,
       notes,
       tags
@@ -484,7 +484,7 @@ router.put('/results/:id', async (req: Request, res: Response) => {
 router.delete('/results/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const deleted = await SampleSetService.deleteScanResult(id);
+    const deleted = await BacktestSetService.deleteScanResult(id);
 
     if (!deleted) {
       return res.status(404).json({

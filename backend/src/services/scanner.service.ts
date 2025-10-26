@@ -8,6 +8,7 @@
 import { getDatabase } from '../database/db';
 import { DailyMetrics } from './universe-data.service';
 import universeDataService from './universe-data.service';
+import dataBackfillService from './data-backfill.service';
 import crypto from 'crypto';
 
 export interface ScanCriteria {
@@ -72,6 +73,9 @@ export class ScannerService {
     const startTime = Date.now();
 
     console.log('🔍 Starting scan with criteria:', JSON.stringify(criteria, null, 2));
+
+    // Trigger automatic data backfill in parallel (non-blocking)
+    dataBackfillService.backfillLatestData();
 
     // Validate query before execution
     this.validateQuery(criteria);
@@ -163,6 +167,9 @@ export class ScannerService {
     const startTime = Date.now();
     console.log(`🤖 Natural language scan: "${query}"`);
 
+    // Trigger automatic data backfill in parallel (non-blocking)
+    dataBackfillService.backfillLatestData();
+
     // Import required services
     const claudeService = (await import('./claude.service')).default;
     const scriptExecutionService = (await import('./script-execution.service')).default;
@@ -214,9 +221,28 @@ export class ScannerService {
       }
 
       // 5. Convert to ScanResult format
+      // First, deduplicate by ticker+date, keeping only the highest scoring match
+      const deduplicatedMap = new Map<string, any>();
+
+      for (const match of matches) {
+        const key = `${match.ticker}:${match.end_date}`;
+        const existing = deduplicatedMap.get(key);
+
+        // Keep the match with the highest pattern_strength
+        if (!existing || (match.pattern_strength || 0) > (existing.pattern_strength || 0)) {
+          deduplicatedMap.set(key, match);
+        }
+      }
+
+      const uniqueMatches = Array.from(deduplicatedMap.values())
+        .sort((a, b) => (b.pattern_strength || 0) - (a.pattern_strength || 0))
+        .slice(0, 50); // Limit to 50 results
+
+      console.log(`📊 After deduplication: ${uniqueMatches.length} unique matches (from ${matches.length} total)`);
+
       const scanMatches: ScanMatch[] = [];
 
-      for (const match of matches.slice(0, 50)) { // Limit to 50 results for now
+      for (const match of uniqueMatches) {
         // Fetch the actual daily metrics for this ticker/date
         const db = (await import('../database/db')).getDatabase();
         const metrics = db.prepare(

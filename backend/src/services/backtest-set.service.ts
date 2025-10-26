@@ -1,5 +1,5 @@
 /**
- * Sample Set Service
+ * Backtest Set Service
  *
  * Manages sample sets (collections of pattern occurrences) and scan results
  */
@@ -8,7 +8,7 @@ import { getDatabase } from '../database/db';
 import { v4 as uuidv4 } from 'uuid';
 import polygonService from './polygon.service';
 
-export interface SampleSet {
+export interface BacktestSet {
   id: string;
   name: string;
   description?: string;
@@ -20,7 +20,7 @@ export interface SampleSet {
 
 export interface ScanResult {
   id: string;
-  sample_set_id: string;
+  backtest_set_id: string;
   ticker: string;
   start_date: string;
   end_date: string;
@@ -35,14 +35,14 @@ export interface ScanResult {
   created_at: string;
 }
 
-export interface CreateSampleSetRequest {
+export interface CreateBacktestSetRequest {
   name: string;
   description?: string;
   pattern_type?: string;
 }
 
 export interface AddScanResultRequest {
-  sample_set_id: string;
+  backtest_set_id: string;
   ticker: string;
   start_date: string;
   end_date: string;
@@ -51,22 +51,22 @@ export interface AddScanResultRequest {
   tags?: string[];
 }
 
-export class SampleSetService {
+export class BacktestSetService {
   /**
    * Create a new sample set
    */
-  async createSampleSet(data: CreateSampleSetRequest): Promise<SampleSet> {
+  async createBacktestSet(data: CreateBacktestSetRequest): Promise<BacktestSet> {
     const db = getDatabase();
     const id = uuidv4();
 
     const stmt = db.prepare(`
-      INSERT INTO sample_sets (id, name, description, pattern_type, total_samples)
+      INSERT INTO backtest_sets (id, name, description, pattern_type, total_samples)
       VALUES (?, ?, ?, ?, 0)
     `);
 
     stmt.run(id, data.name, data.description || null, data.pattern_type || null);
 
-    const result = db.prepare('SELECT * FROM sample_sets WHERE id = ?').get(id) as SampleSet;
+    const result = db.prepare('SELECT * FROM backtest_sets WHERE id = ?').get(id) as BacktestSet;
 
     console.log(`✅ Created sample set: ${data.name} (ID: ${id})`);
 
@@ -76,25 +76,25 @@ export class SampleSetService {
   /**
    * Get all sample sets
    */
-  async getSampleSets(): Promise<SampleSet[]> {
+  async getBacktestSets(): Promise<BacktestSet[]> {
     const db = getDatabase();
-    const stmt = db.prepare('SELECT * FROM sample_sets ORDER BY created_at DESC');
-    return stmt.all() as SampleSet[];
+    const stmt = db.prepare('SELECT * FROM backtest_sets ORDER BY created_at DESC');
+    return stmt.all() as BacktestSet[];
   }
 
   /**
    * Get a specific sample set by ID
    */
-  async getSampleSet(id: string): Promise<SampleSet | null> {
+  async getBacktestSet(id: string): Promise<BacktestSet | null> {
     const db = getDatabase();
-    const stmt = db.prepare('SELECT * FROM sample_sets WHERE id = ?');
-    return stmt.get(id) as SampleSet | null;
+    const stmt = db.prepare('SELECT * FROM backtest_sets WHERE id = ?');
+    return stmt.get(id) as BacktestSet | null;
   }
 
   /**
    * Update a sample set
    */
-  async updateSampleSet(id: string, data: Partial<CreateSampleSetRequest>): Promise<SampleSet | null> {
+  async updateBacktestSet(id: string, data: Partial<CreateBacktestSetRequest>): Promise<BacktestSet | null> {
     const db = getDatabase();
 
     const updates: string[] = [];
@@ -114,34 +114,34 @@ export class SampleSetService {
     }
 
     if (updates.length === 0) {
-      return this.getSampleSet(id);
+      return this.getBacktestSet(id);
     }
 
     updates.push('updated_at = CURRENT_TIMESTAMP');
     values.push(id);
 
     const stmt = db.prepare(`
-      UPDATE sample_sets
+      UPDATE backtest_sets
       SET ${updates.join(', ')}
       WHERE id = ?
     `);
 
     stmt.run(...values);
 
-    return this.getSampleSet(id);
+    return this.getBacktestSet(id);
   }
 
   /**
    * Delete a sample set and all its scan results
    */
-  async deleteSampleSet(id: string): Promise<boolean> {
+  async deleteBacktestSet(id: string): Promise<boolean> {
     const db = getDatabase();
 
     // Delete all scan results first (CASCADE should handle this, but being explicit)
-    db.prepare('DELETE FROM scan_results WHERE sample_set_id = ?').run(id);
+    db.prepare('DELETE FROM scan_results WHERE backtest_set_id = ?').run(id);
 
     // Delete the sample set
-    const result = db.prepare('DELETE FROM sample_sets WHERE id = ?').run(id);
+    const result = db.prepare('DELETE FROM backtest_sets WHERE id = ?').run(id);
 
     console.log(`✅ Deleted sample set ${id}`);
 
@@ -172,7 +172,7 @@ export class SampleSetService {
 
     const stmt = db.prepare(`
       INSERT INTO scan_results (
-        id, sample_set_id, ticker, start_date, end_date, peak_date,
+        id, backtest_set_id, ticker, start_date, end_date, peak_date,
         total_change_percent, peak_change_percent, volume_spike_ratio, pattern_duration_days,
         notes, tags, daily_bars
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -180,7 +180,7 @@ export class SampleSetService {
 
     stmt.run(
       id,
-      data.sample_set_id,
+      data.backtest_set_id,
       data.ticker,
       data.start_date,
       data.end_date,
@@ -195,8 +195,8 @@ export class SampleSetService {
     );
 
     // Update sample set total count
-    db.prepare('UPDATE sample_sets SET total_samples = (SELECT COUNT(*) FROM scan_results WHERE sample_set_id = ?) WHERE id = ?')
-      .run(data.sample_set_id, data.sample_set_id);
+    db.prepare('UPDATE backtest_sets SET total_samples = (SELECT COUNT(*) FROM scan_results WHERE backtest_set_id = ?) WHERE id = ?')
+      .run(data.backtest_set_id, data.backtest_set_id);
 
     const result = db.prepare('SELECT * FROM scan_results WHERE id = ?').get(id) as any;
 
@@ -216,10 +216,10 @@ export class SampleSetService {
   /**
    * Get all scan results for a sample set
    */
-  async getScanResults(sampleSetId: string): Promise<ScanResult[]> {
+  async getScanResults(backtestSetId: string): Promise<ScanResult[]> {
     const db = getDatabase();
-    const stmt = db.prepare('SELECT * FROM scan_results WHERE sample_set_id = ? ORDER BY created_at DESC');
-    const results = stmt.all(sampleSetId) as any[];
+    const stmt = db.prepare('SELECT * FROM scan_results WHERE backtest_set_id = ? ORDER BY created_at DESC');
+    const results = stmt.all(backtestSetId) as any[];
 
     // Parse JSON fields
     return results.map(result => ({
@@ -253,8 +253,8 @@ export class SampleSetService {
   async deleteScanResult(id: string): Promise<boolean> {
     const db = getDatabase();
 
-    // Get the sample_set_id before deleting
-    const result = db.prepare('SELECT sample_set_id FROM scan_results WHERE id = ?').get(id) as any;
+    // Get the backtest_set_id before deleting
+    const result = db.prepare('SELECT backtest_set_id FROM scan_results WHERE id = ?').get(id) as any;
 
     if (!result) return false;
 
@@ -262,8 +262,8 @@ export class SampleSetService {
     db.prepare('DELETE FROM scan_results WHERE id = ?').run(id);
 
     // Update sample set total count
-    db.prepare('UPDATE sample_sets SET total_samples = (SELECT COUNT(*) FROM scan_results WHERE sample_set_id = ?) WHERE id = ?')
-      .run(result.sample_set_id, result.sample_set_id);
+    db.prepare('UPDATE backtest_sets SET total_samples = (SELECT COUNT(*) FROM scan_results WHERE backtest_set_id = ?) WHERE id = ?')
+      .run(result.backtest_set_id, result.backtest_set_id);
 
     console.log(`✅ Deleted scan result ${id}`);
 
@@ -404,4 +404,4 @@ export class SampleSetService {
 }
 
 // Export singleton instance
-export default new SampleSetService();
+export default new BacktestSetService();

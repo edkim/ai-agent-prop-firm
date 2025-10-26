@@ -183,8 +183,8 @@ CREATE INDEX IF NOT EXISTS idx_daily_metrics_date ON daily_metrics(date);
 CREATE INDEX IF NOT EXISTS idx_daily_metrics_volume_ratio ON daily_metrics(ticker, volume_ratio);
 CREATE INDEX IF NOT EXISTS idx_daily_metrics_change ON daily_metrics(ticker, change_percent);
 
--- Sample Sets Table (user-created collections of patterns)
-CREATE TABLE IF NOT EXISTS sample_sets (
+-- Backtest Sets Table (user-created collections of patterns)
+CREATE TABLE IF NOT EXISTS backtest_sets (
     id TEXT PRIMARY KEY, -- UUID
     name TEXT NOT NULL,
     description TEXT,
@@ -197,7 +197,7 @@ CREATE TABLE IF NOT EXISTS sample_sets (
 -- Scan Results Table (individual pattern occurrences saved to sample sets)
 CREATE TABLE IF NOT EXISTS scan_results (
     id TEXT PRIMARY KEY, -- UUID
-    sample_set_id TEXT NOT NULL,
+    backtest_set_id TEXT NOT NULL,
     ticker TEXT NOT NULL,
     start_date TEXT NOT NULL, -- Pattern start date (YYYY-MM-DD)
     end_date TEXT NOT NULL, -- Pattern end date (YYYY-MM-DD)
@@ -217,10 +217,10 @@ CREATE TABLE IF NOT EXISTS scan_results (
     daily_bars TEXT, -- JSON array of daily OHLCV data
 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (sample_set_id) REFERENCES sample_sets(id) ON DELETE CASCADE
+    FOREIGN KEY (backtest_set_id) REFERENCES backtest_sets(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_scan_results_sample_set ON scan_results(sample_set_id);
+CREATE INDEX IF NOT EXISTS idx_scan_results_backtest_set ON scan_results(backtest_set_id);
 CREATE INDEX IF NOT EXISTS idx_scan_results_ticker ON scan_results(ticker);
 CREATE INDEX IF NOT EXISTS idx_scan_results_date_range ON scan_results(start_date, end_date);
 
@@ -280,16 +280,16 @@ CREATE TABLE IF NOT EXISTS samples (
     ticker TEXT NOT NULL,
     start_date TEXT NOT NULL, -- Pattern start date (YYYY-MM-DD)
     end_date TEXT NOT NULL, -- Pattern end date (YYYY-MM-DD)
-    sample_set_id TEXT,
+    backtest_set_id TEXT,
     source_scan_id TEXT, -- Optional: which scan found this
     notes TEXT,
     metadata TEXT, -- JSON: Store max_gain, peak_date, etc.
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (sample_set_id) REFERENCES sample_sets(id) ON DELETE CASCADE,
+    FOREIGN KEY (backtest_set_id) REFERENCES backtest_sets(id) ON DELETE CASCADE,
     FOREIGN KEY (source_scan_id) REFERENCES scan_history(id) ON DELETE SET NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_samples_sample_set ON samples(sample_set_id);
+CREATE INDEX IF NOT EXISTS idx_samples_backtest_set ON samples(backtest_set_id);
 CREATE INDEX IF NOT EXISTS idx_samples_ticker ON samples(ticker);
 CREATE INDEX IF NOT EXISTS idx_samples_date_range ON samples(start_date, end_date);
 

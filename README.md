@@ -28,7 +28,7 @@ This platform enables traders to discover, backtest, and validate trading strate
 ### Enhanced Scanner UI
 - Actions column in results table
 - Inline chart display (expand/collapse)
-- One-click "Save to Sample Set" dropdown
+- One-click "Save to Backtest Set" dropdown
 - Real-time chart loading with progress indicators
 - Seamless integration with existing scanner workflow
 
@@ -99,7 +99,7 @@ Max hold: 15 days.
 - Full trade logs and performance metrics
 - Saved script for review and reuse
 
-### 3. Sample Sets Management
+### 3. Backtest Sets Management
 
 Organize and track discovered patterns:
 - Create collections of promising setups
@@ -234,11 +234,11 @@ Content-Type: application/json
 - Claude's assumptions
 - Confidence score
 
-### Sample Sets API
+### Backtest Sets API
 
 ```bash
 # Create sample set
-POST /api/scanner/sample-sets
+POST /api/scanner/backtest-sets
 {
   "name": "Hyperbolic Reversals 2025",
   "description": "100%+ gains followed by 20%+ drops",
@@ -246,7 +246,7 @@ POST /api/scanner/sample-sets
 }
 
 # Add scan result
-POST /api/scanner/sample-sets/{id}/results
+POST /api/scanner/backtest-sets/{id}/results
 {
   "ticker": "FUBO",
   "start_date": "2025-01-02",
@@ -256,10 +256,10 @@ POST /api/scanner/sample-sets/{id}/results
 }
 
 # Get all sample sets
-GET /api/scanner/sample-sets
+GET /api/scanner/backtest-sets
 
 # Get results for a set
-GET /api/scanner/sample-sets/{id}/results
+GET /api/scanner/backtest-sets/{id}/results
 ```
 
 ## 🏗️ Architecture
@@ -271,14 +271,14 @@ GET /api/scanner/sample-sets/{id}/results
 - `claude.service.ts` - AI script generation
 - `backtest-router.service.ts` - Intelligent strategy routing
 - `script-execution.service.ts` - Safe TypeScript execution
-- `sample-set.service.ts` - Pattern collection management
+- `backtest-set.service.ts` - Pattern collection management
 - `universe-data.service.ts` - Market data management
 
 **API Routes:**
 - `/api/scanner/*` - Pattern scanning endpoints
 - `/api/backtests/*` - Strategy backtesting
 - `/api/data/*` - Market data management
-- `/api/scanner/sample-sets/*` - Sample sets CRUD
+- `/api/scanner/backtest-sets/*` - Sample sets CRUD
 
 **Data Storage:**
 - SQLite database for market data and metrics
@@ -294,7 +294,7 @@ GET /api/scanner/sample-sets/{id}/results
 - **Components:**
   - `BacktestForm.tsx` - Natural language strategy input
   - `ResultsDisplay.tsx` - Trade logs and metrics
-  - `SampleSetManager.tsx` - Pattern collection UI
+  - `BacktestSetManager.tsx` - Pattern collection UI
 
 ## 📊 Real Results
 
@@ -333,7 +333,7 @@ ai-backtest/
 │   │   │   ├── routes/
 │   │   │   │   ├── scanner.ts           # Scanner endpoints
 │   │   │   │   ├── backtests.ts         # Backtest endpoints
-│   │   │   │   ├── sample-sets.ts       # Sample sets CRUD
+│   │   │   │   ├── backtest-sets.ts       # Sample sets CRUD
 │   │   │   │   └── data.ts              # Data management
 │   │   │   └── server.ts
 │   │   ├── services/
@@ -341,7 +341,7 @@ ai-backtest/
 │   │   │   ├── claude.service.ts        # AI integration
 │   │   │   ├── backtest-router.service.ts  # Strategy routing
 │   │   │   ├── script-execution.service.ts # Script runner
-│   │   │   ├── sample-set.service.ts    # Pattern management
+│   │   │   ├── backtest-set.service.ts    # Pattern management
 │   │   │   ├── polygon.service.ts       # Market data
 │   │   │   └── universe-data.service.ts # Universe management
 │   │   ├── database/
@@ -350,7 +350,7 @@ ai-backtest/
 │   │   └── types/
 │   │       ├── scanner.types.ts
 │   │       ├── backtest.types.ts
-│   │       └── sample-set.types.ts
+│   │       └── backtest-set.types.ts
 │   ├── claude-generated-scripts/       # AI-generated code
 │   │   ├── scanner-*.ts                 # Scanner scripts
 │   │   ├── scanner-*.json               # Scanner metadata
@@ -362,10 +362,10 @@ ai-backtest/
 │   │   ├── components/
 │   │   │   ├── BacktestForm.tsx
 │   │   │   ├── ResultsDisplay.tsx
-│   │   │   └── SampleSetManager.tsx     # NEW
+│   │   │   └── BacktestSetManager.tsx     # NEW
 │   │   ├── services/
 │   │   │   ├── api.ts
-│   │   │   └── sampleSetsApi.ts         # NEW
+│   │   │   └── backtestSetsApi.ts         # NEW
 │   │   ├── App.tsx
 │   │   └── main.tsx
 │   └── package.json
@@ -520,24 +520,7 @@ npm run dev
   - Inline chart display in scanner results
   - One-click save to sample sets
 
-### Phase 4: Quality & Reliability (Remaining)
-
 **Next Priorities:**
-1. **Script Generation Improvements**
-   - Reduce 25% failure rate
-   - TypeScript validation before execution
-   - Retry logic with error feedback
-   - Template library for common patterns
-
-2. **Strategy Parameter Optimization**
-   - Automated parameter testing
-   - Historical validation across sample sets
-   - Win rate and risk/reward analysis
-
-3. **Enhanced Pattern Discovery**
-   - Multi-pattern scanning in single query
-   - Pattern correlation analysis
-   - Automated sample set population
 
 ### Phase 5: Advanced Features
 

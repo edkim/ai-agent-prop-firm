@@ -40,14 +40,14 @@ Implementing on-demand chart thumbnail generation for scan results. Users can cl
    - Display loading state while generating
    - Show thumbnail inline or in modal
 
-6. **Sample Set Selector** (Pending)
+6. **Backtest Set Selector** (Pending)
    - Dropdown component for selecting sample sets
    - Inline on each result card
-   - "Save to Sample Set" action
+   - "Save to Backtest Set" action
 
 7. **Integration** (Pending)
    - Wire up chart generation on button click
-   - Wire up save-to-sample-set functionality
+   - Wire up save-to-backtest-set functionality
    - Error handling and user feedback
 
 ## Files Created
@@ -135,7 +135,7 @@ Content-Type: application/json
    - Create chart display modal/inline
    - Handle loading and error states
 
-3. **Sample Set UI**
+3. **Backtest Set UI**
    - Create dropdown selector component
    - Wire up save functionality
    - Test full workflow
@@ -216,7 +216,7 @@ None - both backend and frontend implementation complete!
    - Charts API service for frontend integration
    - Updated Scanner component with "View Chart" buttons
    - Inline chart display (expand/collapse per result)
-   - "Save to Sample Set" dropdown in Actions column
+   - "Save to Backtest Set" dropdown in Actions column
    - Loading states and error handling
 
 3. **User Experience**
