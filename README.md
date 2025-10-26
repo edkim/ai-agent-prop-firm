@@ -1,59 +1,135 @@
 # AI-Powered Algorithmic Trading Backtest Platform
 
-A sophisticated backtesting platform with natural language query support, intelligent routing, and dynamic script generation for algorithmic trading strategies.
+A sophisticated backtesting and pattern discovery platform combining AI-powered script generation, natural language query support, and intelligent strategy analysis for algorithmic trading.
 
-## Overview
+## 🚀 Overview
 
-This platform combines:
-- ✅ **React + TypeScript frontend** with natural language interface
-- ✅ **Intelligent routing system** that analyzes queries and optimizes execution
-- ✅ **Dynamic script generation** for complex, multi-day backtests
-- ✅ **Opening Range Breakout (ORB) strategy** with customizable parameters
-- ✅ **TypeScript/Express backend** with SQLite database
-- ✅ **Polygon.io integration** for real market data
-- ✅ **RESTful API** for programmatic access
+This platform enables traders to discover, backtest, and validate trading strategies using natural language queries and AI-generated code. It combines traditional SQL-based pattern scanning with Claude AI for complex temporal pattern detection and custom strategy generation.
 
-## Features
+### Key Capabilities
 
-### Natural Language Interface
-Describe your backtests in plain English:
-- "Backtest CRML for the past 5 days, exit at noon"
-- "Test HOOD on 2025-07-31"
-- "Run opening range breakout for the last 2 weeks"
+- 🤖 **AI-Powered Pattern Discovery** - Natural language scanner generates custom TypeScript code for complex pattern detection
+- ⚡ **High-Performance SQL Scanner** - Memory-safe streaming scanner for quick pattern searches across universes
+- 📊 **Dynamic Strategy Generation** - Claude generates custom backtest scripts from plain English descriptions
+- 🔍 **Pattern Analysis** - Sample sets management for tracking and validating discovered patterns
+- 💾 **Script Persistence** - All AI-generated code saved with metadata for audit trail and reuse
+- 📈 **Real Market Data** - Polygon.io integration for intraday and daily data
 
-### Intelligent Routing
-The platform automatically:
-- Parses natural language queries
-- Determines optimal execution strategy
-- Generates date ranges from phrases like "past 10 days"
-- Detects custom exit times ("noon", "14:00")
-- Routes to appropriate backend implementation
+## ✨ What's New (Phase 3)
 
-### Supported Query Types
-- **Date ranges**: "past 10 days", "last 2 weeks", "previous month"
-- **Specific dates**: "2025-10-10, 2025-10-15, 2025-10-20"
-- **Custom exits**: "exit at noon", "close at 14:00"
-- **Combined**: "Test past 5 days, exit at noon"
+### Scanner Script Persistence (2025-10-26)
+- All Claude-generated scanner scripts now saved permanently
+- Metadata JSON files track query, explanation, and results
+- Full transparency into AI-generated pattern detection logic
+- Aligned with backtest script persistence pattern
 
-### Web Interface
-Modern, responsive UI with:
-- Natural language query input
-- Real-time backtest execution
-- Performance metrics dashboard
-- Trade-by-trade breakdown
-- Routing decision transparency
+### Sample Sets Management
+- CRUD operations for organizing discovered patterns
+- Scan history tracking with performance metrics
+- Frontend UI for managing pattern collections
+- API endpoints for programmatic access
 
-## Quick Start
+### Memory-Safe Scanner
+- Streaming query execution prevents heap overflow
+- Defensive 10,000 row limit on large result sets
+- Query validation warnings for potentially expensive operations
+- Production-ready for Russell 2000+ universe scans
+
+### Claude Integration
+- Natural language scanner script generation
+- Intelligent backtest script creation with date selection
+- Automatic assumption documentation
+- Confidence scoring
+
+## 📋 Features
+
+### 1. Dual-Mode Pattern Scanner
+
+#### SQL Scanner (Fast & Free)
+- **Speed:** 1-2 seconds typical
+- **Use case:** Well-defined technical criteria
+- **Filters:** Price change, volume, RSI, SMA, consecutive days
+- **Memory:** Streaming execution, handles unlimited results safely
+
+**Example:**
+```json
+{
+  "universe": "russell2000",
+  "start_date": "2025-01-01",
+  "end_date": "2025-10-25",
+  "min_consecutive_up_days": 3,
+  "min_change_percent": 50,
+  "min_volume_ratio": 2
+}
+```
+
+#### Natural Language Scanner (AI-Powered)
+- **Capability:** Complex temporal patterns, multi-step logic
+- **Use case:** "Stocks that went up 100%+ in 3 days, then dropped 20%+"
+- **Process:** Claude generates custom TypeScript code
+- **Persistence:** Scripts saved to `backend/claude-generated-scripts/`
+
+**Example:**
+```json
+{
+  "query": "Find stocks in 2025 that have gone up 100% or more in 3 days, followed by -20% or more",
+  "universe": "russell2000",
+  "dateRange": {
+    "start": "2025-01-01",
+    "end": "2025-10-25"
+  }
+}
+```
+
+### 2. AI-Powered Backtesting
+
+Describe strategies in plain English and Claude generates executable TypeScript:
+
+**Input:**
+```
+Short FUBO after hyperbolic move on Jan 6, 2025.
+Entry: when price closes below previous day low.
+Stop loss: previous day high.
+Take profit: 40%.
+Max hold: 15 days.
+```
+
+**Output:**
+- Custom backtest script with entry/exit logic
+- Automatic date range selection
+- Documented assumptions and confidence score
+- Full trade logs and performance metrics
+- Saved script for review and reuse
+
+### 3. Sample Sets Management
+
+Organize and track discovered patterns:
+- Create collections of promising setups
+- Track scan history and results
+- Add notes and tags to patterns
+- Frontend UI for visual management
+- API for programmatic access
+
+### 4. Pattern Analysis Workflow
+
+1. **Discover:** Use scanner to find patterns across universe
+2. **Collect:** Save promising candidates to sample sets
+3. **Backtest:** Generate and run strategy scripts on patterns
+4. **Validate:** Analyze results and refine parameters
+5. **Scale:** Apply validated strategies across new patterns
+
+## 🏃 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 18+
 - Polygon.io API key ([Get free key](https://polygon.io))
+- Anthropic API key for Claude integration ([Get key](https://console.anthropic.com))
 
 ### Installation
 
 ```bash
-# Clone the repository
+# Clone repository
 git clone https://github.com/edkim/ai-backtest.git
 cd ai-backtest
 
@@ -68,21 +144,25 @@ npm install
 
 ### Configuration
 
-Create `.env` in project root:
+Create `.env` in backend directory:
 
 ```env
+# Required
 POLYGON_API_KEY=your_polygon_key_here
+ANTHROPIC_API_KEY=your_anthropic_key_here
+
+# Optional
 DATABASE_PATH=./backtesting.db
 PORT=3000
 NODE_ENV=development
 ```
 
-### Start the Platform
+### Start Platform
 
 **Terminal 1 - Backend:**
 ```bash
 cd backend
-npm start
+npm run dev
 ```
 
 **Terminal 2 - Frontend:**
@@ -91,334 +171,161 @@ cd frontend
 npm run dev
 ```
 
-**Access the web interface:**
+**Access:**
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:3000
 
-## Usage
+## 📖 Usage Examples
 
-### Web Interface (Recommended)
+### Scanner API
 
-1. Open http://localhost:5173
-2. Enter ticker symbol (e.g., `HOOD`, `CRML`, `NVDA`)
-3. Describe your backtest in natural language
-4. Click "Run Backtest"
-5. View comprehensive results
+#### Regular Scan (SQL-based)
+```bash
+POST /api/scanner/scan
+Content-Type: application/json
 
-**Example queries:**
-- `Backtest for the past 10 trading days`
-- `Test past 5 days, exit at noon`
-- `Run on 2025-10-10, 2025-10-15, 2025-10-20`
+{
+  "universe": "russell2000",
+  "start_date": "2025-01-01",
+  "end_date": "2025-10-25",
+  "min_consecutive_up_days": 3,
+  "min_change_percent": 50,
+  "min_volume_ratio": 2,
+  "limit": 100
+}
+```
 
-### API Usage
+**Response:** 16 matches in ~1.6 seconds
 
-#### Intelligent Routing Endpoint (Recommended)
+#### Natural Language Scan (AI-powered)
+```bash
+POST /api/scanner/scan/natural
+Content-Type: application/json
 
+{
+  "query": "Find stocks with hyperbolic moves followed by 20%+ reversals",
+  "universe": "russell2000",
+  "dateRange": {
+    "start": "2025-01-01",
+    "end": "2025-10-25"
+  }
+}
+```
+
+**Response:** 50 matches in ~15 seconds + generated script saved
+
+### Backtest API
+
+#### Intelligent Backtest Execution
 ```bash
 POST /api/backtests/execute-intelligent
 Content-Type: application/json
 
 {
-  "prompt": "Backtest CRML for past 5 days, exit at noon",
-  "ticker": "CRML",
-  "strategyType": "orb",
-  "timeframe": "5min",
-  "config": {}
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "executionId": "uuid",
-  "results": {
-    "trades": [...],
-    "metrics": {
-      "total_trades": 4,
-      "win_rate": 75.0,
-      "total_pnl": 3.11,
-      "avg_pnl": 0.78,
-      ...
-    },
-    "summary": "..."
-  },
-  "routing": {
-    "strategy": "custom-dates",
-    "reason": "Date range query detected: 5 trading days",
-    "dates": ["2025-10-15", "2025-10-16", ...]
-  },
-  "executionTime": 1234
-}
-```
-
-## Architecture
-
-### Backend Components
-
-**Intelligent Routing System**
-- `BacktestRouterService` - Analyzes queries and determines execution strategy
-- `DateQueryService` - Database queries for earnings and special dates
-- `ScriptGeneratorService` - Dynamic TypeScript script generation
-- `ScriptExecutionService` - Executes generated scripts safely
-
-**Routing Strategies**
-- `template-api` - Standard single-day backtests
-- `custom-dates` - Multi-day with date injection
-- `fully-custom` - Future: Complex custom scripts
-
-**Templates**
-- `orb-backtest.template.ts` - Single-day ORB strategy
-- `orb-multiday.template.ts` - Multi-day aggregation
-
-### Frontend Components
-
-**Tech Stack**
-- React 18 + TypeScript
-- Vite (build tool & dev server)
-- TailwindCSS v4 (styling)
-- Axios (API communication)
-
-**Components**
-- `BacktestForm` - Natural language input interface
-- `ResultsDisplay` - Results visualization with metrics & trades
-- `App` - Main application container
-
-## API Documentation
-
-### Health Check
-
-```bash
-GET /health
-```
-
-Returns: `{"status":"ok","timestamp":"..."}`
-
-### Intelligent Backtest Execution
-
-```bash
-POST /api/backtests/execute-intelligent
-```
-
-**Request:**
-```json
-{
-  "prompt": "string",      // Natural language query
-  "ticker": "string",      // Stock ticker
-  "strategyType": "orb",   // Strategy type (default: orb)
-  "timeframe": "5min",     // Timeframe (default: 5min)
-  "config": {}             // Optional config overrides
-}
-```
-
-**Routing Decision:**
-The system automatically:
-1. Parses the prompt for date patterns
-2. Detects exit time specifications
-3. Generates appropriate date lists
-4. Selects optimal template
-5. Executes backtest
-6. Returns results with routing transparency
-
-### Data Management
-
-#### Fetch Historical Data
-
-```bash
-POST /api/data/fetch
-Content-Type: application/json
-
-{
-  "ticker": "AAPL",
-  "timeframe": "5min",
-  "from": "2025-01-01",
-  "to": "2025-12-31"
-}
-```
-
-**Supported Timeframes:**
-- Intraday: `1min`, `5min`, `15min`, `30min`, `1hour`
-- Daily+: `1day`, `1week`, `1month`
-
-#### Get Stored Data
-
-```bash
-GET /api/data/{ticker}?timeframe=5min&from=1672531200000&to=1704067200000
-```
-
-#### Check Data Availability
-
-```bash
-GET /api/data/{ticker}/check?timeframe=5min
-```
-
-### Legacy Strategy Management
-
-For advanced users who want full control:
-
-#### Create Strategy
-
-```bash
-POST /api/strategies
-Content-Type: application/json
-
-{
-  "name": "SMA Crossover",
-  "ticker": "AAPL",
+  "prompt": "Short FUBO after Jan 6 hyperbolic move. Entry when close < prev low. Stop at prev high. 40% target. Max 15 days.",
+  "ticker": "FUBO",
   "timeframe": "1day",
-  "indicators": [
-    {
-      "type": "SMA",
-      "id": "sma50",
-      "params": {"period": 50, "source": "close"}
-    }
-  ],
-  "entryRules": {
-    "conditions": [
-      {"type": "expression", "expression": "close > sma50"}
-    ]
-  },
-  "exitRules": {
-    "conditions": [
-      {"type": "expression", "expression": "close < sma50"}
-    ]
-  },
-  "positionSizing": {
-    "method": "PERCENT_PORTFOLIO",
-    "value": 100
-  }
+  "strategyType": "orb"
 }
 ```
 
-#### Get All Strategies
+**Response includes:**
+- Trade-by-trade logs
+- P&L metrics
+- Script path and metadata
+- Claude's assumptions
+- Confidence score
+
+### Sample Sets API
 
 ```bash
-GET /api/strategies
-```
-
-#### Get Strategy by ID
-
-```bash
-GET /api/strategies/{id}
-```
-
-#### Update Strategy
-
-```bash
-PUT /api/strategies/{id}
-```
-
-#### Delete Strategy
-
-```bash
-DELETE /api/strategies/{id}
-```
-
-### Legacy Backtest Management
-
-#### Run Backtest
-
-```bash
-POST /api/backtests
-Content-Type: application/json
-
+# Create sample set
+POST /api/scanner/sample-sets
 {
-  "strategyId": 1,
-  "startDate": "2023-01-01",
-  "endDate": "2023-12-31",
-  "initialCapital": 10000,
-  "commission": 1,
-  "slippage": 0.1
+  "name": "Hyperbolic Reversals 2025",
+  "description": "100%+ gains followed by 20%+ drops",
+  "pattern_type": "mean_reversion"
 }
-```
 
-#### Get All Backtests
-
-```bash
-GET /api/backtests
-```
-
-#### Get Backtest Results
-
-```bash
-GET /api/backtests/{id}
-```
-
-Returns complete results including metrics, equity curve, and trade log.
-
-#### Delete Backtest
-
-```bash
-DELETE /api/backtests/{id}
-```
-
-## Opening Range Breakout (ORB) Strategy
-
-### Description
-
-The ORB strategy:
-1. Identifies the high/low of the first 5-minute bar (9:30-9:35 AM EST)
-2. Enters long when price breaks above the opening range high
-3. Exits at market close (configurable to noon, custom time, etc.)
-4. Optional: Trailing stops, market filters
-
-### Customization
-
-Through natural language:
-- **Exit time**: "exit at noon", "close at 14:00"
-- **Date range**: "past 10 days", "last 2 weeks"
-- **Specific dates**: "2025-10-10, 2025-10-15"
-
-Through API config:
-```json
+# Add scan result
+POST /api/scanner/sample-sets/{id}/results
 {
-  "config": {
-    "exitTime": "12:00",
-    "trailingStopPct": 2.0,
-    "marketFilterTicker": "QQQ"
-  }
+  "ticker": "FUBO",
+  "start_date": "2025-01-02",
+  "end_date": "2025-01-13",
+  "peak_date": "2025-01-06",
+  "notes": "251% gain, 53x volume, RSI 91.5"
 }
+
+# Get all sample sets
+GET /api/scanner/sample-sets
+
+# Get results for a set
+GET /api/scanner/sample-sets/{id}/results
 ```
 
-## Supported Indicators
+## 🏗️ Architecture
 
-| Indicator | Description | Parameters |
-|-----------|-------------|------------|
-| `SMA` | Simple Moving Average | `period`, `source` |
-| `EMA` | Exponential Moving Average | `period`, `source` |
-| `RSI` | Relative Strength Index | `period`, `source` |
-| `ATR` | Average True Range | `period` |
+### Backend Stack
 
-## Performance Metrics
+**Core Services:**
+- `scanner.service.ts` - Dual-mode scanner (SQL + AI)
+- `claude.service.ts` - AI script generation
+- `backtest-router.service.ts` - Intelligent strategy routing
+- `script-execution.service.ts` - Safe TypeScript execution
+- `sample-set.service.ts` - Pattern collection management
+- `universe-data.service.ts` - Market data management
 
-The platform calculates:
+**API Routes:**
+- `/api/scanner/*` - Pattern scanning endpoints
+- `/api/backtests/*` - Strategy backtesting
+- `/api/data/*` - Market data management
+- `/api/scanner/sample-sets/*` - Sample sets CRUD
 
-**Returns**
-- Total Return ($ and %)
-- Average P&L per trade
-- Win rate
+**Data Storage:**
+- SQLite database for market data and metrics
+- Script files: `backend/claude-generated-scripts/`
+- Metadata: JSON files paired with each script
 
-**Risk Metrics**
-- Maximum drawdown
-- Sharpe ratio
-- Standard deviation
+### Frontend Stack
 
-**Trade Statistics**
-- Total trades
-- Winning/losing trades
-- Largest win/loss
-- Average win/loss
-- Profit factor
+- **Framework:** React 18 + TypeScript
+- **Build Tool:** Vite
+- **Styling:** TailwindCSS v4
+- **API Client:** Axios
+- **Components:**
+  - `BacktestForm.tsx` - Natural language strategy input
+  - `ResultsDisplay.tsx` - Trade logs and metrics
+  - `SampleSetManager.tsx` - Pattern collection UI
 
-## Real-World Examples
+## 📊 Real Results
 
-See [CRML_ORB_RESULTS.md](CRML_ORB_RESULTS.md) for a detailed 9-day backtest showing:
-- 75% win rate
-- +$311 profit on 100 shares
-- Trade-by-trade breakdown
-- Analysis and insights
+### Hyperbolic Short Strategy (2025 Analysis)
 
-## Project Structure
+**Test:** Mean reversion shorts after extreme upward moves
+
+**Scanner Query:**
+- 3+ consecutive up days
+- 50%+ total gain
+- 2x+ volume ratio
+
+**Results:**
+- **16 candidates found** (Russell 2000, 10 months)
+- **4 backtested:** FUBO, PRAX, BYND, REPL
+- **Win rate:** 67% (2 wins, 1 loss, 1 script error)
+- **Average win:** +3.6%
+- **Average loss:** -6.4%
+
+**Key Insights:**
+- ✅ Reversals are real (67% of hyperbolic moves reversed)
+- ⚠️ Entry timing critical (5-7 days after peak optimal)
+- ❌ 40% profit target too aggressive (0% hit rate)
+- ✅ 20% target more realistic based on actual price action
+- ⚠️ AI script generation has 25% failure rate (needs improvement)
+
+**See:** `ai-convo-history/2025-10-25-backtest-results-analysis.md`
+
+## 📁 Project Structure
 
 ```
 ai-backtest/
@@ -426,46 +333,54 @@ ai-backtest/
 │   ├── src/
 │   │   ├── api/
 │   │   │   ├── routes/
-│   │   │   │   ├── data.ts
-│   │   │   │   ├── strategies.ts
-│   │   │   │   └── backtests.ts        # Intelligent routing endpoint
+│   │   │   │   ├── scanner.ts           # Scanner endpoints
+│   │   │   │   ├── backtests.ts         # Backtest endpoints
+│   │   │   │   ├── sample-sets.ts       # Sample sets CRUD
+│   │   │   │   └── data.ts              # Data management
 │   │   │   └── server.ts
 │   │   ├── services/
-│   │   │   ├── polygon.service.ts
-│   │   │   ├── backtest.service.ts
-│   │   │   ├── backtest-router.service.ts   # NEW: Intelligent routing
-│   │   │   ├── date-query.service.ts        # NEW: Date filtering
-│   │   │   ├── script-generator.service.ts   # NEW: Dynamic scripts
-│   │   │   └── script-execution.service.ts   # NEW: Script runner
-│   │   ├── templates/
-│   │   │   ├── orb-backtest.template.ts
-│   │   │   └── orb-multiday.template.ts     # NEW: Multi-day template
+│   │   │   ├── scanner.service.ts       # Dual-mode scanner
+│   │   │   ├── claude.service.ts        # AI integration
+│   │   │   ├── backtest-router.service.ts  # Strategy routing
+│   │   │   ├── script-execution.service.ts # Script runner
+│   │   │   ├── sample-set.service.ts    # Pattern management
+│   │   │   ├── polygon.service.ts       # Market data
+│   │   │   └── universe-data.service.ts # Universe management
+│   │   ├── database/
+│   │   │   ├── db.ts                    # SQLite connection
+│   │   │   └── schema.sql               # Database schema
 │   │   └── types/
-│   │       ├── strategy.types.ts
+│   │       ├── scanner.types.ts
 │   │       ├── backtest.types.ts
-│   │       └── script.types.ts              # NEW: Script types
+│   │       └── sample-set.types.ts
+│   ├── claude-generated-scripts/       # AI-generated code
+│   │   ├── scanner-*.ts                 # Scanner scripts
+│   │   ├── scanner-*.json               # Scanner metadata
+│   │   ├── claude-*-{ticker}.ts         # Backtest scripts
+│   │   └── claude-*-{ticker}.json       # Backtest metadata
 │   └── package.json
-├── frontend/                                  # NEW: React frontend
+├── frontend/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── BacktestForm.tsx
-│   │   │   └── ResultsDisplay.tsx
+│   │   │   ├── ResultsDisplay.tsx
+│   │   │   └── SampleSetManager.tsx     # NEW
 │   │   ├── services/
-│   │   │   └── api.ts
+│   │   │   ├── api.ts
+│   │   │   └── sampleSetsApi.ts         # NEW
 │   │   ├── App.tsx
-│   │   ├── main.tsx
-│   │   └── index.css
-│   ├── vite.config.ts
-│   ├── tailwind.config.js
+│   │   └── main.tsx
 │   └── package.json
-├── QUICK_START.md                            # Updated
-├── README.md                                 # This file (updated)
-├── INTELLIGENT_ROUTING_SUMMARY.md           # Routing documentation
-├── FRONTEND_COMPLETE.md                     # Frontend documentation
-└── CRML_ORB_RESULTS.md                      # Real backtest example
+├── ai-convo-history/                    # Analysis & documentation
+│   ├── 2025-10-25-backtest-results-analysis.md
+│   ├── 2025-10-25-memory-management-fix.md
+│   ├── 2025-10-26-scanner-script-persistence.md
+│   └── ...
+├── ORIGINAL_REQUIREMENTS.md
+└── README.md
 ```
 
-## Development
+## 🛠️ Development
 
 ### Backend Development
 
@@ -475,10 +390,10 @@ cd backend
 # Development with auto-reload
 npm run dev
 
-# Build for production
+# TypeScript compilation
 npm run build
 
-# Run production build
+# Production
 npm start
 ```
 
@@ -487,96 +402,178 @@ npm start
 ```bash
 cd frontend
 
-# Development server
+# Dev server with HMR
 npm run dev
 
-# Build for production
+# Production build
 npm run build
 
-# Preview production build
+# Preview production
 npm run preview
 ```
 
-### Type Checking
+### Database Management
 
-Both frontend and backend use TypeScript with strict mode enabled.
-
-## Documentation
-
-- **[QUICK_START.md](QUICK_START.md)** - Get started in 5 minutes
-- **[INTELLIGENT_ROUTING_SUMMARY.md](INTELLIGENT_ROUTING_SUMMARY.md)** - Routing system details
-- **[FRONTEND_COMPLETE.md](FRONTEND_COMPLETE.md)** - Frontend architecture
-- **[CRML_ORB_RESULTS.md](CRML_ORB_RESULTS.md)** - Real backtest example
-- **[DYNAMIC_SCRIPT_GENERATION.md](DYNAMIC_SCRIPT_GENERATION.md)** - Script generation details
-
-## Troubleshooting
-
-### Database Issues
-
-Delete and recreate:
 ```bash
-rm backtesting.db
-cd backend && npm start  # Database auto-recreates
+# Reset database
+rm backend/backtesting.db
+cd backend && npm start  # Auto-recreates
+
+# Populate Russell 2000 universe
+cd backend
+npx ts-node populate-russell2000.ts
+
+# Backfill historical data
+POST /api/scanner/universes/russell2000/backfill
+{
+  "start_date": "2025-01-01",
+  "end_date": "2025-10-25",
+  "batch_size": 10
+}
 ```
 
-### Polygon API Rate Limits
+## 📚 Documentation
 
-Free tier limits:
-- Wait between requests
-- Reduce date ranges
-- Use cached data
+### Core Documentation
+- **README.md** - This file (overview and quick start)
+- **ORIGINAL_REQUIREMENTS.md** - Original project requirements
 
-### Frontend Build Errors
+### Analysis & Insights
+- **2025-10-25-backtest-results-analysis.md** - Hyperbolic short strategy results (67% win rate)
+- **2025-10-25-memory-management-fix.md** - Scanner streaming implementation
+- **2025-10-26-scanner-script-persistence.md** - Script saving implementation
+- **2025-10-26-scanner-log-verification.md** - Natural language scanner execution
 
+### Historical
+All dated markdown files in `ai-convo-history/` folder document features, decisions, and analysis.
+
+## 🐛 Troubleshooting
+
+### Scanner Issues
+
+**Memory errors:**
+- Scanner now uses streaming - should not occur
+- Default 10K limit prevents runaway queries
+- Check query validation warnings in logs
+
+**Script generation fails:**
+- Current 25% failure rate for complex patterns
+- Check `claude-generated-scripts/` for error details
+- Retry or simplify query
+
+### Backend Issues
+
+**Database:**
 ```bash
-cd frontend
+rm backend/backtesting.db
+cd backend && npm start
+```
+
+**TypeScript errors:**
+```bash
+cd backend
 rm -rf node_modules package-lock.json
 npm install
 ```
 
-### CORS Issues
+### Frontend Issues
 
-Vite proxy is configured for `/api` routes. If you encounter CORS:
-- Verify backend is running on port 3000
-- Check `vite.config.ts` proxy settings
+**Build errors:**
+```bash
+cd frontend
+rm -rf node_modules package-lock.json
+npm install
+npm run dev
+```
 
-## Roadmap
+**CORS:**
+- Verify backend on port 3000
+- Check `vite.config.ts` proxy config
 
-### Current (Phase 2) ✅
-- React + TypeScript frontend
-- Intelligent routing system
-- Natural language query support
-- Dynamic script generation
-- Multi-day backtesting
+### API Issues
 
-### Phase 3 (Next)
-- Equity curve visualization
-- Strategy comparison
-- Historical backtest management
+**Polygon rate limits:**
+- Free tier: 5 calls/minute
+- Use cached data when possible
+- Implement delays between requests
+
+**Anthropic API:**
+- Monitor credit balance
+- Each scan/backtest consumes tokens
+- Script generation: ~$0.02-0.10 per execution
+
+## 🗺️ Roadmap
+
+### Current Status: Phase 3 Complete ✅
+
+**Completed:**
+- ✅ Dual-mode scanner (SQL + AI)
+- ✅ Scanner script persistence
+- ✅ Sample sets management
+- ✅ Memory-safe streaming
+- ✅ Scan history tracking
+- ✅ Natural language backtesting
+- ✅ Script metadata and audit trail
+
+### Phase 4: Quality & Reliability
+
+**Priorities:**
+1. **Script Generation Improvements**
+   - Reduce 25% failure rate
+   - TypeScript validation before execution
+   - Retry logic with error feedback
+   - Template library for common patterns
+
+2. **Strategy Parameter Optimization**
+   - Automated parameter testing
+   - Historical validation across sample sets
+   - Win rate and risk/reward analysis
+
+3. **Enhanced Pattern Discovery**
+   - Multi-pattern scanning in single query
+   - Pattern correlation analysis
+   - Automated sample set population
+
+### Phase 5: Advanced Features
+
+- Real-time pattern detection
+- Portfolio-level backtesting
+- Strategy comparison framework
+- Interactive parameter optimization
+- WebSocket for live updates
+- Chart visualization
 - Export to CSV/PDF
 - Dark mode
 
-### Phase 4 (Future)
-- Real-time progress updates
-- WebSocket integration
-- Advanced parameter optimization
-- Portfolio-level backtesting
-- Custom indicator builder
+## 🤝 Contributing
 
-## Contributing
+This is an active research project. Key areas for contribution:
 
-This project is in active development. Contributions welcome!
+1. **AI Script Generation:** Improve Claude prompts for better script quality
+2. **Pattern Detection:** Add new scanner filters and pattern types
+3. **Strategy Library:** Contribute validated strategy templates
+4. **Documentation:** Analysis documents and use cases
+5. **Testing:** Validate strategies across different market conditions
 
-## License
+## 📄 License
 
 MIT
 
-## Support
+## 💬 Support
 
-- **Issues**: [GitHub Issues](https://github.com/edkim/ai-backtest/issues)
-- **Documentation**: See docs folder
-- **Examples**: Check CRML_ORB_RESULTS.md
+- **Issues:** [GitHub Issues](https://github.com/edkim/ai-backtest/issues)
+- **Analysis:** See `ai-convo-history/` folder
+- **Examples:** Hyperbolic short strategy analysis shows complete workflow
+
+## 🙏 Acknowledgments
+
+- **Polygon.io** - Market data API
+- **Anthropic Claude** - AI script generation
+- **React & Vite** - Frontend framework
+- **TailwindCSS** - UI styling
 
 ---
 
-Built with ❤️ using React, TypeScript, Node.js, and Polygon.io
+**Built with Claude Code** - AI-powered pattern discovery and strategy backtesting platform
+
+*Last updated: 2025-10-26*
