@@ -73,6 +73,9 @@ export class ScannerService {
 
     console.log('🔍 Starting scan with criteria:', JSON.stringify(criteria, null, 2));
 
+    // Validate query before execution
+    this.validateQuery(criteria);
+
     // Build SQL query from criteria
     const { query, params } = await this.buildQuery(criteria);
 
@@ -82,7 +85,28 @@ export class ScannerService {
 
     const db = getDatabase();
     const stmt = db.prepare(query);
-    const results = stmt.all(...params) as DailyMetrics[];
+
+    // Use streaming instead of loading all results into memory
+    // Apply defensive limit if not specified
+    const maxResults = criteria.limit || 10000;
+    const results: DailyMetrics[] = [];
+    let count = 0;
+
+    try {
+      for (const row of stmt.iterate(...params)) {
+        results.push(row as DailyMetrics);
+        count++;
+
+        // Stop when we hit the limit to prevent memory issues
+        if (count >= maxResults) {
+          console.log(`⚠️  Reached maximum result limit of ${maxResults}`);
+          break;
+        }
+      }
+    } catch (error: any) {
+      console.error('❌ Error during query execution:', error.message);
+      throw new Error(`Query execution failed: ${error.message}`);
+    }
 
     console.log(`✅ Found ${results.length} matches`);
 
@@ -226,6 +250,16 @@ export class ScannerService {
         scanTimeMs
       );
 
+      // Save scanner script permanently before cleanup
+      await this.saveScannerScript(
+        query,
+        explanation,
+        universe,
+        dateRange,
+        scanMatches.length,
+        scriptPath
+      );
+
       // Clean up temp file
       await fs.unlink(scriptPath).catch(() => {
         // Ignore cleanup errors
@@ -278,6 +312,56 @@ export class ScannerService {
     };
 
     return this.scan(criteria);
+  }
+
+  /**
+   * Validate query criteria before execution
+   * Warns about potentially problematic queries
+   */
+  private validateQuery(criteria: ScanCriteria): void {
+    const warnings: string[] = [];
+
+    // Check if query has any meaningful filters
+    const hasFilters =
+      criteria.universe ||
+      criteria.tickers ||
+      criteria.start_date ||
+      criteria.end_date ||
+      criteria.min_change_percent !== undefined ||
+      criteria.max_change_percent !== undefined ||
+      criteria.min_volume_ratio !== undefined ||
+      criteria.min_consecutive_up_days !== undefined ||
+      criteria.min_consecutive_down_days !== undefined ||
+      criteria.price_above_sma20 !== undefined ||
+      criteria.price_above_sma50 !== undefined ||
+      criteria.min_rsi !== undefined ||
+      criteria.max_rsi !== undefined;
+
+    if (!hasFilters) {
+      warnings.push('No filters specified - query may return very large result set');
+    }
+
+    // Warn about broad date ranges without other filters
+    if (criteria.start_date && criteria.end_date) {
+      const start = new Date(criteria.start_date);
+      const end = new Date(criteria.end_date);
+      const daysDiff = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (daysDiff > 365 && !criteria.limit) {
+        warnings.push(`Large date range (${daysDiff} days) without limit - consider adding criteria.limit`);
+      }
+    }
+
+    // Warn if no limit and universe is specified
+    if (criteria.universe && !criteria.limit) {
+      warnings.push('Universe scan without limit - defaulting to 10,000 max results');
+    }
+
+    // Log warnings
+    if (warnings.length > 0) {
+      console.log('⚠️  Query validation warnings:');
+      warnings.forEach(w => console.log(`   - ${w}`));
+    }
   }
 
   /**
@@ -390,10 +474,11 @@ export class ScannerService {
 
     query += ' ORDER BY date DESC';
 
-    if (criteria.limit) {
-      query += ' LIMIT ?';
-      params.push(criteria.limit);
-    }
+    // Always add LIMIT clause for performance and safety
+    // Default to 10,000 max to prevent runaway queries
+    const limit = criteria.limit || 10000;
+    query += ' LIMIT ?';
+    params.push(limit);
 
     return { query, params };
   }
@@ -537,6 +622,57 @@ export class ScannerService {
     }
 
     return scanId;
+  }
+
+  /**
+   * Save Claude-generated scanner script permanently
+   */
+  private async saveScannerScript(
+    query: string,
+    explanation: string,
+    universe: string,
+    dateRange: { start: string; end: string } | undefined,
+    matchesFound: number,
+    tempFilepath: string
+  ): Promise<void> {
+    try {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+
+      const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0];
+      const filename = `scanner-${timestamp}.ts`;
+      const metadataFilename = `scanner-${timestamp}.json`;
+
+      const scriptsDir = path.join(__dirname, '../../claude-generated-scripts');
+      const scriptPath = path.join(scriptsDir, filename);
+      const metadataPath = path.join(scriptsDir, metadataFilename);
+
+      // Ensure scripts directory exists
+      await fs.mkdir(scriptsDir, { recursive: true });
+
+      // Save the script
+      await fs.copyFile(tempFilepath, scriptPath);
+
+      // Save metadata
+      const metadata = {
+        timestamp: new Date().toISOString(),
+        type: 'scanner',
+        userQuery: query,
+        explanation,
+        universe,
+        dateRange: dateRange || null,
+        matchesFound,
+        scriptFilename: filename
+      };
+
+      await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2), 'utf8');
+
+      console.log(`💾 Saved scanner script: ${filename}`);
+      console.log(`📄 Saved metadata: ${metadataFilename}`);
+    } catch (error: any) {
+      console.error('❌ Error saving scanner script:', error);
+      // Don't throw - this is a nice-to-have feature
+    }
   }
 }
 
