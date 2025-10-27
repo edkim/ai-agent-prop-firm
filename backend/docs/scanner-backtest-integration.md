@@ -19,7 +19,7 @@ This document outlines a complete system for discovering, analyzing, and backtes
    ↓ Save 40 interesting patterns to "My Samples"
 
 4. Claude Analysis
-   ↓ Select 3 representative examples
+   ↓ Select up to 3 representative examples from backtest set
    ↓ Generate combined charts (daily context + intraday detail)
    ↓ Send to Claude Vision API (6 images total: 3 samples × 2 views)
    ↓ Claude suggests 5 trading strategies

@@ -64,11 +64,16 @@ export default function Scanner() {
       return;
     }
 
-    // Generate date range (30 days before match date)
-    const endDate = match.date;
-    const startDate = new Date(new Date(match.date).getTime() - 30 * 24 * 60 * 60 * 1000)
+    // Generate date range (30 days before + signal day + 30 days after)
+    const signalDate = match.date;
+    const startDate = new Date(new Date(signalDate).getTime() - 30 * 24 * 60 * 60 * 1000)
       .toISOString()
       .split('T')[0];
+    const endDateCalculated = new Date(Math.min(
+      new Date(signalDate).getTime() + 30 * 24 * 60 * 60 * 1000,
+      Date.now()
+    ));
+    const endDate = endDateCalculated.toISOString().split('T')[0];
 
     setLoadingCharts(prev => ({ ...prev, [key]: true }));
 
@@ -77,6 +82,7 @@ export default function Scanner() {
         ticker: match.ticker,
         startDate,
         endDate,
+        signalDate,
       });
       setCharts(prev => ({ ...prev, [key]: chart }));
       setExpandedRows(prev => ({ ...prev, [key]: true }));
