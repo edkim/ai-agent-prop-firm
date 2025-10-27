@@ -274,24 +274,7 @@ CREATE INDEX IF NOT EXISTS idx_portfolio_backtests_universe ON portfolio_backtes
 CREATE INDEX IF NOT EXISTS idx_portfolio_backtests_created ON portfolio_backtests(created_at);
 CREATE INDEX IF NOT EXISTS idx_portfolio_backtests_win_rate ON portfolio_backtests(win_rate);
 
--- Individual samples (Phase 3: curated pattern collections)
-CREATE TABLE IF NOT EXISTS samples (
-    id TEXT PRIMARY KEY, -- UUID
-    ticker TEXT NOT NULL,
-    start_date TEXT NOT NULL, -- Pattern start date (YYYY-MM-DD)
-    end_date TEXT NOT NULL, -- Pattern end date (YYYY-MM-DD)
-    backtest_set_id TEXT,
-    source_scan_id TEXT, -- Optional: which scan found this
-    notes TEXT,
-    metadata TEXT, -- JSON: Store max_gain, peak_date, etc.
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (backtest_set_id) REFERENCES backtest_sets(id) ON DELETE CASCADE,
-    FOREIGN KEY (source_scan_id) REFERENCES scan_history(id) ON DELETE SET NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_samples_backtest_set ON samples(backtest_set_id);
-CREATE INDEX IF NOT EXISTS idx_samples_ticker ON samples(ticker);
-CREATE INDEX IF NOT EXISTS idx_samples_date_range ON samples(start_date, end_date);
+-- Note: The samples table has been removed. Use scan_results table instead.
 
 -- Scan history (Phase 3: track all scanner executions)
 CREATE TABLE IF NOT EXISTS scan_history (
@@ -315,12 +298,64 @@ CREATE TABLE IF NOT EXISTS chart_thumbnails (
     ticker TEXT NOT NULL,
     start_date TEXT NOT NULL, -- YYYY-MM-DD format
     end_date TEXT NOT NULL, -- YYYY-MM-DD format
+    signal_date TEXT, -- YYYY-MM-DD format (optional: when to change line color from blue to green)
     chart_data TEXT NOT NULL, -- Base64-encoded PNG image
     width INTEGER DEFAULT 300,
     height INTEGER DEFAULT 150,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(ticker, start_date, end_date)
+    UNIQUE(ticker, start_date, end_date, signal_date)
 );
 
 CREATE INDEX IF NOT EXISTS idx_chart_thumbnails_ticker ON chart_thumbnails(ticker);
 CREATE INDEX IF NOT EXISTS idx_chart_thumbnails_date_range ON chart_thumbnails(start_date, end_date);
+
+-- Claude Analyses Table (Phase 5: visual AI analysis for backtest prompt generation)
+CREATE TABLE IF NOT EXISTS claude_analyses (
+    id TEXT PRIMARY KEY, -- UUID
+    backtest_set_id TEXT NOT NULL,
+    selected_sample_ids TEXT NOT NULL, -- JSON array of sample IDs
+    analysis_status TEXT DEFAULT 'PENDING', -- 'PENDING', 'GENERATING_CHARTS', 'ANALYZING', 'COMPLETED', 'FAILED'
+    visual_insights TEXT, -- JSON: continuation_signals, exhaustion_signals, etc.
+    error_message TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    completed_at DATETIME,
+    FOREIGN KEY (backtest_set_id) REFERENCES backtest_sets(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_claude_analyses_set ON claude_analyses(backtest_set_id);
+CREATE INDEX IF NOT EXISTS idx_claude_analyses_status ON claude_analyses(analysis_status);
+
+-- Strategy Recommendations Table (strategies suggested by Claude)
+CREATE TABLE IF NOT EXISTS strategy_recommendations (
+    id TEXT PRIMARY KEY, -- UUID
+    analysis_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    side TEXT NOT NULL, -- 'long' or 'short'
+    entry_conditions TEXT NOT NULL, -- JSON: visual conditions + specific signals
+    exit_conditions TEXT NOT NULL, -- JSON: exit rules + stop loss
+    confidence_score REAL, -- 0-100, if Claude provides it
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (analysis_id) REFERENCES claude_analyses(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_strategy_recommendations_analysis ON strategy_recommendations(analysis_id);
+
+-- Analysis Charts Table (cache generated charts for Claude analysis)
+CREATE TABLE IF NOT EXISTS analysis_charts (
+    id TEXT PRIMARY KEY, -- UUID
+    analysis_id TEXT NOT NULL,
+    sample_id TEXT NOT NULL,
+    chart_type TEXT NOT NULL, -- 'daily_context' or 'intraday_detail'
+    ticker TEXT NOT NULL,
+    start_date TEXT NOT NULL,
+    end_date TEXT NOT NULL,
+    chart_data TEXT NOT NULL, -- Base64-encoded PNG
+    width INTEGER,
+    height INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (analysis_id) REFERENCES claude_analyses(id) ON DELETE CASCADE,
+    FOREIGN KEY (sample_id) REFERENCES scan_results(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_analysis_charts_analysis ON analysis_charts(analysis_id);
+CREATE INDEX IF NOT EXISTS idx_analysis_charts_sample ON analysis_charts(sample_id);
