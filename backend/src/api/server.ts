@@ -16,6 +16,7 @@ import portfolioBacktestsRoutes from './routes/portfolio-backtests';
 import backtestSetsRoutes from './routes/backtest-sets';
 import chartsRoutes from './routes/charts';
 import claudeAnalysisRoutes from './routes/claude-analysis';
+import batchBacktestRoutes from './routes/batch-backtest';
 
 // Load environment variables
 // Resolve to project root (one level up from backend/)
@@ -50,6 +51,7 @@ app.use('/api/portfolio-backtests', portfolioBacktestsRoutes);
 app.use('/api/backtest-sets', backtestSetsRoutes);
 app.use('/api/charts', chartsRoutes);
 app.use('/api/analysis', claudeAnalysisRoutes);
+app.use('/api/batch-backtest', batchBacktestRoutes);
 
 // Error handling middleware
 app.use((err: Error, _req: Request, res: Response, _next: any) => {
