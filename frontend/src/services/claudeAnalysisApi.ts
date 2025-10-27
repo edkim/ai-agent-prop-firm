@@ -102,6 +102,27 @@ export interface ChartsResponse {
 
 export const claudeAnalysisApi = {
   /**
+   * Generate chart preview without Claude analysis
+   * Returns preview ID and generated charts
+   */
+  async generatePreview(request: AnalyzeChartsRequest): Promise<{ previewId: string; charts: ChartData[] }> {
+    const response = await apiClient.post<{ previewId: string; charts: ChartData[] }>('/analysis/preview', {
+      backtestSetId: request.backtestSetId,
+      sampleIds: request.sampleIds
+    });
+    return response.data;
+  },
+
+  /**
+   * Analyze existing preview charts with Claude
+   * Uses preview ID from generatePreview()
+   */
+  async analyzePreview(previewId: string): Promise<{ success: boolean; analysisId: string }> {
+    const response = await apiClient.post<{ success: boolean; analysisId: string }>(`/analysis/${previewId}/analyze`);
+    return response.data;
+  },
+
+  /**
    * Start a new Claude analysis
    * Analyzes selected samples and generates strategy recommendations
    */

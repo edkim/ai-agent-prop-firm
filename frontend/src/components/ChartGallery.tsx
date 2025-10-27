@@ -20,7 +20,7 @@ export default function ChartGallery({ analysisId, loading }: ChartGalleryProps)
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [isFetching, setIsFetching] = useState(false);
 
-  // Fetch charts when analysisId changes
+  // Fetch charts when analysisId changes or when analysis completes
   useEffect(() => {
     if (!analysisId) {
       setCharts([]);
@@ -33,6 +33,11 @@ export default function ChartGallery({ analysisId, loading }: ChartGalleryProps)
       try {
         const data = await claudeAnalysisApi.getCharts(analysisId);
         setCharts(data.charts);
+
+        // If no charts yet and still loading, poll periodically
+        if (data.charts.length === 0 && loading) {
+          setTimeout(fetchCharts, 2000); // Retry in 2 seconds
+        }
       } catch (err: any) {
         console.error('Failed to load charts:', err);
         setFetchError(err.response?.data?.error || err.message || 'Failed to load charts');
@@ -42,7 +47,7 @@ export default function ChartGallery({ analysisId, loading }: ChartGalleryProps)
     };
 
     fetchCharts();
-  }, [analysisId]);
+  }, [analysisId, loading]); // Refetch when analysisId or loading changes
 
   // Group charts by sample (each sample has 2 charts: daily + intraday)
   const chartsBySample: Record<string, ChartData[]> = {};

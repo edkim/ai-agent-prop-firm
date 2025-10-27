@@ -10,6 +10,85 @@ import logger from '../../services/logger.service';
 const router = Router();
 
 /**
+ * POST /api/analysis/preview
+ * Generate chart preview without Claude analysis
+ *
+ * Body:
+ * - backtestSetId: string (required)
+ * - sampleIds: string[] (required, 1-3 samples)
+ *
+ * Response:
+ * - previewId: string
+ * - charts: ChartData[]
+ */
+router.post('/preview', async (req: Request, res: Response) => {
+  try {
+    const { backtestSetId, sampleIds } = req.body;
+
+    // Validate required fields
+    if (!backtestSetId || !sampleIds || !Array.isArray(sampleIds)) {
+      return res.status(400).json({
+        error: 'Missing required parameters: backtestSetId, sampleIds (array)'
+      });
+    }
+
+    // Validate sample count
+    if (sampleIds.length === 0 || sampleIds.length > 3) {
+      return res.status(400).json({
+        error: 'Must select 1-3 samples for preview'
+      });
+    }
+
+    logger.info(`📊 Preview request: ${sampleIds.length} samples from set ${backtestSetId}`);
+
+    // Generate preview charts
+    const result = await claudeAnalysisService.generateChartsPreview({
+      backtestSetId,
+      sampleIds
+    });
+
+    res.json(result);
+  } catch (error: any) {
+    logger.error('Error generating preview:', error);
+    res.status(500).json({
+      error: 'Failed to generate preview',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/analysis/:id/analyze
+ * Analyze existing preview charts with Claude
+ *
+ * Params:
+ * - id: preview ID
+ *
+ * Response:
+ * - success: boolean
+ */
+router.post('/:id/analyze', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    logger.info(`🤖 Analyzing preview ${id}`);
+
+    // Start analysis asynchronously
+    claudeAnalysisService.analyzeExistingPreview(id).catch(error => {
+      logger.error(`Analysis of preview ${id} failed:`, error);
+    });
+
+    res.json({ success: true, analysisId: id });
+  } catch (error: any) {
+    logger.error('Error starting analysis:', error);
+    res.status(500).json({
+      error: 'Failed to start analysis',
+      message: error.message
+    });
+  }
+});
+
+/**
  * POST /api/analysis
  * Start a new Claude analysis
  *
