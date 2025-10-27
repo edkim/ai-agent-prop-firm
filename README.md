@@ -17,6 +17,16 @@ This platform enables traders to discover, backtest, and validate trading strate
 
 ## ✨ What's New (Phase 4)
 
+### Claude Visual AI Analysis (2025-10-26)
+- **🎨 Visual pattern recognition** using Claude Vision API
+- **📊 Dual-chart generation** (daily context + intraday detail)
+- **🤖 AI-powered insights** from multi-sample chart analysis
+- **📈 1400x700px charts** with volume bars and price overlays
+- **💡 Strategy recommendations** based on visual patterns
+- Select multiple samples → "Analyze with Claude" → Get trading insights
+- Daily charts: 30-day context window for pattern discovery
+- Intraday charts: 5-min bars ±5 days around signal for entry/exit analysis
+
 ### Chart Thumbnails (2025-10-26)
 - **On-demand chart generation** for all scan results
 - Server-side rendering with ChartJS (300x150px thumbnails)
@@ -269,14 +279,19 @@ GET /api/scanner/backtest-sets/{id}/results
 **Core Services:**
 - `scanner.service.ts` - Dual-mode scanner (SQL + AI)
 - `claude.service.ts` - AI script generation
+- `claude-analysis.service.ts` - Visual AI pattern analysis
 - `backtest-router.service.ts` - Intelligent strategy routing
 - `script-execution.service.ts` - Safe TypeScript execution
 - `backtest-set.service.ts` - Pattern collection management
+- `chart-generator.service.ts` - Server-side chart rendering
+- `polygon-intraday.service.ts` - 5-min bar data fetching
 - `universe-data.service.ts` - Market data management
 
 **API Routes:**
 - `/api/scanner/*` - Pattern scanning endpoints
 - `/api/backtests/*` - Strategy backtesting
+- `/api/analysis/*` - Claude visual analysis
+- `/api/charts/*` - Chart generation and thumbnails
 - `/api/data/*` - Market data management
 - `/api/scanner/backtest-sets/*` - Sample sets CRUD
 
@@ -513,12 +528,21 @@ npm run dev
 - ✅ Natural language backtesting
 - ✅ Script metadata and audit trail
 
-**Phase 4 Progress:**
+**Phase 4 Complete:**
+- ✅ **Claude Visual AI Analysis** - Pattern recognition using Claude Vision API
+  - Multi-sample chart analysis with AI insights
+  - Dual-chart generation (daily + intraday)
+  - Strategy recommendations from visual patterns
+  - 1400x700px charts with volume overlays
 - ✅ **Chart Thumbnails** - On-demand chart generation for scan results
   - Server-side chart rendering with ChartJS
   - SQLite caching for instant retrieval
   - Inline chart display in scanner results
   - One-click save to sample sets
+- ✅ **US Stocks Universe** - Full market data backfill support
+  - 6,059 US stocks (common, ADRs, preferred)
+  - Automated 5-year historical data backfill
+  - Batch processing with configurable rates
 
 **Next Priorities:**
 
@@ -564,4 +588,4 @@ MIT
 
 **Built with Claude Code** - AI-powered pattern discovery and strategy backtesting platform
 
-*Last updated: 2025-10-26*
+*Last updated: 2025-10-27*
