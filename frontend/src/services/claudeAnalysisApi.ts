@@ -81,6 +81,23 @@ export interface AnalysisStatusResponse {
   error?: string;
 }
 
+export interface ChartData {
+  id: string;
+  sampleId: string;
+  chartType: 'daily_context' | 'intraday_detail';
+  ticker: string;
+  startDate: string;
+  endDate: string;
+  chartData: string; // base64 PNG
+  width: number;
+  height: number;
+  createdAt: string;
+}
+
+export interface ChartsResponse {
+  charts: ChartData[];
+}
+
 // Claude Analysis API functions
 
 export const claudeAnalysisApi = {
@@ -111,6 +128,15 @@ export const claudeAnalysisApi = {
    */
   async pollStatus(analysisId: string): Promise<AnalysisStatusResponse> {
     const response = await apiClient.get<AnalysisStatusResponse>(`/analysis/${analysisId}/status`);
+    return response.data;
+  },
+
+  /**
+   * Get all charts for an analysis
+   * Returns generated charts with base64 image data
+   */
+  async getCharts(analysisId: string): Promise<ChartsResponse> {
+    const response = await apiClient.get<ChartsResponse>(`/analysis/${analysisId}/charts`);
     return response.data;
   },
 };

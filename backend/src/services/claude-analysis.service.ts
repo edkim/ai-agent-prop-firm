@@ -539,6 +539,45 @@ Focus on ACTIONABLE, VISUAL signals that can be coded into backtest scripts. Be 
       error: analysis.error_message
     };
   }
+
+  /**
+   * Get all charts for an analysis
+   */
+  async getAnalysisCharts(analysisId: string): Promise<any[] | null> {
+    const db = getDatabase();
+
+    // Check if analysis exists
+    const analysis = db.prepare(`
+      SELECT id FROM claude_analyses WHERE id = ?
+    `).get(analysisId);
+
+    if (!analysis) {
+      return null;
+    }
+
+    // Get all charts for this analysis
+    const charts = db.prepare(`
+      SELECT
+        id, sample_id, chart_type, ticker, start_date, end_date,
+        chart_data, width, height, created_at
+      FROM analysis_charts
+      WHERE analysis_id = ?
+      ORDER BY sample_id, chart_type
+    `).all(analysisId) as any[];
+
+    return charts.map(c => ({
+      id: c.id,
+      sampleId: c.sample_id,
+      chartType: c.chart_type,
+      ticker: c.ticker,
+      startDate: c.start_date,
+      endDate: c.end_date,
+      chartData: c.chart_data,
+      width: c.width,
+      height: c.height,
+      createdAt: c.created_at
+    }));
+  }
 }
 
 export default new ClaudeAnalysisService();
