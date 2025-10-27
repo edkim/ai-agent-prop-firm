@@ -24,6 +24,7 @@ export interface ChartThumbnailRequest {
   ticker: string;
   startDate: string;
   endDate: string;
+  signalDate?: string; // Optional: when to change line color from blue to green
 }
 
 export interface ChartThumbnailResponse {

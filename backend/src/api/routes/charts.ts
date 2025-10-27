@@ -17,6 +17,7 @@ const router = Router();
  * - ticker: string (required)
  * - startDate: string (required, YYYY-MM-DD)
  * - endDate: string (required, YYYY-MM-DD)
+ * - signalDate: string (optional, YYYY-MM-DD) - line changes from blue to green at this date
  *
  * Response:
  * - ticker: string
@@ -28,7 +29,7 @@ const router = Router();
  */
 router.post('/thumbnail', async (req: Request, res: Response) => {
   try {
-    const { ticker, startDate, endDate } = req.body;
+    const { ticker, startDate, endDate, signalDate } = req.body;
 
     // Validate required fields
     if (!ticker || !startDate || !endDate) {
@@ -67,6 +68,7 @@ router.post('/thumbnail', async (req: Request, res: Response) => {
       startDate,
       endDate,
       bars,
+      signalDate,
     });
 
     res.json(result);
