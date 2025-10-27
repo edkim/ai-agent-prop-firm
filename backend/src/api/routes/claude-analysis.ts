@@ -123,4 +123,33 @@ router.get('/:id/status', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /api/analysis/:id/charts
+ * Get all generated charts for an analysis
+ *
+ * Response:
+ * - charts: array of chart objects with base64 image data
+ */
+router.get('/:id/charts', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const charts = await claudeAnalysisService.getAnalysisCharts(id);
+
+    if (charts === null) {
+      return res.status(404).json({
+        error: 'Analysis not found'
+      });
+    }
+
+    res.json({ charts });
+  } catch (error: any) {
+    logger.error('Error getting analysis charts:', error);
+    res.status(500).json({
+      error: 'Failed to get analysis charts',
+      message: error.message
+    });
+  }
+});
+
 export default router;

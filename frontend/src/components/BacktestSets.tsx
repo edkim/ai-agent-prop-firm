@@ -8,6 +8,7 @@ import { backtestSetsApi } from '../services/backtestSetsApi';
 import type { BacktestSet, Sample } from '../services/backtestSetsApi';
 import { claudeAnalysisApi } from '../services/claudeAnalysisApi';
 import type { AnalysisResult, AnalysisStatus } from '../services/claudeAnalysisApi';
+import ChartGallery from './ChartGallery';
 
 interface BacktestSetsProps {
   activeBacktestSet: BacktestSet | null;
@@ -39,6 +40,7 @@ export default function BacktestSets({
   const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatus | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [currentAnalysisId, setCurrentAnalysisId] = useState<string | null>(null);
 
   // Load all sample sets on mount
   useEffect(() => {
@@ -176,6 +178,7 @@ export default function BacktestSets({
       });
 
       const analysisId = response.analysisId;
+      setCurrentAnalysisId(analysisId); // Store analysisId for chart fetching
 
       // Poll for completion
       await pollAnalysisStatus(analysisId);
@@ -347,6 +350,14 @@ export default function BacktestSets({
             </div>
           )}
         </div>
+      )}
+
+      {/* Chart Gallery */}
+      {currentAnalysisId && (
+        <ChartGallery
+          analysisId={currentAnalysisId}
+          loading={analyzing}
+        />
       )}
 
       {/* Samples List */}
