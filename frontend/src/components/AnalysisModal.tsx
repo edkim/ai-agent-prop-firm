@@ -7,6 +7,8 @@
 import { useState, useEffect } from 'react';
 import { claudeAnalysisApi } from '../services/claudeAnalysisApi';
 import type { ChartData, AnalysisResult, AnalysisStatus } from '../services/claudeAnalysisApi';
+import { batchBacktestApi } from '../services/batchBacktestApi';
+import type { BatchBacktestStatus, StrategyPerformance } from '../services/batchBacktestApi';
 import ChartModal from './ChartModal';
 
 interface AnalysisModalProps {
@@ -25,6 +27,10 @@ export default function AnalysisModal({ backtestSetId, sampleIds, onClose }: Ana
   const [error, setError] = useState<string | null>(null);
   const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatus | null>(null);
   const [selectedChart, setSelectedChart] = useState<ChartData | null>(null);
+
+  // Batch backtest state
+  const [batchBacktesting, setBatchBacktesting] = useState(false);
+  const [batchBacktestStatus, setBatchBacktestStatus] = useState<BatchBacktestStatus | null>(null);
 
   // Generate charts on mount
   useEffect(() => {
@@ -106,6 +112,60 @@ export default function AnalysisModal({ backtestSetId, sampleIds, onClose }: Ana
         console.error('Failed to poll:', err);
         setError(err.message);
         setState('ERROR');
+      }
+    };
+
+    poll();
+  };
+
+  const handleBatchBacktest = async () => {
+    if (!analysisResult) return;
+
+    setBatchBacktesting(true);
+    setError(null);
+
+    try {
+      // Start batch backtest
+      const result = await batchBacktestApi.startBatchBacktest({
+        analysisId: analysisResult.analysisId,
+        backtestSetId
+      });
+
+      // Poll for progress
+      await pollBatchBacktestStatus(result.batchRunId);
+    } catch (err: any) {
+      console.error('Failed to start batch backtest:', err);
+      setError(err.response?.data?.error || err.message || 'Batch backtest failed');
+      setBatchBacktesting(false);
+    }
+  };
+
+  const pollBatchBacktestStatus = async (batchRunId: string) => {
+    const maxAttempts = 600; // 10 minutes max
+    let attempts = 0;
+
+    const poll = async () => {
+      try {
+        const status = await batchBacktestApi.getBatchBacktestStatus(batchRunId);
+        setBatchBacktestStatus(status);
+
+        if (status.status === 'COMPLETED' || status.status === 'FAILED') {
+          setBatchBacktesting(false);
+          return;
+        }
+
+        // Continue polling
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 1000);
+        } else {
+          setError('Batch backtest timeout - please refresh');
+          setBatchBacktesting(false);
+        }
+      } catch (err: any) {
+        console.error('Failed to poll batch backtest:', err);
+        setError(err.message);
+        setBatchBacktesting(false);
       }
     };
 
@@ -384,6 +444,90 @@ export default function AnalysisModal({ backtestSetId, sampleIds, onClose }: Ana
                       </div>
                     </div>
                   )}
+
+                  {/* Batch Backtest Section */}
+                  <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h4 className="text-md font-semibold text-gray-800 mb-3">💡 Batch Backtest</h4>
+                    <p className="text-sm text-gray-700 mb-4">
+                      Test all {analysisResult.strategies.length} strategies across all samples in your backtest set
+                    </p>
+
+                    {!batchBacktesting && !batchBacktestStatus && (
+                      <button
+                        onClick={handleBatchBacktest}
+                        className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium text-lg shadow-md hover:shadow-lg transition"
+                      >
+                        Backtest All Strategies
+                      </button>
+                    )}
+
+                    {batchBacktesting && (
+                      <div className="text-center py-6">
+                        <div className="animate-spin h-12 w-12 border-4 border-green-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                        <p className="text-gray-700 font-medium">Running batch backtest...</p>
+                        {batchBacktestStatus && (
+                          <p className="text-sm text-gray-600 mt-2">
+                            Progress: {batchBacktestStatus.completedTests} / {batchBacktestStatus.totalTests} tests
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {batchBacktestStatus && !batchBacktesting && (
+                      <div className="mt-4">
+                        <h5 className="text-sm font-semibold text-gray-800 mb-3">Results</h5>
+                        <div className="space-y-2">
+                          {batchBacktestStatus.strategies
+                            .sort((a, b) => b.winRate - a.winRate)
+                            .map((strategy, idx) => (
+                              <div
+                                key={strategy.strategyId}
+                                className={`p-3 rounded border ${
+                                  idx === 0
+                                    ? 'bg-green-50 border-green-300'
+                                    : 'bg-white border-gray-200'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    {idx === 0 && <span className="text-lg">🏆</span>}
+                                    <span className="font-medium text-sm">{strategy.strategyName}</span>
+                                  </div>
+                                  <span
+                                    className={`text-sm font-bold ${
+                                      strategy.winRate >= 60 ? 'text-green-600' : 'text-gray-600'
+                                    }`}
+                                  >
+                                    {strategy.winRate.toFixed(1)}% Win Rate
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 text-xs text-gray-600">
+                                  <div>
+                                    Tests: {strategy.successfulTests}/{strategy.totalTests}
+                                  </div>
+                                  <div>
+                                    Trades: {strategy.winningTrades}W / {strategy.losingTrades}L
+                                  </div>
+                                  <div>
+                                    Avg: {strategy.avgPnlPercent.toFixed(2)}%
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+
+                        {batchBacktestStatus.strategies.length > 0 && (
+                          <div className="mt-4 p-3 bg-gray-100 rounded">
+                            <p className="text-xs text-gray-700">
+                              <strong>Best Strategy:</strong>{' '}
+                              {batchBacktestStatus.strategies[0].strategyName} with{' '}
+                              {batchBacktestStatus.strategies[0].winRate.toFixed(1)}% win rate
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 

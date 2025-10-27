@@ -359,3 +359,122 @@ CREATE TABLE IF NOT EXISTS analysis_charts (
 
 CREATE INDEX IF NOT EXISTS idx_analysis_charts_analysis ON analysis_charts(analysis_id);
 CREATE INDEX IF NOT EXISTS idx_analysis_charts_sample ON analysis_charts(sample_id);
+
+-- Batch Backtest Runs Table (one record per batch execution)
+CREATE TABLE IF NOT EXISTS batch_backtest_runs (
+    id TEXT PRIMARY KEY, -- UUID
+    analysis_id TEXT NOT NULL,
+    backtest_set_id TEXT NOT NULL,
+    status TEXT DEFAULT 'PENDING', -- 'PENDING', 'RUNNING', 'COMPLETED', 'FAILED'
+    total_strategies INTEGER DEFAULT 0,
+    total_samples INTEGER DEFAULT 0,
+    total_tests INTEGER DEFAULT 0, -- strategies × samples
+    completed_tests INTEGER DEFAULT 0,
+    failed_tests INTEGER DEFAULT 0,
+    error_message TEXT,
+    execution_time_ms INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    completed_at DATETIME,
+    FOREIGN KEY (analysis_id) REFERENCES claude_analyses(id) ON DELETE CASCADE,
+    FOREIGN KEY (backtest_set_id) REFERENCES backtest_sets(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_batch_runs_analysis ON batch_backtest_runs(analysis_id);
+CREATE INDEX IF NOT EXISTS idx_batch_runs_status ON batch_backtest_runs(status);
+
+-- Strategy Backtest Scripts Table (generated scripts for each strategy)
+CREATE TABLE IF NOT EXISTS strategy_backtest_scripts (
+    id TEXT PRIMARY KEY, -- UUID
+    strategy_recommendation_id TEXT NOT NULL,
+    script_path TEXT NOT NULL, -- Path to generated TypeScript file
+    script_hash TEXT, -- SHA-256 hash for change detection
+    generation_status TEXT DEFAULT 'PENDING', -- 'PENDING', 'GENERATING', 'COMPLETED', 'FAILED'
+    error_message TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (strategy_recommendation_id) REFERENCES strategy_recommendations(id) ON DELETE CASCADE,
+    UNIQUE(strategy_recommendation_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_strategy_scripts_recommendation ON strategy_backtest_scripts(strategy_recommendation_id);
+CREATE INDEX IF NOT EXISTS idx_strategy_scripts_status ON strategy_backtest_scripts(generation_status);
+
+-- Batch Backtest Results Table (individual test results: one per strategy+sample combo)
+CREATE TABLE IF NOT EXISTS batch_backtest_results (
+    id TEXT PRIMARY KEY, -- UUID
+    batch_run_id TEXT NOT NULL,
+    strategy_recommendation_id TEXT NOT NULL,
+    sample_id TEXT NOT NULL, -- scan_results.id
+    ticker TEXT NOT NULL,
+    status TEXT DEFAULT 'PENDING', -- 'PENDING', 'RUNNING', 'COMPLETED', 'FAILED'
+
+    -- Trade results
+    total_trades INTEGER DEFAULT 0,
+    winning_trades INTEGER DEFAULT 0,
+    losing_trades INTEGER DEFAULT 0,
+    total_pnl REAL DEFAULT 0,
+    total_pnl_percent REAL DEFAULT 0,
+    max_drawdown_percent REAL,
+
+    -- Detailed results
+    trades_json TEXT, -- JSON array of trade objects
+    metrics_json TEXT, -- JSON object with detailed metrics
+
+    -- Execution metadata
+    execution_time_ms INTEGER,
+    error_message TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    completed_at DATETIME,
+
+    FOREIGN KEY (batch_run_id) REFERENCES batch_backtest_runs(id) ON DELETE CASCADE,
+    FOREIGN KEY (strategy_recommendation_id) REFERENCES strategy_recommendations(id) ON DELETE CASCADE,
+    FOREIGN KEY (sample_id) REFERENCES scan_results(id) ON DELETE CASCADE,
+    UNIQUE(batch_run_id, strategy_recommendation_id, sample_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_batch_results_run ON batch_backtest_results(batch_run_id);
+CREATE INDEX IF NOT EXISTS idx_batch_results_strategy ON batch_backtest_results(strategy_recommendation_id);
+CREATE INDEX IF NOT EXISTS idx_batch_results_sample ON batch_backtest_results(sample_id);
+CREATE INDEX IF NOT EXISTS idx_batch_results_status ON batch_backtest_results(status);
+
+-- Batch Strategy Performance Summary (aggregated performance per strategy)
+CREATE TABLE IF NOT EXISTS batch_strategy_performance (
+    id TEXT PRIMARY KEY, -- UUID
+    batch_run_id TEXT NOT NULL,
+    strategy_recommendation_id TEXT NOT NULL,
+    strategy_name TEXT NOT NULL,
+
+    -- Win/Loss statistics
+    total_tests INTEGER DEFAULT 0,
+    successful_tests INTEGER DEFAULT 0, -- Tests that completed without error
+    failed_tests INTEGER DEFAULT 0, -- Tests that errored
+    winning_trades INTEGER DEFAULT 0,
+    losing_trades INTEGER DEFAULT 0,
+    win_rate REAL, -- Percentage (0-100)
+
+    -- P&L statistics
+    total_pnl REAL DEFAULT 0,
+    avg_pnl_per_trade REAL,
+    avg_pnl_percent_per_trade REAL,
+    median_pnl_percent REAL,
+    best_pnl_percent REAL,
+    worst_pnl_percent REAL,
+
+    -- Risk metrics
+    avg_drawdown_percent REAL,
+    max_drawdown_percent REAL,
+
+    -- Best/Worst performers
+    best_sample_id TEXT, -- Sample with best performance
+    best_sample_pnl_percent REAL,
+    worst_sample_id TEXT, -- Sample with worst performance
+    worst_sample_pnl_percent REAL,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (batch_run_id) REFERENCES batch_backtest_runs(id) ON DELETE CASCADE,
+    FOREIGN KEY (strategy_recommendation_id) REFERENCES strategy_recommendations(id) ON DELETE CASCADE,
+    UNIQUE(batch_run_id, strategy_recommendation_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_strategy_performance_run ON batch_strategy_performance(batch_run_id);
+CREATE INDEX IF NOT EXISTS idx_strategy_performance_win_rate ON batch_strategy_performance(win_rate);
