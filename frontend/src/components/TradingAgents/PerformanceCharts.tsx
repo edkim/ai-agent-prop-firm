@@ -24,8 +24,14 @@ export default function PerformanceCharts({ agentId }: PerformanceChartsProps) {
   const loadData = async () => {
     try {
       const [curveData, metricsData] = await Promise.all([
-        tradingAgentApi.getEquityCurve(agentId).catch(() => []),
-        tradingAgentApi.getLatestMetrics(agentId).catch(() => null),
+        tradingAgentApi.getEquityCurve(agentId).catch((err) => {
+          console.log('No equity curve data yet:', err.message);
+          return [];
+        }),
+        tradingAgentApi.getLatestMetrics(agentId).catch((err) => {
+          console.log('No metrics available yet:', err.message);
+          return null;
+        }),
       ]);
       setEquityCurve(curveData);
       setMetrics(metricsData);

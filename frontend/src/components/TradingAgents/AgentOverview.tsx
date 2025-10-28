@@ -29,8 +29,14 @@ export default function AgentOverview({ agent, portfolio, onRefresh }: AgentOver
   const loadData = async () => {
     try {
       const [metricsData, activityData] = await Promise.all([
-        tradingAgentApi.getLatestMetrics(agent.id).catch(() => null),
-        tradingAgentApi.getActivity(agent.id, { limit: 10 }).catch(() => []),
+        tradingAgentApi.getLatestMetrics(agent.id).catch((err) => {
+          console.log('No metrics available yet (this is normal for new agents):', err.message);
+          return null;
+        }),
+        tradingAgentApi.getActivity(agent.id, { limit: 10 }).catch((err) => {
+          console.log('No activity available yet:', err.message);
+          return [];
+        }),
       ]);
       setMetrics(metricsData);
       setActivity(activityData);
