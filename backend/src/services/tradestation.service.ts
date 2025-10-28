@@ -6,6 +6,8 @@
 
 import axios, { AxiosInstance } from 'axios';
 import qs from 'qs';
+import fs from 'fs';
+import path from 'path';
 import { getDatabase } from '../database/db';
 import logger from './logger.service';
 
@@ -17,9 +19,11 @@ const getAccountId = () => process.env.TRADESTATION_ACCOUNT_ID;
 const getApiBaseUrl = () => process.env.TRADESTATION_ENV === 'live'
   ? 'https://api.tradestation.com/v3'
   : 'https://sim-api.tradestation.com/v3';
-const getAuthBaseUrl = () => process.env.TRADESTATION_ENV === 'live'
-  ? 'https://signin.tradestation.com'
-  : 'https://sim-signin.tradestation.com';
+// OAuth always uses the same signin endpoint for both live and simulation
+const getAuthBaseUrl = () => 'https://signin.tradestation.com';
+
+// Token file storage path (project root)
+const TOKEN_FILE_PATH = path.resolve(process.cwd(), '.tokens.json');
 
 interface AuthTokens {
   access_token: string;
@@ -99,8 +103,13 @@ class TradestationService {
       (error) => Promise.reject(error)
     );
 
-    // Load tokens from database if available
-    this.loadTokensFromDatabase();
+    // Try loading tokens from file first (faster, doesn't require DB)
+    this.loadTokensFromFile();
+
+    // If no file tokens, try loading from database
+    if (!this.tokens) {
+      this.loadTokensFromDatabase();
+    }
   }
 
   /**
@@ -115,7 +124,7 @@ class TradestationService {
       response_type: 'code',
       client_id: getApiKey()!,
       redirect_uri: getRedirectUri(),
-      scope: 'openid profile MarketData ReadAccount Trade',
+      scope: 'openid profile offline_access MarketData ReadAccount Trade OptionSpreads',
       state
     });
 
@@ -278,8 +287,68 @@ class TradestationService {
         VALUES ('tradestation_tokens', ?, CURRENT_TIMESTAMP)
       `).run(JSON.stringify(this.tokens));
 
+      // Also save to file for faster loading
+      this.saveTokensToFile();
+
     } catch (error: any) {
       logger.error('Failed to save tokens to database:', error);
+      // Still try to save to file even if database fails
+      this.saveTokensToFile();
+    }
+  }
+
+  /**
+   * Load tokens from file storage
+   */
+  private loadTokensFromFile(): void {
+    try {
+      if (fs.existsSync(TOKEN_FILE_PATH)) {
+        const fileContent = fs.readFileSync(TOKEN_FILE_PATH, 'utf8');
+        const fileData = JSON.parse(fileContent);
+
+        // Validate token data
+        if (fileData.access_token && fileData.expires_at) {
+          this.tokens = {
+            access_token: fileData.access_token,
+            refresh_token: fileData.refresh_token,
+            expires_in: fileData.expires_in || 0,
+            expires_at: fileData.expires_at
+          };
+
+          // Check if token is still valid
+          if (this.tokens.expires_at > Date.now()) {
+            logger.info('✅ Loaded valid TradeStation tokens from file');
+            this.scheduleTokenRefresh();
+          } else {
+            logger.info('⚠️  File tokens are expired');
+            this.tokens = null;
+          }
+        }
+      }
+    } catch (error: any) {
+      logger.warn('Failed to load tokens from file:', error.message);
+    }
+  }
+
+  /**
+   * Save tokens to file storage
+   */
+  private saveTokensToFile(): void {
+    try {
+      if (this.tokens) {
+        const tokenData = {
+          access_token: this.tokens.access_token,
+          refresh_token: this.tokens.refresh_token,
+          expires_in: this.tokens.expires_in,
+          expires_at: this.tokens.expires_at,
+          token_type: 'Bearer'
+        };
+
+        fs.writeFileSync(TOKEN_FILE_PATH, JSON.stringify(tokenData, null, 2));
+        logger.info('✅ Tokens saved to file storage');
+      }
+    } catch (error: any) {
+      logger.error('Failed to save tokens to file:', error.message);
     }
   }
 
