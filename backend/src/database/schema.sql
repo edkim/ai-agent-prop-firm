@@ -478,3 +478,255 @@ CREATE TABLE IF NOT EXISTS batch_strategy_performance (
 
 CREATE INDEX IF NOT EXISTS idx_strategy_performance_run ON batch_strategy_performance(batch_run_id);
 CREATE INDEX IF NOT EXISTS idx_strategy_performance_win_rate ON batch_strategy_performance(win_rate);
+
+-- =====================================================
+-- PHASE 1: LIVE TRADING INFRASTRUCTURE
+-- Real-time trading agent tables
+-- =====================================================
+
+-- Trading Agents Configuration
+CREATE TABLE IF NOT EXISTS trading_agents (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    account_id TEXT NOT NULL UNIQUE, -- TradeStation account ID
+    timeframe TEXT NOT NULL, -- 'intraday', 'swing', 'position'
+    strategies TEXT NOT NULL, -- JSON array of strategy pattern IDs
+    risk_limits TEXT NOT NULL, -- JSON object with risk parameters
+    active BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_agents_active ON trading_agents(active);
+
+-- Real-time Market Data Bars
+CREATE TABLE IF NOT EXISTS realtime_bars (
+    ticker TEXT NOT NULL,
+    timestamp INTEGER NOT NULL,
+    open REAL NOT NULL,
+    high REAL NOT NULL,
+    low REAL NOT NULL,
+    close REAL NOT NULL,
+    volume INTEGER NOT NULL,
+    timeframe TEXT NOT NULL, -- '1min', '5min', etc.
+    received_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (ticker, timestamp, timeframe)
+);
+
+CREATE INDEX IF NOT EXISTS idx_realtime_bars_ticker_time ON realtime_bars(ticker, timestamp);
+CREATE INDEX IF NOT EXISTS idx_realtime_bars_timeframe ON realtime_bars(timeframe, timestamp);
+
+-- Live Pattern Detections
+CREATE TABLE IF NOT EXISTS live_signals (
+    id TEXT PRIMARY KEY,
+    agent_id TEXT,
+    ticker TEXT NOT NULL,
+    pattern_type TEXT NOT NULL, -- 'breakout-volume-surge', 'gap-and-go', etc.
+    detection_time DATETIME NOT NULL,
+    signal_data TEXT, -- JSON: prices, indicators, pattern details
+    status TEXT DEFAULT 'DETECTED', -- DETECTED, ANALYZING, EXECUTED, REJECTED, EXPIRED
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_live_signals_status ON live_signals(status);
+CREATE INDEX IF NOT EXISTS idx_live_signals_ticker ON live_signals(ticker, detection_time);
+CREATE INDEX IF NOT EXISTS idx_live_signals_agent ON live_signals(agent_id, status);
+
+-- AI Trade Recommendations
+CREATE TABLE IF NOT EXISTS trade_recommendations (
+    id TEXT PRIMARY KEY,
+    signal_id TEXT,
+    agent_id TEXT NOT NULL,
+    ticker TEXT NOT NULL,
+    side TEXT NOT NULL, -- 'LONG', 'SHORT'
+    entry_price REAL,
+    position_size INTEGER, -- Number of shares
+    stop_loss REAL,
+    take_profit REAL,
+    confidence_score INTEGER, -- 0-100
+    reasoning TEXT, -- Claude's explanation
+    chart_data TEXT, -- Base64 chart image
+    risk_checks TEXT, -- JSON: which risk checks passed/failed
+    status TEXT DEFAULT 'PENDING', -- PENDING, APPROVED, REJECTED, EXECUTED, CANCELLED
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (signal_id) REFERENCES live_signals(id) ON DELETE CASCADE,
+    FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_trade_recommendations_status ON trade_recommendations(status);
+CREATE INDEX IF NOT EXISTS idx_trade_recommendations_agent ON trade_recommendations(agent_id, status);
+CREATE INDEX IF NOT EXISTS idx_trade_recommendations_created ON trade_recommendations(created_at DESC);
+
+-- Executed Trades (Live/Paper)
+CREATE TABLE IF NOT EXISTS executed_trades (
+    id TEXT PRIMARY KEY,
+    agent_id TEXT NOT NULL,
+    recommendation_id TEXT,
+    ticker TEXT NOT NULL,
+    side TEXT NOT NULL, -- 'LONG', 'SHORT'
+    
+    -- Entry details
+    entry_time DATETIME,
+    entry_price REAL,
+    position_size INTEGER,
+    entry_order_id TEXT, -- TradeStation order ID
+    
+    -- Exit details
+    exit_time DATETIME,
+    exit_price REAL,
+    exit_order_id TEXT,
+    
+    -- P&L
+    pnl REAL,
+    pnl_percent REAL,
+    
+    -- Risk management
+    stop_loss REAL,
+    take_profit REAL,
+    trailing_stop REAL,
+    
+    -- Exit reason
+    exit_reason TEXT, -- STOP_HIT, TARGET_HIT, TIME_EXIT, MANUAL_EXIT, TRAILING_STOP
+    
+    -- Status
+    status TEXT DEFAULT 'OPEN', -- OPEN, CLOSED, CANCELLED
+    
+    -- Metadata
+    pattern_type TEXT,
+    confidence_score INTEGER,
+    notes TEXT,
+    
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE,
+    FOREIGN KEY (recommendation_id) REFERENCES trade_recommendations(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_executed_trades_agent ON executed_trades(agent_id, status);
+CREATE INDEX IF NOT EXISTS idx_executed_trades_ticker ON executed_trades(ticker, entry_time);
+CREATE INDEX IF NOT EXISTS idx_executed_trades_status ON executed_trades(status);
+CREATE INDEX IF NOT EXISTS idx_executed_trades_entry_time ON executed_trades(entry_time DESC);
+
+-- Portfolio State (per agent)
+CREATE TABLE IF NOT EXISTS portfolio_state (
+    agent_id TEXT PRIMARY KEY,
+    account_id TEXT NOT NULL,
+    
+    -- Equity
+    cash REAL DEFAULT 0,
+    positions TEXT, -- JSON: {ticker: {shares, avgPrice, currentPrice, pnl}}
+    total_equity REAL DEFAULT 0,
+    
+    -- Daily metrics
+    daily_pnl REAL DEFAULT 0,
+    daily_pnl_percent REAL DEFAULT 0,
+    
+    -- Position metrics
+    open_trade_count INTEGER DEFAULT 0,
+    total_exposure REAL DEFAULT 0,
+    
+    -- Last update
+    last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE
+);
+
+-- Risk Metrics (historical tracking)
+CREATE TABLE IF NOT EXISTS risk_metrics (
+    id TEXT PRIMARY KEY,
+    agent_id TEXT NOT NULL,
+    metric_date DATE NOT NULL,
+    
+    -- Exposure metrics
+    total_exposure REAL,
+    max_position_size REAL,
+    avg_position_size REAL,
+    
+    -- Performance metrics
+    daily_pnl REAL,
+    daily_pnl_percent REAL,
+    cumulative_pnl REAL,
+    
+    -- Risk metrics
+    max_drawdown REAL,
+    current_drawdown REAL,
+    sharpe_ratio REAL,
+    sortino_ratio REAL,
+    
+    -- Trade statistics
+    total_trades INTEGER DEFAULT 0,
+    winning_trades INTEGER DEFAULT 0,
+    losing_trades INTEGER DEFAULT 0,
+    win_rate REAL,
+    avg_win REAL,
+    avg_loss REAL,
+    largest_win REAL,
+    largest_loss REAL,
+    profit_factor REAL,
+    
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE,
+    UNIQUE(agent_id, metric_date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_risk_metrics_agent_date ON risk_metrics(agent_id, metric_date DESC);
+
+-- TradeStation Orders (audit trail)
+CREATE TABLE IF NOT EXISTS tradestation_orders (
+    id TEXT PRIMARY KEY,
+    agent_id TEXT NOT NULL,
+    trade_id TEXT, -- Links to executed_trades
+    
+    -- Order details
+    order_id TEXT NOT NULL, -- TradeStation order ID
+    ticker TEXT NOT NULL,
+    side TEXT NOT NULL, -- BUY, SELL
+    order_type TEXT NOT NULL, -- MARKET, LIMIT, STOP, STOP_LIMIT
+    quantity INTEGER NOT NULL,
+    limit_price REAL,
+    stop_price REAL,
+    
+    -- Status
+    status TEXT NOT NULL, -- PENDING, FILLED, PARTIAL, CANCELLED, REJECTED
+    filled_quantity INTEGER DEFAULT 0,
+    avg_fill_price REAL,
+    
+    -- Timestamps
+    submitted_at DATETIME NOT NULL,
+    filled_at DATETIME,
+    
+    -- Response data
+    response_data TEXT, -- JSON: full TradeStation API response
+    error_message TEXT,
+    
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE,
+    FOREIGN KEY (trade_id) REFERENCES executed_trades(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_tradestation_orders_agent ON tradestation_orders(agent_id);
+CREATE INDEX IF NOT EXISTS idx_tradestation_orders_status ON tradestation_orders(status);
+CREATE INDEX IF NOT EXISTS idx_tradestation_orders_trade ON tradestation_orders(trade_id);
+
+-- Agent Activity Log (audit trail)
+CREATE TABLE IF NOT EXISTS agent_activity_log (
+    id TEXT PRIMARY KEY,
+    agent_id TEXT NOT NULL,
+    activity_type TEXT NOT NULL, -- SIGNAL_DETECTED, TRADE_ANALYZED, ORDER_PLACED, POSITION_CLOSED, RISK_LIMIT_HIT, etc.
+    ticker TEXT,
+    description TEXT NOT NULL,
+    data TEXT, -- JSON: additional context
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_agent_activity_agent_time ON agent_activity_log(agent_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_agent_activity_type ON agent_activity_log(activity_type, timestamp DESC);

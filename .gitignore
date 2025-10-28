@@ -42,3 +42,4 @@ backend/claude-generated-scripts/
 
 # Temporary files
 /tmp/
+backend/.tokens.json
