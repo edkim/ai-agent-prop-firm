@@ -2,10 +2,15 @@
  * Express Server Setup
  */
 
-import express, { Express, Request, Response } from 'express';
-import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+
+// Load environment variables FIRST before any other imports
+// Resolve to project root (one level up from backend/)
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+
+import express, { Express, Request, Response } from 'express';
+import cors from 'cors';
 import { initializeDatabase } from '../database/db';
 import dataRoutes from './routes/data';
 import strategyRoutes from './routes/strategies';
@@ -18,10 +23,6 @@ import chartsRoutes from './routes/charts';
 import claudeAnalysisRoutes from './routes/claude-analysis';
 import batchBacktestRoutes from './routes/batch-backtest';
 import tradingAgentRoutes from './routes/trading-agent';
-
-// Load environment variables
-// Resolve to project root (one level up from backend/)
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
