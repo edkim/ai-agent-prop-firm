@@ -124,6 +124,7 @@ class TradestationService {
       response_type: 'code',
       client_id: getApiKey()!,
       redirect_uri: getRedirectUri(),
+      audience: 'https://api.tradestation.com',
       scope: 'openid profile offline_access MarketData ReadAccount Trade OptionSpreads',
       state
     });
@@ -391,6 +392,19 @@ class TradestationService {
   }
 
   /**
+   * Get all accounts for the authenticated user
+   */
+  async getAccounts(): Promise<any[]> {
+    try {
+      const response = await this.apiClient.get('/brokerage/accounts');
+      return response.data.Accounts || [];
+    } catch (error: any) {
+      logger.error('Failed to get accounts:', error.response?.data || error.message);
+      throw error;
+    }
+  }
+
+  /**
    * Get account information
    */
   async getAccount(): Promise<Account> {
@@ -401,17 +415,21 @@ class TradestationService {
         throw new Error('TRADESTATION_ACCOUNT_ID not configured');
       }
 
-      const response = await this.apiClient.get(`/brokerage/accounts/${accountId}`);
+      const response = await this.apiClient.get(`/brokerage/accounts/${accountId}/balances`);
 
-      const data = response.data;
+      const balances = response.data.Balances?.[0];
+
+      if (!balances) {
+        throw new Error('No balance data returned from TradeStation');
+      }
 
       return {
-        accountId: data.AccountID,
-        name: data.Name,
-        type: data.Type,
-        cash: data.Cash || 0,
-        equity: data.Equity || 0,
-        buyingPower: data.BuyingPower || 0
+        accountId: balances.AccountID || accountId,
+        name: balances.AccountID || accountId,
+        type: balances.AccountType || 'Cash',
+        cash: parseFloat(balances.CashBalance || '0'),
+        equity: parseFloat(balances.Equity || '0'),
+        buyingPower: parseFloat(balances.BuyingPower || '0')
       };
 
     } catch (error: any) {
