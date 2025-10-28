@@ -413,4 +413,201 @@ router.get('/:id/portfolio', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * GET /api/agents/:id/signals
+ * Get live signals for agent
+ */
+router.get('/:id/signals', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.query;
+
+    let query = `SELECT * FROM live_signals WHERE agent_id = ?`;
+    const params: any[] = [id];
+
+    if (status) {
+      query += ` AND status = ?`;
+      params.push(status);
+    }
+
+    query += ` ORDER BY detection_time DESC LIMIT 100`;
+
+    const db = await import('../../services/database.service');
+    const signals = await db.DatabaseService.prototype.all(query, params);
+
+    res.json({ signals });
+
+  } catch (error: any) {
+    logger.error('Error getting signals:', error);
+    res.status(500).json({
+      error: 'Failed to get signals',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/agents/:id/recommendations
+ * Get trade recommendations for agent
+ */
+router.get('/:id/recommendations', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.query;
+
+    let query = `SELECT * FROM trade_recommendations WHERE agent_id = ?`;
+    const params: any[] = [id];
+
+    if (status) {
+      query += ` AND status = ?`;
+      params.push(status);
+    }
+
+    query += ` ORDER BY created_at DESC LIMIT 100`;
+
+    const db = await import('../../services/database.service');
+    const recommendations = await db.DatabaseService.prototype.all(query, params);
+
+    res.json({ recommendations });
+
+  } catch (error: any) {
+    logger.error('Error getting recommendations:', error);
+    res.status(500).json({
+      error: 'Failed to get recommendations',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/agents/:id/recommendations/:recommendationId/approve
+ * Manually approve a recommendation
+ */
+router.post('/:id/recommendations/:recommendationId/approve', async (req: Request, res: Response) => {
+  try {
+    const { recommendationId } = req.params;
+
+    const db = await import('../../services/database.service');
+    await db.DatabaseService.prototype.run(
+      `UPDATE trade_recommendations SET status = 'APPROVED', updated_at = datetime('now') WHERE id = ?`,
+      [recommendationId]
+    );
+
+    res.json({ message: 'Recommendation approved' });
+
+  } catch (error: any) {
+    logger.error('Error approving recommendation:', error);
+    res.status(500).json({
+      error: 'Failed to approve recommendation',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/agents/:id/recommendations/:recommendationId/reject
+ * Manually reject a recommendation
+ */
+router.post('/:id/recommendations/:recommendationId/reject', async (req: Request, res: Response) => {
+  try {
+    const { recommendationId } = req.params;
+    const { reason } = req.body;
+
+    const db = await import('../../services/database.service');
+    await db.DatabaseService.prototype.run(
+      `UPDATE trade_recommendations SET status = 'REJECTED', updated_at = datetime('now') WHERE id = ?`,
+      [recommendationId]
+    );
+
+    // Log rejection reason
+    if (reason) {
+      const { id } = req.params;
+      tradingAgentService.logActivity(
+        id,
+        'RISK_LIMIT_HIT',
+        `Recommendation manually rejected: ${reason}`,
+        undefined,
+        { recommendationId, reason }
+      );
+    }
+
+    res.json({ message: 'Recommendation rejected' });
+
+  } catch (error: any) {
+    logger.error('Error rejecting recommendation:', error);
+    res.status(500).json({
+      error: 'Failed to reject recommendation',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/agents/:id/trades
+ * Get executed trades for agent
+ */
+router.get('/:id/trades', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.query;
+
+    let query = `SELECT * FROM executed_trades WHERE agent_id = ?`;
+    const params: any[] = [id];
+
+    if (status) {
+      query += ` AND status = ?`;
+      params.push(status);
+    }
+
+    query += ` ORDER BY entry_time DESC LIMIT 100`;
+
+    const db = await import('../../services/database.service');
+    const trades = await db.DatabaseService.prototype.all(query, params);
+
+    res.json({ trades });
+
+  } catch (error: any) {
+    logger.error('Error getting trades:', error);
+    res.status(500).json({
+      error: 'Failed to get trades',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/agents/:id/trades/:tradeId/close
+ * Close an open trade
+ */
+router.post('/:id/trades/:tradeId/close', async (req: Request, res: Response) => {
+  try {
+    const { tradeId } = req.params;
+    const { exitPrice, exitReason } = req.body;
+
+    if (!exitPrice) {
+      return res.status(400).json({
+        error: 'Exit price required'
+      });
+    }
+
+    const ExecutionEngineService = await import('../../services/execution-engine.service');
+    const executionEngine = new ExecutionEngineService.ExecutionEngineService();
+
+    const trade = await executionEngine.closeTrade(
+      tradeId,
+      exitPrice,
+      exitReason || 'MANUAL_EXIT'
+    );
+
+    res.json({ trade });
+
+  } catch (error: any) {
+    logger.error('Error closing trade:', error);
+    res.status(500).json({
+      error: 'Failed to close trade',
+      message: error.message
+    });
+  }
+});
+
 export default router;

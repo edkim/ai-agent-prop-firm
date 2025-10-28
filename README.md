@@ -1,10 +1,10 @@
 # AI-Powered Algorithmic Trading Backtest Platform
 
-A sophisticated backtesting and pattern discovery platform combining AI-powered script generation, natural language query support, and intelligent strategy analysis for algorithmic trading.
+A sophisticated backtesting, pattern discovery, and **autonomous trading platform** combining AI-powered script generation, natural language query support, and intelligent strategy analysis for algorithmic trading.
 
 ## 🚀 Overview
 
-This platform enables traders to discover, backtest, and validate trading strategies using natural language queries and AI-generated code. It combines traditional SQL-based pattern scanning with Claude AI for complex temporal pattern detection and custom strategy generation.
+This platform enables traders to discover, backtest, and validate trading strategies using natural language queries and AI-generated code. It combines traditional SQL-based pattern scanning with Claude AI for complex temporal pattern detection, custom strategy generation, and **real-time autonomous trading**.
 
 ### Key Capabilities
 
@@ -14,8 +14,128 @@ This platform enables traders to discover, backtest, and validate trading strate
 - 🔍 **Pattern Analysis** - Sample sets management for tracking and validating discovered patterns
 - 💾 **Script Persistence** - All AI-generated code saved with metadata for audit trail and reuse
 - 📈 **Real Market Data** - Polygon.io integration for intraday and daily data
+- 🎯 **Autonomous Trading Agents** - AI-powered agents for real-time pattern detection and trade execution
+- 🛡️ **Risk Management** - Multi-layer risk checks with configurable limits per agent
+- 📱 **Paper Trading** - TradeStation integration for live market testing
 
-## ✨ What's New (Phase 4)
+## ✨ What's New
+
+### Phase 5: Autonomous Trading Agents (2025-10-28) 🆕
+
+**Agent Brain - Real-Time Decision Making**
+
+The platform now includes autonomous trading agents that detect patterns in real-time and execute trades automatically with Claude AI analysis and comprehensive risk management.
+
+#### Core Services
+
+1. **RealtimeScannerService** - Pattern Detection Engine
+   - 6 pattern types: Breakout with Volume Surge, Gap and Go, Cup and Handle, Bull Flag, VWAP Bounce, Momentum Surge
+   - Technical indicators: RSI, VWAP, Volume Ratio, ATR, SMA (20, 50)
+   - Multi-timeframe confirmation (1m, 5m, 15m)
+   - Pattern quality scoring (0-100)
+   - Signal deduplication (5-minute window)
+
+2. **TradeOptimizerService** - AI Trade Analyzer
+   - Claude Vision API integration for chart analysis
+   - Position sizing with Kelly Criterion
+   - Stop loss/take profit calculations
+   - Correlation checking with existing positions
+   - Fallback rule-based analysis if Claude API fails
+
+3. **ExecutionEngineService** - Risk Checks & Execution
+   - 6 risk checks: Position size, Portfolio exposure, Daily loss limit, Concurrent positions, Confidence score, Correlation
+   - TradeStation API order placement
+   - Portfolio state tracking
+   - Trade lifecycle management (entry/exit)
+   - Activity logging for full audit trail
+
+#### Agent Configuration
+
+```typescript
+{
+  "name": "Breakout Hunter",
+  "accountId": "SIM3113503M",  // TradeStation paper trading
+  "timeframe": "intraday",
+  "strategies": ["breakout-volume-surge", "gap-and-go"],
+  "riskLimits": {
+    "maxPositionSize": 10000,        // Max $ per trade
+    "maxPortfolioExposure": 50,      // Max % of capital deployed
+    "maxDailyLoss": 500,              // Stop trading if hit
+    "maxConcurrentPositions": 5,     // Max open positions
+    "minConfidenceScore": 70,        // Min AI confidence (0-100)
+    "maxCorrelation": 0.7            // Max correlation with existing positions
+  }
+}
+```
+
+#### API Endpoints
+
+**Agent Management:**
+- `POST /api/agents` - Create new trading agent
+- `GET /api/agents` - List all agents
+- `GET /api/agents/:id` - Get agent details + portfolio
+- `PATCH /api/agents/:id` - Update agent configuration
+- `DELETE /api/agents/:id` - Delete agent
+- `POST /api/agents/:id/activate` - Start agent trading
+- `POST /api/agents/:id/deactivate` - Stop agent trading
+
+**Monitoring:**
+- `GET /api/agents/:id/signals` - Live pattern detections
+- `GET /api/agents/:id/recommendations` - AI trade recommendations
+- `GET /api/agents/:id/trades` - Executed trades
+- `GET /api/agents/:id/activity` - Activity log
+- `GET /api/agents/:id/portfolio` - Current portfolio state
+
+**Manual Control:**
+- `POST /api/agents/:id/recommendations/:recommendationId/approve` - Approve trade
+- `POST /api/agents/:id/recommendations/:recommendationId/reject` - Reject trade
+- `POST /api/agents/:id/trades/:tradeId/close` - Close position
+
+#### Data Flow
+
+```
+[TradeStation WebSocket]
+    ↓ Real-time bars
+[RealtimeScannerService]
+    ↓ Pattern detected (scored 0-100)
+[live_signals table] → status='DETECTED'
+    ↓
+[TradeOptimizerService]
+    ↓ Claude analyzes chart + signal + portfolio
+[trade_recommendations table] → status='PENDING'
+    ↓
+[ExecutionEngineService]
+    ↓ Run 6 risk checks
+[risk_checks: PASS/FAIL]
+    ↓ If all pass
+[TradeStation API] → Place order
+    ↓
+[executed_trades table] → status='OPEN'
+    ↓
+[portfolio_state table] → Updated
+```
+
+#### Status
+
+**Phase 1 (Real-Time Foundation):** ✅ Complete
+- TradeStation OAuth integration
+- Account/position/order endpoints
+- Paper trading operational (SIM3113503M)
+- Database schema (9 tables)
+
+**Phase 2 (Agent Brain):** ✅ Complete
+- Pattern recognition engine (6 patterns)
+- AI trade optimizer (Claude Vision)
+- Execution engine (6 risk checks)
+- API routes (14 endpoints)
+
+**Next Phase (Portfolio Management):**
+- Position monitoring
+- Trailing stops
+- Time-based exits
+- Real-time P&L tracking
+
+### Phase 4: Visual Analysis & Chart Generation (2025-10-26)
 
 ### Claude Visual AI Analysis (2025-10-26)
 - **🎨 Visual pattern recognition** using Claude Vision API
