@@ -610,4 +610,203 @@ router.post('/:id/trades/:tradeId/close', async (req: Request, res: Response) =>
   }
 });
 
+/**
+ * POST /api/agents/:id/monitor/start
+ * Start position monitoring for agent
+ */
+router.post('/:id/monitor/start', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const PositionMonitorService = await import('../../services/position-monitor.service');
+    const positionMonitor = new PositionMonitorService.PositionMonitorService();
+
+    positionMonitor.startMonitoring(id);
+
+    res.json({ message: 'Position monitoring started' });
+
+  } catch (error: any) {
+    logger.error('Error starting monitoring:', error);
+    res.status(500).json({
+      error: 'Failed to start monitoring',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/agents/:id/monitor/stop
+ * Stop position monitoring for agent
+ */
+router.post('/:id/monitor/stop', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const PositionMonitorService = await import('../../services/position-monitor.service');
+    const positionMonitor = new PositionMonitorService.PositionMonitorService();
+
+    positionMonitor.stopMonitoring(id);
+
+    res.json({ message: 'Position monitoring stopped' });
+
+  } catch (error: any) {
+    logger.error('Error stopping monitoring:', error);
+    res.status(500).json({
+      error: 'Failed to stop monitoring',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/agents/:id/trades/:tradeId/trailing-stop
+ * Enable trailing stop for a position
+ */
+router.post('/:id/trades/:tradeId/trailing-stop', async (req: Request, res: Response) => {
+  try {
+    const { tradeId } = req.params;
+    const { trailPercent, activationPercent } = req.body;
+
+    if (!trailPercent) {
+      return res.status(400).json({
+        error: 'Trail percent required'
+      });
+    }
+
+    const TrailingStopService = await import('../../services/trailing-stop.service');
+    const trailingStopService = new TrailingStopService.TrailingStopService();
+
+    await trailingStopService.enableTrailingStop(tradeId, {
+      trailPercent,
+      activationPercent: activationPercent || 2,
+      updateIncrement: 0
+    });
+
+    res.json({
+      message: 'Trailing stop enabled',
+      trailPercent,
+      activationPercent: activationPercent || 2
+    });
+
+  } catch (error: any) {
+    logger.error('Error enabling trailing stop:', error);
+    res.status(500).json({
+      error: 'Failed to enable trailing stop',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/agents/:id/metrics
+ * Get risk metrics for date range
+ */
+router.get('/:id/metrics', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { startDate, endDate } = req.query;
+
+    const RiskMetricsService = await import('../../services/risk-metrics.service');
+    const riskMetricsService = new RiskMetricsService.RiskMetricsService();
+
+    const start = startDate ? new Date(startDate as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const end = endDate ? new Date(endDate as string) : new Date();
+
+    const metrics = await riskMetricsService.getMetrics(id, start, end);
+
+    res.json({ metrics });
+
+  } catch (error: any) {
+    logger.error('Error getting metrics:', error);
+    res.status(500).json({
+      error: 'Failed to get metrics',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/agents/:id/metrics/latest
+ * Get latest risk metrics
+ */
+router.get('/:id/metrics/latest', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const RiskMetricsService = await import('../../services/risk-metrics.service');
+    const riskMetricsService = new RiskMetricsService.RiskMetricsService();
+
+    const metrics = await riskMetricsService.getLatestMetrics(id);
+
+    if (!metrics) {
+      return res.status(404).json({
+        error: 'No metrics found'
+      });
+    }
+
+    res.json(metrics);
+
+  } catch (error: any) {
+    logger.error('Error getting latest metrics:', error);
+    res.status(500).json({
+      error: 'Failed to get latest metrics',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/agents/:id/equity-curve
+ * Get equity curve data for charting
+ */
+router.get('/:id/equity-curve', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { startDate, endDate } = req.query;
+
+    const RiskMetricsService = await import('../../services/risk-metrics.service');
+    const riskMetricsService = new RiskMetricsService.RiskMetricsService();
+
+    const start = startDate ? new Date(startDate as string) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const end = endDate ? new Date(endDate as string) : new Date();
+
+    const equityCurve = await riskMetricsService.getEquityCurve(id, start, end);
+
+    res.json({ equityCurve });
+
+  } catch (error: any) {
+    logger.error('Error getting equity curve:', error);
+    res.status(500).json({
+      error: 'Failed to get equity curve',
+      message: error.message
+    });
+  }
+});
+
+/**
+ * POST /api/agents/:id/metrics/calculate
+ * Manually trigger daily metrics calculation
+ */
+router.post('/:id/metrics/calculate', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { date } = req.body;
+
+    const RiskMetricsService = await import('../../services/risk-metrics.service');
+    const riskMetricsService = new RiskMetricsService.RiskMetricsService();
+
+    const targetDate = date ? new Date(date) : new Date();
+    const metrics = await riskMetricsService.calculateDailyMetrics(id, targetDate);
+
+    res.json(metrics);
+
+  } catch (error: any) {
+    logger.error('Error calculating metrics:', error);
+    res.status(500).json({
+      error: 'Failed to calculate metrics',
+      message: error.message
+    });
+  }
+});
+
 export default router;
