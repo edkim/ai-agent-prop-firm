@@ -43,3 +43,6 @@ backend/claude-generated-scripts/
 # Temporary files
 /tmp/
 backend/.tokens.json
+
+# Backfill progress files
+backend/backfill-progress-intraday.json
