@@ -136,11 +136,147 @@ The platform now includes autonomous trading agents that detect patterns in real
 - Performance analytics (equity curve, statistics)
 - API routes (21 total endpoints)
 
-**Next Phase (Agent Dashboard):**
-- Live trading interface
-- Real-time position visualization
-- Performance analytics charts
+**Phase 4 (Agent Dashboard):** ✅ Complete
+- Live trading interface with agent cards
+- Real-time position visualization (5-second refresh)
+- Performance analytics charts (equity, win/loss, drawdowns)
+- Manual trade controls (approve/reject, close, trailing stops)
+- Settings management for risk limits and strategies
+- Multi-agent monitoring and switching
+
+### Phase 4: Agent Dashboard (2025-10-28) 🆕
+
+**Live Trading Interface & Real-Time Monitoring**
+
+Phase 4 delivers a comprehensive frontend dashboard for monitoring and controlling autonomous trading agents in real-time.
+
+#### Dashboard Components
+
+1. **AgentDashboard** - Main Layout
+   - Agent selector with status cards (P&L, active/paused)
+   - Tab navigation (Overview, Positions, Signals, Trades, Performance, Settings)
+   - Real-time portfolio data refresh (every 5 seconds)
+   - Multi-agent support with quick switching
+
+2. **AgentOverview** - Status & Performance Summary
+   - Agent status (active/paused, timeframe, strategies)
+   - Portfolio metrics (equity, cash, P&L, open positions)
+   - Performance metrics (win rate, profit factor, Sharpe ratio, max drawdown)
+   - Risk limits display
+   - Recent activity log (last 10 events)
+   - Quick actions (activate/deactivate, start/stop monitoring)
+
+3. **PositionMonitor** - Open Positions Table
+   - Real-time position data (ticker, side, entry, size, P&L)
+   - Stop loss, take profit, and trailing stop levels
+   - Position duration tracking
+   - Manual close button
+   - Enable/adjust trailing stop button
+   - Color-coded P&L (green/red)
+   - Auto-refresh every 5 seconds
+
+4. **SignalFeed** - Live Pattern Detections
+   - Pending trade recommendations with AI analysis
+   - Signal details (pattern type, quality score, multi-timeframe confirmation)
+   - Trade details (entry, stop, target, position size, confidence)
+   - Risk check results (6 checks with pass/fail status)
+   - Manual approve/reject buttons
+   - Recent signal history with status badges
+
+5. **TradeHistory** - Historical Trades
+   - Trade table with filters (ALL, OPEN, CLOSED)
+   - Summary statistics (total trades, win rate, total P&L, avg win/loss)
+   - Trade details (date, ticker, side, entry/exit, P&L, exit reason, confidence)
+   - Exit reason badges (stop hit, target hit, trailing stop, time exit, manual)
+   - Pattern type display
+   - Sortable columns
+
+6. **PerformanceCharts** - Visual Analytics
+   - Equity curve (line chart)
+   - Win/loss distribution (pie chart)
+   - Average win vs loss (bar chart)
+   - Key metrics cards (total trades, win rate, profit factor, Sharpe ratio)
+   - Risk metrics (max/current drawdown, Sortino ratio)
+   - Position sizing stats (largest win/loss, avg position size)
+
+7. **AgentSettings** - Configuration Management
+   - Basic info (name, timeframe)
+   - Strategy selection (6 available patterns with checkboxes)
+   - Risk limits form (6 configurable limits)
+   - Save/reset buttons
+   - Delete agent button with confirmation
+
+#### User Flows
+
+**Activate Agent:**
+1. Select agent card
+2. Click "Activate" button
+3. Confirm action in modal
+4. Agent status → Active
+5. Monitoring starts automatically
+
+**Manual Trade Execution:**
+1. Signal appears in Signal Feed (status: DETECTED)
+2. AI analyzes → Recommendation appears (status: PENDING)
+3. Review trade details, confidence score, risk checks
+4. Click "Execute Trade" or "Reject"
+5. If approved → Trade appears in Positions tab
+6. Signal status → EXECUTED
+
+**Close Position:**
+1. View position in Positions tab
+2. Click "Close" button
+3. Confirm with current price and estimated P&L
+4. Position closes → Moves to Trade History
+5. Portfolio metrics update
+
+**Enable Trailing Stop:**
+1. Select open position
+2. Click "Enable Trailing" button
+3. Enter trail % and activation %
+4. Trailing stop indicator appears in table
+5. Stop auto-adjusts as price moves favorably
+
+#### Technical Stack
+
+**Frontend:**
+- React 19 with TypeScript
+- TailwindCSS for styling
+- Recharts for performance charts
+- date-fns for time formatting
+- Axios for API calls
+
+**State Management:**
+- React hooks (useState, useEffect)
+- Real-time polling (5-second intervals)
+- Optimistic updates for user actions
+
+**Components Created (8 files):**
+```
+frontend/src/components/TradingAgents/
+├── AgentDashboard.tsx       (360 lines)
+├── AgentOverview.tsx        (280 lines)
+├── PositionMonitor.tsx      (220 lines)
+├── SignalFeed.tsx           (240 lines)
+├── TradeHistory.tsx         (220 lines)
+├── PerformanceCharts.tsx    (240 lines)
+└── AgentSettings.tsx        (260 lines)
+
+frontend/src/services/
+└── tradingAgentApi.ts       (260 lines)
+
+frontend/src/types/
+└── tradingAgent.ts          (180 lines)
+```
+
+#### Status
+
+**Phase 4:** ✅ Complete (8 components, 2,260 lines of code)
+- Full dashboard with 6 tabs
+- Real-time data updates
 - Manual trade controls
+- Performance visualization
+- Settings management
 
 ### Phase 6: Portfolio Management (2025-10-28) 🆕
 

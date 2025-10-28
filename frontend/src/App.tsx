@@ -7,9 +7,10 @@ import { useState } from 'react';
 import BacktestForm from './components/BacktestForm';
 import ResultsDisplay from './components/ResultsDisplay';
 import Scanner from './components/Scanner';
+import AgentDashboard from './components/TradingAgents/AgentDashboard';
 import type { IntelligentBacktestResponse } from './services/api';
 
-type Tab = 'backtest' | 'scanner';
+type Tab = 'backtest' | 'scanner' | 'agents';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>('scanner');
@@ -82,6 +83,19 @@ function App() {
               >
                 Backtest
               </button>
+              <button
+                onClick={() => {
+                  setActiveTab('agents');
+                  clearResults();
+                }}
+                className={`${
+                  activeTab === 'agents'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+              >
+                Trading Agents
+              </button>
             </nav>
           </div>
         </div>
@@ -89,7 +103,9 @@ function App() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'backtest' ? (
+        {activeTab === 'agents' ? (
+          <AgentDashboard />
+        ) : activeTab === 'backtest' ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column - Form */}
             <div className="lg:col-span-1">
