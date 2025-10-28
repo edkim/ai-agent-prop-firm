@@ -23,6 +23,7 @@ const apiClient: AxiosInstance = axios.create({
 export interface StartBatchBacktestRequest {
   analysisId: string;
   backtestSetId: string;
+  strategyIds?: string[]; // Optional: test specific strategies only
 }
 
 export interface StartBatchBacktestResponse {
@@ -78,6 +79,7 @@ export const batchBacktestApi = {
     const response = await apiClient.post<StartBatchBacktestResponse>('/batch-backtest', {
       analysisId: request.analysisId,
       backtestSetId: request.backtestSetId,
+      strategyIds: request.strategyIds,
     });
     return response.data;
   },

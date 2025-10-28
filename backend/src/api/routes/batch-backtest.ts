@@ -22,7 +22,7 @@ const router = Router();
  */
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { analysisId, backtestSetId } = req.body;
+    const { analysisId, backtestSetId, strategyIds } = req.body;
 
     if (!analysisId || !backtestSetId) {
       return res.status(400).json({
@@ -30,11 +30,16 @@ router.post('/', async (req: Request, res: Response) => {
       });
     }
 
-    logger.info(`🚀 Starting batch backtest: analysis=${analysisId}, set=${backtestSetId}`);
+    if (strategyIds && strategyIds.length > 0) {
+      logger.info(`🚀 Starting batch backtest: analysis=${analysisId}, set=${backtestSetId}, strategies=${strategyIds.length}`);
+    } else {
+      logger.info(`🚀 Starting batch backtest: analysis=${analysisId}, set=${backtestSetId}`);
+    }
 
     const result = await batchBacktestService.startBatchBacktest({
       analysisId,
-      backtestSetId
+      backtestSetId,
+      strategyIds
     });
 
     res.json(result);
