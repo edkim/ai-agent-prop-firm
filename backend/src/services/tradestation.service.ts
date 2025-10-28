@@ -9,19 +9,17 @@ import qs from 'qs';
 import { getDatabase } from '../database/db';
 import logger from './logger.service';
 
-const TRADESTATION_API_KEY = process.env.TRADESTATION_API_KEY;
-const TRADESTATION_API_SECRET = process.env.TRADESTATION_API_SECRET;
-const TRADESTATION_REDIRECT_URI = process.env.TRADESTATION_REDIRECT_URI || 'http://localhost:3000/auth/callback';
-const TRADESTATION_ACCOUNT_ID = process.env.TRADESTATION_ACCOUNT_ID;
-
-// TradeStation API endpoints
-const API_BASE_URL = process.env.TRADESTATION_ENV === 'live'
+// Helper functions to get environment variables at runtime
+const getApiKey = () => process.env.TRADESTATION_API_KEY;
+const getApiSecret = () => process.env.TRADESTATION_API_SECRET;
+const getRedirectUri = () => process.env.TRADESTATION_REDIRECT_URI || 'http://localhost:3000/auth/callback';
+const getAccountId = () => process.env.TRADESTATION_ACCOUNT_ID;
+const getApiBaseUrl = () => process.env.TRADESTATION_ENV === 'live'
   ? 'https://api.tradestation.com/v3'
-  : 'https://sim-api.tradestation.com/v3'; // Paper trading (simulation)
-
-const AUTH_BASE_URL = process.env.TRADESTATION_ENV === 'live'
+  : 'https://sim-api.tradestation.com/v3';
+const getAuthBaseUrl = () => process.env.TRADESTATION_ENV === 'live'
   ? 'https://signin.tradestation.com'
-  : 'https://sim-signin.tradestation.com'; // Paper trading auth
+  : 'https://sim-signin.tradestation.com';
 
 interface AuthTokens {
   access_token: string;
@@ -81,7 +79,7 @@ class TradestationService {
 
   constructor() {
     this.apiClient = axios.create({
-      baseURL: API_BASE_URL,
+      baseURL: getApiBaseUrl(),
       headers: {
         'Content-Type': 'application/json'
       }
@@ -109,22 +107,22 @@ class TradestationService {
    * Get OAuth authorization URL
    */
   getAuthorizationUrl(state: string): string {
-    if (!TRADESTATION_API_KEY) {
+    if (!getApiKey()) {
       throw new Error('TRADESTATION_API_KEY not configured');
     }
 
     const params = new URLSearchParams({
       response_type: 'code',
-      client_id: TRADESTATION_API_KEY,
-      redirect_uri: TRADESTATION_REDIRECT_URI,
+      client_id: getApiKey()!,
+      redirect_uri: getRedirectUri(),
       scope: 'openid profile MarketData ReadAccount Trade',
       state
     });
 
-    const authUrl = `${AUTH_BASE_URL}/authorize?${params.toString()}`;
+    const authUrl = `${getAuthBaseUrl()}/authorize?${params.toString()}`;
 
     logger.info('📝 Generated TradeStation authorization URL');
-    logger.info(`   Redirect URI: ${TRADESTATION_REDIRECT_URI}`);
+    logger.info(`   Redirect URI: ${getRedirectUri()}`);
     logger.info(`   State: ${state}`);
 
     return authUrl;
@@ -134,7 +132,7 @@ class TradestationService {
    * Exchange authorization code for access token
    */
   async authenticate(authorizationCode: string): Promise<void> {
-    if (!TRADESTATION_API_KEY || !TRADESTATION_API_SECRET) {
+    if (!getApiKey() || !getApiSecret()) {
       throw new Error('TradeStation API credentials not configured');
     }
 
@@ -142,13 +140,13 @@ class TradestationService {
       logger.info('🔐 Authenticating with TradeStation...');
 
       const response = await axios.post(
-        `${AUTH_BASE_URL}/oauth/token`,
+        `${getAuthBaseUrl()}/oauth/token`,
         qs.stringify({
           grant_type: 'authorization_code',
           code: authorizationCode,
-          client_id: TRADESTATION_API_KEY,
-          client_secret: TRADESTATION_API_SECRET,
-          redirect_uri: TRADESTATION_REDIRECT_URI
+          client_id: getApiKey(),
+          client_secret: getApiSecret(),
+          redirect_uri: getRedirectUri()
         }),
         {
           headers: {
@@ -186,7 +184,7 @@ class TradestationService {
       throw new Error('No refresh token available');
     }
 
-    if (!TRADESTATION_API_KEY || !TRADESTATION_API_SECRET) {
+    if (!getApiKey() || !getApiSecret()) {
       throw new Error('TradeStation API credentials not configured');
     }
 
@@ -194,12 +192,12 @@ class TradestationService {
       logger.info('🔄 Refreshing TradeStation access token...');
 
       const response = await axios.post(
-        `${AUTH_BASE_URL}/oauth/token`,
+        `${getAuthBaseUrl()}/oauth/token`,
         qs.stringify({
           grant_type: 'refresh_token',
           refresh_token: this.tokens.refresh_token,
-          client_id: TRADESTATION_API_KEY,
-          client_secret: TRADESTATION_API_SECRET
+          client_id: getApiKey(),
+          client_secret: getApiSecret()
         }),
         {
           headers: {
@@ -328,7 +326,7 @@ class TradestationService {
    */
   async getAccount(): Promise<Account> {
     try {
-      const accountId = TRADESTATION_ACCOUNT_ID;
+      const accountId = getAccountId();
 
       if (!accountId) {
         throw new Error('TRADESTATION_ACCOUNT_ID not configured');
@@ -358,7 +356,7 @@ class TradestationService {
    */
   async getPositions(): Promise<Position[]> {
     try {
-      const accountId = TRADESTATION_ACCOUNT_ID;
+      const accountId = getAccountId();
 
       if (!accountId) {
         throw new Error('TRADESTATION_ACCOUNT_ID not configured');
@@ -389,7 +387,7 @@ class TradestationService {
    */
   async placeOrder(request: PlaceOrderRequest): Promise<Order> {
     try {
-      const accountId = TRADESTATION_ACCOUNT_ID;
+      const accountId = getAccountId();
 
       if (!accountId) {
         throw new Error('TRADESTATION_ACCOUNT_ID not configured');
@@ -511,7 +509,7 @@ class TradestationService {
 
     return {
       authenticated: this.isAuthenticated(),
-      accountId: TRADESTATION_ACCOUNT_ID,
+      accountId: getAccountId(),
       expiresIn
     };
   }
