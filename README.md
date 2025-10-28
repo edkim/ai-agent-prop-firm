@@ -1,10 +1,10 @@
 # AI-Powered Algorithmic Trading Backtest Platform
 
-A sophisticated backtesting and pattern discovery platform combining AI-powered script generation, natural language query support, and intelligent strategy analysis for algorithmic trading.
+A sophisticated backtesting, pattern discovery, and **autonomous trading platform** combining AI-powered script generation, natural language query support, and intelligent strategy analysis for algorithmic trading.
 
 ## 🚀 Overview
 
-This platform enables traders to discover, backtest, and validate trading strategies using natural language queries and AI-generated code. It combines traditional SQL-based pattern scanning with Claude AI for complex temporal pattern detection and custom strategy generation.
+This platform enables traders to discover, backtest, and validate trading strategies using natural language queries and AI-generated code. It combines traditional SQL-based pattern scanning with Claude AI for complex temporal pattern detection, custom strategy generation, and **real-time autonomous trading**.
 
 ### Key Capabilities
 
@@ -14,8 +14,369 @@ This platform enables traders to discover, backtest, and validate trading strate
 - 🔍 **Pattern Analysis** - Sample sets management for tracking and validating discovered patterns
 - 💾 **Script Persistence** - All AI-generated code saved with metadata for audit trail and reuse
 - 📈 **Real Market Data** - Polygon.io integration for intraday and daily data
+- 🎯 **Autonomous Trading Agents** - AI-powered agents for real-time pattern detection and trade execution
+- 🛡️ **Risk Management** - Multi-layer risk checks with configurable limits per agent
+- 📱 **Paper Trading** - TradeStation integration for live market testing
 
-## ✨ What's New (Phase 4)
+## ✨ What's New
+
+### Phase 5: Autonomous Trading Agents (2025-10-28) 🆕
+
+**Agent Brain - Real-Time Decision Making**
+
+The platform now includes autonomous trading agents that detect patterns in real-time and execute trades automatically with Claude AI analysis and comprehensive risk management.
+
+#### Core Services
+
+1. **RealtimeScannerService** - Pattern Detection Engine
+   - 6 pattern types: Breakout with Volume Surge, Gap and Go, Cup and Handle, Bull Flag, VWAP Bounce, Momentum Surge
+   - Technical indicators: RSI, VWAP, Volume Ratio, ATR, SMA (20, 50)
+   - Multi-timeframe confirmation (1m, 5m, 15m)
+   - Pattern quality scoring (0-100)
+   - Signal deduplication (5-minute window)
+
+2. **TradeOptimizerService** - AI Trade Analyzer
+   - Claude Vision API integration for chart analysis
+   - Position sizing with Kelly Criterion
+   - Stop loss/take profit calculations
+   - Correlation checking with existing positions
+   - Fallback rule-based analysis if Claude API fails
+
+3. **ExecutionEngineService** - Risk Checks & Execution
+   - 6 risk checks: Position size, Portfolio exposure, Daily loss limit, Concurrent positions, Confidence score, Correlation
+   - TradeStation API order placement
+   - Portfolio state tracking
+   - Trade lifecycle management (entry/exit)
+   - Activity logging for full audit trail
+
+#### Agent Configuration
+
+```typescript
+{
+  "name": "Breakout Hunter",
+  "accountId": "SIM3113503M",  // TradeStation paper trading
+  "timeframe": "intraday",
+  "strategies": ["breakout-volume-surge", "gap-and-go"],
+  "riskLimits": {
+    "maxPositionSize": 10000,        // Max $ per trade
+    "maxPortfolioExposure": 50,      // Max % of capital deployed
+    "maxDailyLoss": 500,              // Stop trading if hit
+    "maxConcurrentPositions": 5,     // Max open positions
+    "minConfidenceScore": 70,        // Min AI confidence (0-100)
+    "maxCorrelation": 0.7            // Max correlation with existing positions
+  }
+}
+```
+
+#### API Endpoints
+
+**Agent Management:**
+- `POST /api/agents` - Create new trading agent
+- `GET /api/agents` - List all agents
+- `GET /api/agents/:id` - Get agent details + portfolio
+- `PATCH /api/agents/:id` - Update agent configuration
+- `DELETE /api/agents/:id` - Delete agent
+- `POST /api/agents/:id/activate` - Start agent trading
+- `POST /api/agents/:id/deactivate` - Stop agent trading
+
+**Monitoring:**
+- `GET /api/agents/:id/signals` - Live pattern detections
+- `GET /api/agents/:id/recommendations` - AI trade recommendations
+- `GET /api/agents/:id/trades` - Executed trades
+- `GET /api/agents/:id/activity` - Activity log
+- `GET /api/agents/:id/portfolio` - Current portfolio state
+
+**Manual Control:**
+- `POST /api/agents/:id/recommendations/:recommendationId/approve` - Approve trade
+- `POST /api/agents/:id/recommendations/:recommendationId/reject` - Reject trade
+- `POST /api/agents/:id/trades/:tradeId/close` - Close position
+
+#### Data Flow
+
+```
+[TradeStation WebSocket]
+    ↓ Real-time bars
+[RealtimeScannerService]
+    ↓ Pattern detected (scored 0-100)
+[live_signals table] → status='DETECTED'
+    ↓
+[TradeOptimizerService]
+    ↓ Claude analyzes chart + signal + portfolio
+[trade_recommendations table] → status='PENDING'
+    ↓
+[ExecutionEngineService]
+    ↓ Run 6 risk checks
+[risk_checks: PASS/FAIL]
+    ↓ If all pass
+[TradeStation API] → Place order
+    ↓
+[executed_trades table] → status='OPEN'
+    ↓
+[portfolio_state table] → Updated
+```
+
+#### Status
+
+**Phase 1 (Real-Time Foundation):** ✅ Complete
+- TradeStation OAuth integration
+- Account/position/order endpoints
+- Paper trading operational (SIM3113503M)
+- Database schema (9 tables)
+
+**Phase 2 (Agent Brain):** ✅ Complete
+- Pattern recognition engine (6 patterns)
+- AI trade optimizer (Claude Vision)
+- Execution engine (6 risk checks)
+- API routes (14 endpoints)
+
+**Phase 3 (Portfolio Management):** ✅ Complete
+- Position monitoring (real-time, 5-second intervals)
+- Trailing stops (dynamic profit protection)
+- Risk metrics (Sharpe, Sortino, drawdown, win rate)
+- Performance analytics (equity curve, statistics)
+- API routes (21 total endpoints)
+
+**Phase 4 (Agent Dashboard):** ✅ Complete
+- Live trading interface with agent cards
+- Real-time position visualization (5-second refresh)
+- Performance analytics charts (equity, win/loss, drawdowns)
+- Manual trade controls (approve/reject, close, trailing stops)
+- Settings management for risk limits and strategies
+- Multi-agent monitoring and switching
+
+### Phase 4: Agent Dashboard (2025-10-28) 🆕
+
+**Live Trading Interface & Real-Time Monitoring**
+
+Phase 4 delivers a comprehensive frontend dashboard for monitoring and controlling autonomous trading agents in real-time.
+
+#### Dashboard Components
+
+1. **AgentDashboard** - Main Layout
+   - Agent selector with status cards (P&L, active/paused)
+   - Tab navigation (Overview, Positions, Signals, Trades, Performance, Settings)
+   - Real-time portfolio data refresh (every 5 seconds)
+   - Multi-agent support with quick switching
+
+2. **AgentOverview** - Status & Performance Summary
+   - Agent status (active/paused, timeframe, strategies)
+   - Portfolio metrics (equity, cash, P&L, open positions)
+   - Performance metrics (win rate, profit factor, Sharpe ratio, max drawdown)
+   - Risk limits display
+   - Recent activity log (last 10 events)
+   - Quick actions (activate/deactivate, start/stop monitoring)
+
+3. **PositionMonitor** - Open Positions Table
+   - Real-time position data (ticker, side, entry, size, P&L)
+   - Stop loss, take profit, and trailing stop levels
+   - Position duration tracking
+   - Manual close button
+   - Enable/adjust trailing stop button
+   - Color-coded P&L (green/red)
+   - Auto-refresh every 5 seconds
+
+4. **SignalFeed** - Live Pattern Detections
+   - Pending trade recommendations with AI analysis
+   - Signal details (pattern type, quality score, multi-timeframe confirmation)
+   - Trade details (entry, stop, target, position size, confidence)
+   - Risk check results (6 checks with pass/fail status)
+   - Manual approve/reject buttons
+   - Recent signal history with status badges
+
+5. **TradeHistory** - Historical Trades
+   - Trade table with filters (ALL, OPEN, CLOSED)
+   - Summary statistics (total trades, win rate, total P&L, avg win/loss)
+   - Trade details (date, ticker, side, entry/exit, P&L, exit reason, confidence)
+   - Exit reason badges (stop hit, target hit, trailing stop, time exit, manual)
+   - Pattern type display
+   - Sortable columns
+
+6. **PerformanceCharts** - Visual Analytics
+   - Equity curve (line chart)
+   - Win/loss distribution (pie chart)
+   - Average win vs loss (bar chart)
+   - Key metrics cards (total trades, win rate, profit factor, Sharpe ratio)
+   - Risk metrics (max/current drawdown, Sortino ratio)
+   - Position sizing stats (largest win/loss, avg position size)
+
+7. **AgentSettings** - Configuration Management
+   - Basic info (name, timeframe)
+   - Strategy selection (6 available patterns with checkboxes)
+   - Risk limits form (6 configurable limits)
+   - Save/reset buttons
+   - Delete agent button with confirmation
+
+#### User Flows
+
+**Activate Agent:**
+1. Select agent card
+2. Click "Activate" button
+3. Confirm action in modal
+4. Agent status → Active
+5. Monitoring starts automatically
+
+**Manual Trade Execution:**
+1. Signal appears in Signal Feed (status: DETECTED)
+2. AI analyzes → Recommendation appears (status: PENDING)
+3. Review trade details, confidence score, risk checks
+4. Click "Execute Trade" or "Reject"
+5. If approved → Trade appears in Positions tab
+6. Signal status → EXECUTED
+
+**Close Position:**
+1. View position in Positions tab
+2. Click "Close" button
+3. Confirm with current price and estimated P&L
+4. Position closes → Moves to Trade History
+5. Portfolio metrics update
+
+**Enable Trailing Stop:**
+1. Select open position
+2. Click "Enable Trailing" button
+3. Enter trail % and activation %
+4. Trailing stop indicator appears in table
+5. Stop auto-adjusts as price moves favorably
+
+#### Technical Stack
+
+**Frontend:**
+- React 19 with TypeScript
+- TailwindCSS for styling
+- Recharts for performance charts
+- date-fns for time formatting
+- Axios for API calls
+
+**State Management:**
+- React hooks (useState, useEffect)
+- Real-time polling (5-second intervals)
+- Optimistic updates for user actions
+
+**Components Created (8 files):**
+```
+frontend/src/components/TradingAgents/
+├── AgentDashboard.tsx       (360 lines)
+├── AgentOverview.tsx        (280 lines)
+├── PositionMonitor.tsx      (220 lines)
+├── SignalFeed.tsx           (240 lines)
+├── TradeHistory.tsx         (220 lines)
+├── PerformanceCharts.tsx    (240 lines)
+└── AgentSettings.tsx        (260 lines)
+
+frontend/src/services/
+└── tradingAgentApi.ts       (260 lines)
+
+frontend/src/types/
+└── tradingAgent.ts          (180 lines)
+```
+
+#### Status
+
+**Phase 4:** ✅ Complete (8 components, 2,260 lines of code)
+- Full dashboard with 6 tabs
+- Real-time data updates
+- Manual trade controls
+- Performance visualization
+- Settings management
+
+### Phase 6: Portfolio Management (2025-10-28) 🆕
+
+**Real-Time Position Monitoring & Exit Management**
+
+Building on the autonomous trading agent brain, Phase 3 adds comprehensive portfolio management with real-time monitoring, dynamic stop management, and performance analytics.
+
+#### Core Services
+
+1. **PositionMonitorService** - Real-Time Position Monitoring
+   - Monitors all open positions every 5 seconds
+   - 4 exit conditions: Stop loss, Take profit, Trailing stop, Time-based
+   - Real-time portfolio state updates (P&L, equity, exposure)
+   - Slippage protection (max 2% threshold)
+   - Automatic exit execution via TradeStation
+   - Start/stop monitoring per agent
+
+2. **TrailingStopService** - Dynamic Profit Protection
+   - Trailing stop activation at profit threshold (default +2%)
+   - High/low water mark tracking
+   - Automatic tightening as price moves favorably
+   - Never widens (only moves in favorable direction)
+   - ATR-based optimal trail percent calculation
+   - Statistics tracking (avg trail%, avg activation profit)
+
+3. **RiskMetricsService** - Performance Analytics
+   - Daily metrics calculation (exposure, P&L, risk, trade stats)
+   - Sharpe ratio (risk-adjusted returns, annualized)
+   - Sortino ratio (downside risk only, annualized)
+   - Maximum drawdown & current drawdown tracking
+   - Win rate, profit factor, avg win/loss
+   - Equity curve generation for charting
+   - Auto-update after each trade close
+
+#### Exit Priority System
+
+1. **Stop Loss** (highest priority) - Prevent catastrophic loss
+2. **Trailing Stop** - Lock in profits dynamically
+3. **Take Profit** - Capture target gains
+4. **Time Exit** (lowest priority) - Cleanup stale positions
+
+Time-based exit rules:
+- Intraday: Close 5 minutes before market close (3:55 PM ET)
+- Swing: Max 5 trading days
+- Position: Max 20 trading days
+
+#### API Endpoints (7 new)
+
+**Position Monitoring:**
+- `POST /api/agents/:id/monitor/start` - Start monitoring
+- `POST /api/agents/:id/monitor/stop` - Stop monitoring
+
+**Trailing Stops:**
+- `POST /api/agents/:id/trades/:tradeId/trailing-stop` - Enable trailing stop
+  ```json
+  {
+    "trailPercent": 5,
+    "activationPercent": 2
+  }
+  ```
+
+**Risk Metrics:**
+- `GET /api/agents/:id/metrics` - Get metrics for date range
+- `GET /api/agents/:id/metrics/latest` - Get latest daily metrics
+- `GET /api/agents/:id/equity-curve` - Get equity curve data
+- `POST /api/agents/:id/metrics/calculate` - Manually calculate metrics
+
+#### Performance Metrics
+
+**Calculated Metrics:**
+- Exposure: Total, max position, avg position
+- P&L: Daily, cumulative, daily %
+- Risk: Max drawdown, current drawdown, Sharpe, Sortino
+- Trade stats: Total, wins, losses, win rate, avg win/loss, largest win/loss, profit factor
+
+**Formulas:**
+```typescript
+// Sharpe Ratio (annualized)
+sharpeRatio = (avgDailyReturn * 252) / (stdDev * sqrt(252))
+
+// Sortino Ratio (downside deviation only)
+sortinoRatio = (avgDailyReturn * 252) / (downsideStdDev * sqrt(252))
+
+// Max Drawdown
+maxDrawdown = max((peak - trough) / peak) * 100
+
+// Profit Factor
+profitFactor = totalWins / totalLosses
+```
+
+#### Status
+
+**Phase 3:** ✅ Complete (3 services, 1,340 lines of code)
+- PositionMonitorService: Real-time monitoring, 4 exit types
+- TrailingStopService: Dynamic stop management
+- RiskMetricsService: Full performance analytics
+
+**API Growth:** 14 → 21 endpoints (+50%)
+
+### Phase 4: Visual Analysis & Chart Generation (2025-10-26)
 
 ### Claude Visual AI Analysis (2025-10-26)
 - **🎨 Visual pattern recognition** using Claude Vision API
