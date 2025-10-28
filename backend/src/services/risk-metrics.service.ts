@@ -4,7 +4,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { DatabaseService } from './database.service';
+import { getDatabase } from '../database/db';
 import { TradingAgentService } from './trading-agent.service';
 import { RiskMetrics, ExecutedTrade } from '../types/trading-agent.types';
 
@@ -16,11 +16,11 @@ interface DailyReturn {
 }
 
 export class RiskMetricsService {
-  private db: DatabaseService;
+  private db: any; // sqlite3.Database
   private tradingAgentService: TradingAgentService;
 
   constructor() {
-    this.db = new DatabaseService();
+    this.db = getDatabase();
     this.tradingAgentService = new TradingAgentService();
   }
 

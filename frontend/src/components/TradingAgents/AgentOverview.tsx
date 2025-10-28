@@ -39,9 +39,11 @@ export default function AgentOverview({ agent, portfolio, onRefresh }: AgentOver
         }),
       ]);
       setMetrics(metricsData);
-      setActivity(activityData);
+      // Ensure activityData is always an array
+      setActivity(Array.isArray(activityData) ? activityData : []);
     } catch (err) {
       console.error('Failed to load agent data:', err);
+      setActivity([]); // Ensure activity is always an array
     } finally {
       setLoading(false);
     }
