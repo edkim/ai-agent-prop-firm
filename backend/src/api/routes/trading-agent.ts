@@ -739,9 +739,33 @@ router.get('/:id/metrics/latest', async (req: Request, res: Response) => {
     const metrics = await riskMetricsService.getLatestMetrics(id);
 
     if (!metrics) {
-      return res.status(404).json({
-        error: 'No metrics found'
-      });
+      // Return default zero metrics for new agents without trade history
+      const defaultMetrics = {
+        id: 'default',
+        agentId: id,
+        metricDate: new Date(),
+        totalExposure: 0,
+        maxPositionSize: 0,
+        avgPositionSize: 0,
+        dailyPnL: 0,
+        dailyPnLPercent: 0,
+        cumulativePnL: 0,
+        maxDrawdown: 0,
+        currentDrawdown: 0,
+        sharpeRatio: 0,
+        sortinoRatio: 0,
+        totalTrades: 0,
+        winningTrades: 0,
+        losingTrades: 0,
+        winRate: 0,
+        avgWin: 0,
+        avgLoss: 0,
+        largestWin: 0,
+        largestLoss: 0,
+        profitFactor: 0,
+        createdAt: new Date()
+      };
+      return res.json(defaultMetrics);
     }
 
     res.json(metrics);

@@ -19,7 +19,7 @@ export default function PositionMonitor({ agentId }: PositionMonitorProps) {
 
   useEffect(() => {
     loadPositions();
-    const interval = setInterval(loadPositions, 5000); // Refresh every 5 seconds
+    const interval = setInterval(loadPositions, 15000); // Refresh every 15 seconds
     return () => clearInterval(interval);
   }, [agentId]);
 
