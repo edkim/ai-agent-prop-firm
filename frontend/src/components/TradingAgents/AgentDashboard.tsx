@@ -59,19 +59,27 @@ export default function AgentDashboard() {
     try {
       setLoading(true);
       const data = await tradingAgentApi.getAllAgents();
-      setAgents(data);
-      if (data.length > 0 && !selectedAgentId) {
-        setSelectedAgentId(data[0].id);
+      // Ensure data is an array
+      if (Array.isArray(data)) {
+        setAgents(data);
+        if (data.length > 0 && !selectedAgentId) {
+          setSelectedAgentId(data[0].id);
+        }
+      } else {
+        console.error('API returned non-array data:', data);
+        setAgents([]);
       }
       setError(null);
     } catch (err: any) {
+      console.error('Failed to load agents:', err);
       setError(err.message || 'Failed to load agents');
+      setAgents([]); // Ensure agents is always an array
     } finally {
       setLoading(false);
     }
   };
 
-  const selectedAgent = agents.find(a => a.id === selectedAgentId);
+  const selectedAgent = Array.isArray(agents) ? agents.find(a => a.id === selectedAgentId) : null;
   const selectedPortfolio = selectedAgentId ? portfolios[selectedAgentId] : null;
 
   if (loading) {
