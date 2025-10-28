@@ -129,11 +129,116 @@ The platform now includes autonomous trading agents that detect patterns in real
 - Execution engine (6 risk checks)
 - API routes (14 endpoints)
 
-**Next Phase (Portfolio Management):**
-- Position monitoring
-- Trailing stops
-- Time-based exits
-- Real-time P&L tracking
+**Phase 3 (Portfolio Management):** ✅ Complete
+- Position monitoring (real-time, 5-second intervals)
+- Trailing stops (dynamic profit protection)
+- Risk metrics (Sharpe, Sortino, drawdown, win rate)
+- Performance analytics (equity curve, statistics)
+- API routes (21 total endpoints)
+
+**Next Phase (Agent Dashboard):**
+- Live trading interface
+- Real-time position visualization
+- Performance analytics charts
+- Manual trade controls
+
+### Phase 6: Portfolio Management (2025-10-28) 🆕
+
+**Real-Time Position Monitoring & Exit Management**
+
+Building on the autonomous trading agent brain, Phase 3 adds comprehensive portfolio management with real-time monitoring, dynamic stop management, and performance analytics.
+
+#### Core Services
+
+1. **PositionMonitorService** - Real-Time Position Monitoring
+   - Monitors all open positions every 5 seconds
+   - 4 exit conditions: Stop loss, Take profit, Trailing stop, Time-based
+   - Real-time portfolio state updates (P&L, equity, exposure)
+   - Slippage protection (max 2% threshold)
+   - Automatic exit execution via TradeStation
+   - Start/stop monitoring per agent
+
+2. **TrailingStopService** - Dynamic Profit Protection
+   - Trailing stop activation at profit threshold (default +2%)
+   - High/low water mark tracking
+   - Automatic tightening as price moves favorably
+   - Never widens (only moves in favorable direction)
+   - ATR-based optimal trail percent calculation
+   - Statistics tracking (avg trail%, avg activation profit)
+
+3. **RiskMetricsService** - Performance Analytics
+   - Daily metrics calculation (exposure, P&L, risk, trade stats)
+   - Sharpe ratio (risk-adjusted returns, annualized)
+   - Sortino ratio (downside risk only, annualized)
+   - Maximum drawdown & current drawdown tracking
+   - Win rate, profit factor, avg win/loss
+   - Equity curve generation for charting
+   - Auto-update after each trade close
+
+#### Exit Priority System
+
+1. **Stop Loss** (highest priority) - Prevent catastrophic loss
+2. **Trailing Stop** - Lock in profits dynamically
+3. **Take Profit** - Capture target gains
+4. **Time Exit** (lowest priority) - Cleanup stale positions
+
+Time-based exit rules:
+- Intraday: Close 5 minutes before market close (3:55 PM ET)
+- Swing: Max 5 trading days
+- Position: Max 20 trading days
+
+#### API Endpoints (7 new)
+
+**Position Monitoring:**
+- `POST /api/agents/:id/monitor/start` - Start monitoring
+- `POST /api/agents/:id/monitor/stop` - Stop monitoring
+
+**Trailing Stops:**
+- `POST /api/agents/:id/trades/:tradeId/trailing-stop` - Enable trailing stop
+  ```json
+  {
+    "trailPercent": 5,
+    "activationPercent": 2
+  }
+  ```
+
+**Risk Metrics:**
+- `GET /api/agents/:id/metrics` - Get metrics for date range
+- `GET /api/agents/:id/metrics/latest` - Get latest daily metrics
+- `GET /api/agents/:id/equity-curve` - Get equity curve data
+- `POST /api/agents/:id/metrics/calculate` - Manually calculate metrics
+
+#### Performance Metrics
+
+**Calculated Metrics:**
+- Exposure: Total, max position, avg position
+- P&L: Daily, cumulative, daily %
+- Risk: Max drawdown, current drawdown, Sharpe, Sortino
+- Trade stats: Total, wins, losses, win rate, avg win/loss, largest win/loss, profit factor
+
+**Formulas:**
+```typescript
+// Sharpe Ratio (annualized)
+sharpeRatio = (avgDailyReturn * 252) / (stdDev * sqrt(252))
+
+// Sortino Ratio (downside deviation only)
+sortinoRatio = (avgDailyReturn * 252) / (downsideStdDev * sqrt(252))
+
+// Max Drawdown
+maxDrawdown = max((peak - trough) / peak) * 100
+
+// Profit Factor
+profitFactor = totalWins / totalLosses
+```
+
+#### Status
+
+**Phase 3:** ✅ Complete (3 services, 1,340 lines of code)
+- PositionMonitorService: Real-time monitoring, 4 exit types
+- TrailingStopService: Dynamic stop management
+- RiskMetricsService: Full performance analytics
+
+**API Growth:** 14 → 21 endpoints (+50%)
 
 ### Phase 4: Visual Analysis & Chart Generation (2025-10-26)
 
