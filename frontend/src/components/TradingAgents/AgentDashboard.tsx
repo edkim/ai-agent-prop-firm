@@ -51,7 +51,7 @@ export default function AgentDashboard() {
     };
 
     refreshPortfolios();
-    const interval = setInterval(refreshPortfolios, 5000);
+    const interval = setInterval(refreshPortfolios, 15000); // Refresh every 15 seconds
     return () => clearInterval(interval);
   }, [agents]);
 

@@ -5,7 +5,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { getDatabase } from '../database/db';
-import { TradingAgentService } from './trading-agent.service';
+import tradingAgentService from './trading-agent.service';
 import { RiskMetrics, ExecutedTrade } from '../types/trading-agent.types';
 
 interface DailyReturn {
@@ -16,12 +16,8 @@ interface DailyReturn {
 }
 
 export class RiskMetricsService {
-  private db: any; // sqlite3.Database
-  private tradingAgentService: TradingAgentService;
-
-  constructor() {
-    this.db = getDatabase();
-    this.tradingAgentService = new TradingAgentService();
+  private get tradingAgentService() {
+    return tradingAgentService;
   }
 
   /**
@@ -32,7 +28,7 @@ export class RiskMetricsService {
       const dateStr = date.toISOString().split('T')[0];
 
       // Get all trades closed on this date
-      const closedTrades = await this.getClosedTradesForDate(agentId, dateStr);
+      const closedTrades = this.getClosedTradesForDate(agentId, dateStr);
 
       // Get portfolio state for this date
       const portfolioState = await this.tradingAgentService.getPortfolioState(agentId);
@@ -48,7 +44,7 @@ export class RiskMetricsService {
       const pnlMetrics = this.calculatePnLMetrics(closedTrades, portfolioState);
 
       // Calculate risk metrics
-      const riskMetricsData = await this.calculateRiskMetrics(agentId, dateStr);
+      const riskMetricsData = this.calculateRiskMetrics(agentId, dateStr);
 
       // Calculate trade statistics
       const tradeStats = this.calculateTradeStatistics(closedTrades);
@@ -90,7 +86,7 @@ export class RiskMetricsService {
       };
 
       // Save to database
-      await this.saveMetrics(metrics);
+      this.saveMetrics(metrics);
 
       console.log(`[RiskMetrics] 📊 Calculated daily metrics for ${agentId} on ${dateStr}`);
 
@@ -131,11 +127,12 @@ export class RiskMetricsService {
   /**
    * Get metrics for a date range
    */
-  async getMetrics(
+  getMetrics(
     agentId: string,
     startDate: Date,
     endDate: Date
-  ): Promise<RiskMetrics[]> {
+  ): RiskMetrics[] {
+    const db = getDatabase();
     const startStr = startDate.toISOString().split('T')[0];
     const endStr = endDate.toISOString().split('T')[0];
 
@@ -147,7 +144,7 @@ export class RiskMetricsService {
       ORDER BY metric_date DESC
     `;
 
-    const rows = await this.db.all(query, [agentId, startStr, endStr]);
+    const rows = db.prepare(query).all(agentId, startStr, endStr) as any[];
 
     return rows.map(row => this.rowToMetrics(row));
   }
@@ -155,7 +152,8 @@ export class RiskMetricsService {
   /**
    * Get latest metrics for an agent
    */
-  async getLatestMetrics(agentId: string): Promise<RiskMetrics | null> {
+  getLatestMetrics(agentId: string): RiskMetrics | null {
+    const db = getDatabase();
     const query = `
       SELECT * FROM risk_metrics
       WHERE agent_id = ?
@@ -163,7 +161,7 @@ export class RiskMetricsService {
       LIMIT 1
     `;
 
-    const row = await this.db.get(query, [agentId]);
+    const row = db.prepare(query).get(agentId) as any;
 
     return row ? this.rowToMetrics(row) : null;
   }
@@ -171,11 +169,12 @@ export class RiskMetricsService {
   /**
    * Get equity curve data for charting
    */
-  async getEquityCurve(
+  getEquityCurve(
     agentId: string,
     startDate: Date,
     endDate: Date
-  ): Promise<DailyReturn[]> {
+  ): DailyReturn[] {
+    const db = getDatabase();
     const startStr = startDate.toISOString().split('T')[0];
     const endStr = endDate.toISOString().split('T')[0];
 
@@ -192,7 +191,7 @@ export class RiskMetricsService {
       ORDER BY metric_date ASC
     `;
 
-    const rows = await this.db.all(query, [agentId, agentId, startStr, endStr]);
+    const rows = db.prepare(query).all(agentId, agentId, startStr, endStr) as any[];
 
     return rows.map(row => ({
       date: new Date(row.date),
@@ -263,17 +262,17 @@ export class RiskMetricsService {
   /**
    * Calculate risk metrics (Sharpe, Sortino, Drawdown)
    */
-  private async calculateRiskMetrics(
+  private calculateRiskMetrics(
     agentId: string,
     currentDate: string
-  ): Promise<{
+  ): {
     maxDrawdown: number;
     currentDrawdown: number;
     sharpeRatio: number;
     sortinoRatio: number;
-  }> {
+  } {
     // Get historical equity curve
-    const equityCurve = await this.getHistoricalEquity(agentId, currentDate);
+    const equityCurve = this.getHistoricalEquity(agentId, currentDate);
 
     if (equityCurve.length < 2) {
       return {
@@ -461,10 +460,11 @@ export class RiskMetricsService {
   /**
    * Get historical equity curve
    */
-  private async getHistoricalEquity(
+  private getHistoricalEquity(
     agentId: string,
     endDate: string
-  ): Promise<number[]> {
+  ): number[] {
+    const db = getDatabase();
     const query = `
       SELECT
         metric_date,
@@ -475,7 +475,7 @@ export class RiskMetricsService {
       ORDER BY metric_date ASC
     `;
 
-    const rows = await this.db.all(query, [agentId, agentId, endDate]);
+    const rows = db.prepare(query).all(agentId, agentId, endDate) as any[];
 
     return rows.map(row => row.equity || 0);
   }
@@ -483,10 +483,11 @@ export class RiskMetricsService {
   /**
    * Get closed trades for a specific date
    */
-  private async getClosedTradesForDate(
+  private getClosedTradesForDate(
     agentId: string,
     dateStr: string
-  ): Promise<ExecutedTrade[]> {
+  ): ExecutedTrade[] {
+    const db = getDatabase();
     const query = `
       SELECT * FROM executed_trades
       WHERE agent_id = ?
@@ -495,7 +496,7 @@ export class RiskMetricsService {
       ORDER BY exit_time ASC
     `;
 
-    const rows = await this.db.all(query, [agentId, dateStr]);
+    const rows = db.prepare(query).all(agentId, dateStr) as any[];
 
     return rows.map(row => ({
       id: row.id,
@@ -528,14 +529,15 @@ export class RiskMetricsService {
   /**
    * Get metrics by date
    */
-  private async getMetricsByDate(agentId: string, dateStr: string): Promise<RiskMetrics | null> {
+  private getMetricsByDate(agentId: string, dateStr: string): RiskMetrics | null {
+    const db = getDatabase();
     const query = `
       SELECT * FROM risk_metrics
       WHERE agent_id = ?
         AND metric_date = ?
     `;
 
-    const row = await this.db.get(query, [agentId, dateStr]);
+    const row = db.prepare(query).get(agentId, dateStr) as any;
 
     return row ? this.rowToMetrics(row) : null;
   }
@@ -543,7 +545,8 @@ export class RiskMetricsService {
   /**
    * Save metrics to database
    */
-  private async saveMetrics(metrics: RiskMetrics): Promise<void> {
+  private saveMetrics(metrics: RiskMetrics): void {
+    const db = getDatabase();
     const query = `
       INSERT OR REPLACE INTO risk_metrics (
         id, agent_id, metric_date,
@@ -556,7 +559,7 @@ export class RiskMetricsService {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    await this.db.run(query, [
+    db.prepare(query).run(
       metrics.id,
       metrics.agentId,
       metrics.metricDate.toISOString().split('T')[0],
@@ -580,7 +583,7 @@ export class RiskMetricsService {
       metrics.largestLoss,
       metrics.profitFactor,
       metrics.createdAt.toISOString()
-    ]);
+    );
   }
 
   /**

@@ -22,17 +22,14 @@ export default function AgentOverview({ agent, portfolio, onRefresh }: AgentOver
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 5000); // Refresh every 5 seconds
+    const interval = setInterval(loadData, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
   }, [agent.id]);
 
   const loadData = async () => {
     try {
       const [metricsData, activityData] = await Promise.all([
-        tradingAgentApi.getLatestMetrics(agent.id).catch((err) => {
-          console.log('No metrics available yet (this is normal for new agents):', err.message);
-          return null;
-        }),
+        tradingAgentApi.getLatestMetrics(agent.id),
         tradingAgentApi.getActivity(agent.id, { limit: 10 }).catch((err) => {
           console.log('No activity available yet:', err.message);
           return [];

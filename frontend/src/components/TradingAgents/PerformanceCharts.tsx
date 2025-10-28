@@ -28,10 +28,7 @@ export default function PerformanceCharts({ agentId }: PerformanceChartsProps) {
           console.log('No equity curve data yet:', err.message);
           return [];
         }),
-        tradingAgentApi.getLatestMetrics(agentId).catch((err) => {
-          console.log('No metrics available yet:', err.message);
-          return null;
-        }),
+        tradingAgentApi.getLatestMetrics(agentId),
       ]);
       setEquityCurve(curveData);
       setMetrics(metricsData);
