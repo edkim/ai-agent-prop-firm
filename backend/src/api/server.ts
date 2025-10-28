@@ -17,6 +17,7 @@ import backtestSetsRoutes from './routes/backtest-sets';
 import chartsRoutes from './routes/charts';
 import claudeAnalysisRoutes from './routes/claude-analysis';
 import batchBacktestRoutes from './routes/batch-backtest';
+import tradingAgentRoutes from './routes/trading-agent';
 
 // Load environment variables
 // Resolve to project root (one level up from backend/)
@@ -52,6 +53,7 @@ app.use('/api/backtest-sets', backtestSetsRoutes);
 app.use('/api/charts', chartsRoutes);
 app.use('/api/analysis', claudeAnalysisRoutes);
 app.use('/api/batch-backtest', batchBacktestRoutes);
+app.use('/api/agents', tradingAgentRoutes);
 
 // Error handling middleware
 app.use((err: Error, _req: Request, res: Response, _next: any) => {
