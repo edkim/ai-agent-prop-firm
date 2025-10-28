@@ -34,8 +34,8 @@ export const tradingAgentApi = {
    * Get all trading agents
    */
   async getAllAgents(): Promise<TradingAgent[]> {
-    const response = await apiClient.get<TradingAgent[]>('/');
-    return response.data;
+    const response = await apiClient.get<{ agents: TradingAgent[] }>('/');
+    return response.data.agents;
   },
 
   /**
