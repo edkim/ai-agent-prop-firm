@@ -288,7 +288,7 @@ export default function BacktestSets({
                     {sample.ticker}
                   </div>
                   <div className="text-xs text-gray-500">
-                    {sample.start_date} - {sample.end_date}
+                    {sample.end_date}
                   </div>
                 </div>
                 <button

@@ -118,17 +118,18 @@ export default function AnalysisModal({ backtestSetId, sampleIds, onClose }: Ana
     poll();
   };
 
-  const handleBatchBacktest = async () => {
+  const handleBatchBacktest = async (strategyId?: string) => {
     if (!analysisResult) return;
 
     setBatchBacktesting(true);
     setError(null);
 
     try {
-      // Start batch backtest
+      // Start batch backtest (all strategies or single strategy)
       const result = await batchBacktestApi.startBatchBacktest({
         analysisId: analysisResult.analysisId,
-        backtestSetId
+        backtestSetId,
+        strategyIds: strategyId ? [strategyId] : undefined
       });
 
       // Poll for progress
@@ -327,38 +328,26 @@ export default function AnalysisModal({ backtestSetId, sampleIds, onClose }: Ana
                     <div className="mb-6">
                       <h4 className="text-md font-semibold text-gray-800 mb-3">Visual Insights</h4>
 
-                      {analysisResult.visual_insights.continuation_signals && (
-                        <div className="mb-4">
-                          <div className="text-sm font-medium text-green-700 mb-2">Continuation Signals:</div>
-                          <ul className="text-sm text-gray-700 list-disc list-inside space-y-1 bg-green-50 p-3 rounded border border-green-200">
-                            {analysisResult.visual_insights.continuation_signals.map((signal: string, i: number) => (
-                              <li key={i}>{signal}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                      {Object.entries(analysisResult.visual_insights).map(([category, items]) => {
+                        if (!Array.isArray(items) || items.length === 0) return null;
 
-                      {analysisResult.visual_insights.exhaustion_signals && (
-                        <div className="mb-4">
-                          <div className="text-sm font-medium text-red-700 mb-2">Exhaustion Signals:</div>
-                          <ul className="text-sm text-gray-700 list-disc list-inside space-y-1 bg-red-50 p-3 rounded border border-red-200">
-                            {analysisResult.visual_insights.exhaustion_signals.map((signal: string, i: number) => (
-                              <li key={i}>{signal}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                        // Format category name (e.g., "pattern_characteristics" -> "Pattern Characteristics")
+                        const categoryLabel = category
+                          .split('_')
+                          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                          .join(' ');
 
-                      {analysisResult.visual_insights.key_observations && (
-                        <div className="mb-4">
-                          <div className="text-sm font-medium text-gray-700 mb-2">Key Observations:</div>
-                          <ul className="text-sm text-gray-700 list-disc list-inside space-y-1 bg-gray-50 p-3 rounded border border-gray-200">
-                            {analysisResult.visual_insights.key_observations.map((obs: string, i: number) => (
-                              <li key={i}>{obs}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                        return (
+                          <div key={category} className="mb-4">
+                            <div className="text-sm font-medium text-gray-700 mb-2">{categoryLabel}:</div>
+                            <ul className="text-sm text-gray-700 list-disc list-inside space-y-1 bg-gray-50 p-3 rounded border border-gray-200">
+                              {items.map((item: string, i: number) => (
+                                <li key={i}>{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 
@@ -437,6 +426,17 @@ export default function AnalysisModal({ backtestSetId, sampleIds, onClose }: Ana
                                     {strategy.exit_conditions.max_hold}
                                   </div>
                                 )}
+                              </div>
+
+                              {/* Individual Strategy Backtest Button */}
+                              <div className="mt-4 pt-3 border-t border-gray-200">
+                                <button
+                                  onClick={() => handleBatchBacktest(strategy.id)}
+                                  disabled={batchBacktesting}
+                                  className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium text-sm transition"
+                                >
+                                  {batchBacktesting ? 'Backtest Running...' : 'Backtest This Strategy'}
+                                </button>
                               </div>
                             </div>
                           </details>

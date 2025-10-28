@@ -365,7 +365,7 @@ class ClaudeAnalysisService {
    * Build comprehensive analysis prompt
    */
   private buildAnalysisPrompt(samples: Sample[]): string {
-    return `You are analyzing stock price charts to discover profitable SHORT-TERM trading strategies.
+    return `You are analyzing stock price charts to discover profitable trading strategies.
 
 I'm showing you ${samples.length} example${samples.length > 1 ? 's' : ''} of similar patterns. For each example, you'll see an intraday chart:
 
@@ -403,17 +403,21 @@ Return your analysis as a JSON object with this structure:
 \`\`\`json
 {
   "visual_insights": {
-    "continuation_signals": [
-      "Large green candles with volume >3x average indicate strong momentum likely to continue",
+    "pattern_characteristics": [
+      "Describe the core visual pattern across the examples",
       "..."
     ],
-    "exhaustion_signals": [
-      "Doji after sustained rally with declining volume = warning sign",
+    "common_signals": [
+      "Key signals that appear consistently",
+      "..."
+    ],
+    "risk_factors": [
+      "Warning signs or conditions that could lead to failure",
       "..."
     ],
     "key_observations": [
-      "Observation 1",
-      "Observation 2"
+      "Other important observations",
+      "..."
     ]
   },
   "strategies": {
@@ -619,6 +623,7 @@ Focus on ACTIONABLE, VISUAL signals that can be coded into backtest scripts. Be 
       status: analysis.analysis_status,
       visual_insights: analysis.visual_insights ? JSON.parse(analysis.visual_insights) : undefined,
       strategies: strategies.map(s => ({
+        id: s.id,
         name: s.name,
         side: s.side,
         entry_conditions: JSON.parse(s.entry_conditions),

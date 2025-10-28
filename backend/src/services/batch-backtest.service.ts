@@ -34,6 +34,7 @@ interface Sample {
 interface BatchBacktestRequest {
   analysisId: string;
   backtestSetId: string;
+  strategyIds?: string[]; // Optional: test specific strategies only
 }
 
 interface BatchBacktestStatus {
@@ -82,13 +83,22 @@ export class BatchBacktestService {
     logger.info(`🚀 Starting batch backtest run ${batchRunId}`);
 
     // Get strategies from analysis
-    const strategies = db.prepare(`
+    let strategies = db.prepare(`
       SELECT * FROM strategy_recommendations
       WHERE analysis_id = ?
     `).all(request.analysisId) as StrategyRecommendation[];
 
     if (strategies.length === 0) {
       throw new Error(`No strategies found for analysis ${request.analysisId}`);
+    }
+
+    // Filter strategies if specific IDs provided
+    if (request.strategyIds && request.strategyIds.length > 0) {
+      strategies = strategies.filter(s => request.strategyIds!.includes(s.id));
+      if (strategies.length === 0) {
+        throw new Error(`No matching strategies found for provided strategyIds`);
+      }
+      logger.info(`  ℹ️  Filtered to ${strategies.length} specific strategy(ies)`);
     }
 
     // Get samples from backtest set

@@ -50,6 +50,7 @@ export interface StrategyExit {
 }
 
 export interface StrategyRecommendation {
+  id: string;
   name: string;
   side: 'long' | 'short';
   entry_conditions: StrategyEntry;
