@@ -225,7 +225,9 @@ export class ScannerService {
       const deduplicatedMap = new Map<string, any>();
 
       for (const match of matches) {
-        const key = `${match.ticker}:${match.end_date}`;
+        // Handle both daily scanners (end_date) and intraday scanners (date)
+        const matchDate = match.end_date || match.date;
+        const key = `${match.ticker}:${matchDate}`;
         const existing = deduplicatedMap.get(key);
 
         // Keep the match with the highest pattern_strength
@@ -243,17 +245,32 @@ export class ScannerService {
       const scanMatches: ScanMatch[] = [];
 
       for (const match of uniqueMatches) {
+        const matchDate = match.end_date || match.date;
+
         // Fetch the actual daily metrics for this ticker/date
         const db = (await import('../database/db')).getDatabase();
         const metrics = db.prepare(
           'SELECT * FROM daily_metrics WHERE ticker = ? AND date = ?'
-        ).get(match.ticker, match.end_date) as DailyMetrics | undefined;
+        ).get(match.ticker, matchDate) as DailyMetrics | undefined;
 
         if (metrics) {
           scanMatches.push({
             ticker: match.ticker,
-            date: match.end_date,
+            date: matchDate,
             metrics,
+            score: match.pattern_strength || 50
+          });
+        } else {
+          // For intraday scans that don't have daily_metrics, create minimal metrics object
+          scanMatches.push({
+            ticker: match.ticker,
+            date: matchDate,
+            metrics: {
+              ticker: match.ticker,
+              date: matchDate,
+              // Include any metrics from the match itself
+              ...match.metrics
+            } as any,
             score: match.pattern_strength || 50
           });
         }
