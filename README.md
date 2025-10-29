@@ -1,499 +1,370 @@
-# AI-Powered Algorithmic Trading Backtest Platform
+# AI-Powered Algorithmic Trading Platform
 
-A sophisticated backtesting, pattern discovery, and **autonomous trading platform** combining AI-powered script generation, natural language query support, and intelligent strategy analysis for algorithmic trading.
+A sophisticated backtesting, pattern discovery, and **autonomous trading platform** that combines AI-powered script generation, natural language queries, and real-time trading execution with comprehensive risk management.
 
-## 🚀 Overview
+## 🎯 What Makes This Different
 
-This platform enables traders to discover, backtest, and validate trading strategies using natural language queries and AI-generated code. It combines traditional SQL-based pattern scanning with Claude AI for complex temporal pattern detection, custom strategy generation, and **real-time autonomous trading**.
+**Natural Language → Production Trading**
 
-### Key Capabilities
+Describe patterns in plain English → AI generates TypeScript scanners → Finds setups in historical data → Autonomous agents trade them live with risk management.
 
-- 🤖 **AI-Powered Pattern Discovery** - Natural language scanner generates custom TypeScript code for complex pattern detection
-- ⚡ **High-Performance SQL Scanner** - Memory-safe streaming scanner for quick pattern searches across universes
-- 📊 **Dynamic Strategy Generation** - Claude generates custom backtest scripts from plain English descriptions
-- 🔍 **Pattern Analysis** - Sample sets management for tracking and validating discovered patterns
-- 💾 **Script Persistence** - All AI-generated code saved with metadata for audit trail and reuse
-- 📈 **Real Market Data** - Polygon.io integration for intraday and daily data
-- 🎯 **Autonomous Trading Agents** - AI-powered agents for real-time pattern detection and trade execution
-- 🛡️ **Risk Management** - Multi-layer risk checks with configurable limits per agent
+```
+"Find VWAP bounce setups on 5-minute charts with volume confirmation"
+         ↓
+✅ Intraday scanner generated (5min bars, VWAP calculation)
+✅ 10 setups found (CTSH, ETSY, ZM - scores 70-73)
+✅ Ready for autonomous agent execution
+```
+
+## ✨ Latest Updates
+
+### Intraday Pattern Scanner - VWAP Support (2025-10-29) 🆕
+
+**AI-Generated Intraday Scanners Now Fully Operational**
+
+The platform now correctly generates and executes intraday pattern scanners using real 5-minute bar data, enabling sophisticated day trading pattern detection.
+
+#### What's New
+
+1. **Fixed Claude System Prompt** - Intraday Data Enforcement
+   - Added critical warnings about VWAP requiring intraday data
+   - Keyword detection (VWAP, 5-minute, intraday) triggers ohlcv_data usage
+   - Explicit examples showing proper VWAP calculation
+   - Validation checklist prevents daily data approximations
+   - **Result:** Claude now generates proper cumulative VWAP formulas
+
+2. **Scanner API Fixed** - Handles Both Daily & Intraday Results
+   - Updated `scanner.service.ts` to handle `date` field (intraday) and `end_date` field (daily)
+   - Fallback metrics creation when daily_metrics not available
+   - Proper deduplication for intraday time-based matches
+   - **Result:** API returns 10 VWAP setups instead of 0
+
+3. **Data Infrastructure** - Tech Sector Universe
+   - Backfilled 163,871 5-minute bars (30 days, 62 tickers)
+   - Backfilled 15,931 daily bars (1 year, 64 tickers)
+   - Fixed time_of_day field (11,584 bars updated)
+   - Created tech_sector universe (65 S&P Technology stocks)
+   - **Result:** Full intraday data pipeline operational
+
+#### Verified Results
+
+**Test Query:** "Find VWAP bounce setups on 5-minute charts with price bouncing from VWAP support"
+
+**Scanner Generated:**
+- ✅ Uses ohlcv_data table with timeframe='5min'
+- ✅ Calculates true VWAP: `Σ(Typical Price × Volume) / Σ(Volume)`
+- ✅ Filters by time_of_day (10 AM - 3 PM ET)
+- ✅ Detects VWAP touches within 0.3%, volume confirmation 1.2x+
+- ✅ Returns pattern strength scores (0-100)
+
+**Matches Found (Last 5 Days):**
+1. CTSH (Cognizant) - Score 73 - 10/28
+2. ETSY - Score 73 - 10/27
+3. DXC - Score 72 - 10/24
+4. ZM (Zoom) - Score 70 - 10/28
+5. INTC (Intel) - Score 66 - 10/29
+6. ON Semi - Score 65 - 10/29
+
+**Technical Details:**
+- Scan time: 52 seconds
+- Script size: 269 lines
+- Patterns detected: 61 total, top 10 returned
+- Confidence: AI correctly identifies intraday requirements
+
+#### Files Changed
+```
+backend/src/services/claude.service.ts       - Enhanced system prompt (360+ lines)
+backend/src/services/scanner.service.ts      - Fixed API result handling
+backend/backfill-tech-sector-intraday.ts     - Fast parallel 5min backfill
+backend/backfill-tech-sector-daily.ts        - Fast parallel daily backfill
+backend/fix-time-of-day.ts                   - Populated time_of_day field
+backend/create-tech-universe.ts              - Universe setup script
+ai-convo-history/2025-10-29-vwap-bounce-scanner-prompt.md - Documentation
+```
+
+---
+
+## 🚀 Platform Overview
+
+### Core Capabilities
+
+- 🤖 **Natural Language Pattern Discovery** - Describe patterns in English, AI generates TypeScript scanners
+- ⚡ **Dual-Mode Scanning** - Fast SQL queries OR complex AI-generated temporal patterns
+- 📊 **Intraday & Daily Analysis** - 5-minute bars for day trading, daily bars for swing strategies
+- 🎯 **Autonomous Trading Agents** - Real-time pattern detection with AI-powered trade decisions
+- 🛡️ **Comprehensive Risk Management** - Position limits, exposure caps, correlation checks, confidence scoring
+- 📈 **Real Market Data** - Polygon.io integration (5min/daily bars, unlimited API)
 - 📱 **Paper Trading** - TradeStation integration for live market testing
+- 🎨 **Visual AI Analysis** - Claude Vision API for chart pattern recognition
+- 💾 **Full Audit Trail** - All AI-generated scripts saved with metadata
 
-## ✨ What's New
+---
 
-### Phase 5: Autonomous Trading Agents (2025-10-28) 🆕
+## 🏗️ Architecture
 
-**Agent Brain - Real-Time Decision Making**
+### Data Flow: Natural Language → Live Trading
 
-The platform now includes autonomous trading agents that detect patterns in real-time and execute trades automatically with Claude AI analysis and comprehensive risk management.
+```
+[Natural Language Query]
+    "Find VWAP bounces on 5-minute charts"
+         ↓
+[Claude AI - Scanner Generation]
+    → Generates TypeScript scanner
+    → Uses ohlcv_data (5min bars)
+    → Calculates VWAP properly
+         ↓
+[Script Execution]
+    → Runs against historical data
+    → Finds 10 CTSH, ETSY, ZM, INTC setups
+         ↓
+[Trading Agent - Real-Time]
+    → Monitors live 5min bars
+    → Detects same patterns in real-time
+    → AI analyzes charts (Claude Vision)
+         ↓
+[Risk Checks]
+    → Position size < $10K
+    → Portfolio exposure < 50%
+    → Daily loss limit not hit
+    → Confidence > 70%
+    → Correlation < 0.7
+         ↓
+[TradeStation Execution]
+    → Places paper trading order
+    → Monitors position (5-sec intervals)
+    → Trailing stop protection
+    → Auto-exit on conditions
+```
 
-#### Core Services
+### System Components
 
-1. **RealtimeScannerService** - Pattern Detection Engine
-   - 6 pattern types: Breakout with Volume Surge, Gap and Go, Cup and Handle, Bull Flag, VWAP Bounce, Momentum Surge
-   - Technical indicators: RSI, VWAP, Volume Ratio, ATR, SMA (20, 50)
-   - Multi-timeframe confirmation (1m, 5m, 15m)
-   - Pattern quality scoring (0-100)
-   - Signal deduplication (5-minute window)
+**Backend Services (18 services)**
+```typescript
+// Pattern Discovery
+scanner.service.ts           // Dual-mode scanner (SQL + AI)
+claude.service.ts            // Script generation (scanners + strategies)
+script-execution.service.ts  // Safe TypeScript execution
 
-2. **TradeOptimizerService** - AI Trade Analyzer
-   - Claude Vision API integration for chart analysis
-   - Position sizing with Kelly Criterion
-   - Stop loss/take profit calculations
-   - Correlation checking with existing positions
-   - Fallback rule-based analysis if Claude API fails
+// Intraday Data
+polygon-intraday.service.ts  // 5-minute bar fetching
+market-hours.service.ts      // Trading hours validation
+intraday-backfill.service.ts // Bulk data loading
 
-3. **ExecutionEngineService** - Risk Checks & Execution
-   - 6 risk checks: Position size, Portfolio exposure, Daily loss limit, Concurrent positions, Confidence score, Correlation
-   - TradeStation API order placement
-   - Portfolio state tracking
-   - Trade lifecycle management (entry/exit)
-   - Activity logging for full audit trail
+// Autonomous Trading (Phase 2)
+realtime-scanner.service.ts  // Live pattern detection (6 patterns)
+trade-optimizer.service.ts   // AI trade analysis (Claude Vision)
+execution-engine.service.ts  // Risk checks + order placement
 
-#### Agent Configuration
+// Portfolio Management (Phase 3)
+position-monitor.service.ts  // Real-time monitoring (5-sec)
+trailing-stop.service.ts     // Dynamic profit protection
+risk-metrics.service.ts      // Performance analytics
 
+// Analysis & Visualization
+claude-analysis.service.ts   // Visual pattern recognition
+chart-generator.service.ts   // Server-side chart rendering
+backtest-router.service.ts   // Strategy execution routing
+```
+
+**Database Schema**
+```sql
+-- Market Data
+ohlcv_data           -- Intraday (5min) & daily bars
+daily_metrics        -- Computed indicators (RSI, SMA, volume ratios)
+universe             -- Stock groupings (tech_sector, russell2000, us-stocks)
+universe_stocks      -- Universe membership
+
+-- Pattern Discovery
+scan_history         -- Natural language scan cache
+scan_results         -- Pattern matches
+backtest_sets        -- Pattern collections
+claude_analyses      -- AI visual analysis results
+
+-- Autonomous Trading
+trading_agents       -- Agent configurations
+live_signals         -- Real-time pattern detections
+trade_recommendations -- AI trade proposals
+executed_trades      -- Trade lifecycle tracking
+portfolio_state      -- Real-time P&L and positions
+agent_activity_log   -- Full audit trail
+risk_metrics         -- Performance analytics
+```
+
+---
+
+## 📋 Feature Deep Dive
+
+### 1. Natural Language Scanner - Intraday Patterns
+
+**Capability:** Generate custom scanners for complex intraday patterns
+
+**Example Queries:**
+```javascript
+// VWAP Patterns
+"Find VWAP bounce setups on 5-minute charts with price bouncing from VWAP support"
+
+// Opening Range Breakouts
+"Stocks breaking above first 30 minutes high with 2x volume"
+
+// Momentum Continuation
+"5-minute consolidation flags after 5% morning gap with volume drying up"
+
+// Time-of-Day Patterns
+"Afternoon breakouts between 2-3 PM with increasing volume"
+```
+
+**Generated Scanner Features:**
+- Proper timeframe selection (ohlcv_data, timeframe='5min')
+- Cumulative intraday indicators (VWAP, VWAP slope)
+- Time-of-day filtering (market hours, specific windows)
+- Multi-bar pattern detection (10+ bar context)
+- Volume confirmation (ratio vs 20-bar average)
+- Technical filters (RSI, distance from highs, trend alignment)
+- Pattern strength scoring (0-100)
+
+**Execution:**
+```bash
+POST /api/scanner/scan/natural
+{
+  "query": "Find VWAP bounce setups on 5-minute charts...",
+  "universe": "tech_sector",
+  "dateRange": { "start": "2025-10-24", "end": "2025-10-29" }
+}
+
+Response: 10 matches in 52 seconds
+- CTSH: 73, ETSY: 73, DXC: 72, ZM: 70, INTC: 66
+```
+
+### 2. Autonomous Trading Agents
+
+**6 Real-Time Pattern Types:**
+1. Breakout with Volume Surge
+2. Gap and Go
+3. Cup and Handle
+4. Bull Flag
+5. **VWAP Bounce** (newly fixed!)
+6. Momentum Surge
+
+**Agent Configuration:**
 ```typescript
 {
-  "name": "Breakout Hunter",
-  "accountId": "SIM3113503M",  // TradeStation paper trading
-  "timeframe": "intraday",
-  "strategies": ["breakout-volume-surge", "gap-and-go"],
-  "riskLimits": {
-    "maxPositionSize": 10000,        // Max $ per trade
-    "maxPortfolioExposure": 50,      // Max % of capital deployed
-    "maxDailyLoss": 500,              // Stop trading if hit
-    "maxConcurrentPositions": 5,     // Max open positions
-    "minConfidenceScore": 70,        // Min AI confidence (0-100)
-    "maxCorrelation": 0.7            // Max correlation with existing positions
+  name: "VWAP Day Trader",
+  timeframe: "intraday",
+  strategies: ["vwap-bounce"],
+  riskLimits: {
+    maxPositionSize: 10000,        // $10K per trade
+    maxPortfolioExposure: 50,      // 50% capital max
+    maxDailyLoss: 500,              // Stop at -$500/day
+    maxConcurrentPositions: 5,     // 5 positions max
+    minConfidenceScore: 70,        // AI confidence threshold
+    maxCorrelation: 0.7            // Position diversification
   }
 }
 ```
 
-#### API Endpoints
+**Risk Checks (6 layers):**
+1. ✅ Position Size - Within max limit
+2. ✅ Portfolio Exposure - Total deployed capital
+3. ✅ Daily Loss Limit - Circuit breaker
+4. ✅ Concurrent Positions - Diversification
+5. ✅ Confidence Score - AI conviction level
+6. ✅ Correlation - Avoid clustered risk
 
-**Agent Management:**
-- `POST /api/agents` - Create new trading agent
-- `GET /api/agents` - List all agents
-- `GET /api/agents/:id` - Get agent details + portfolio
-- `PATCH /api/agents/:id` - Update agent configuration
-- `DELETE /api/agents/:id` - Delete agent
-- `POST /api/agents/:id/activate` - Start agent trading
-- `POST /api/agents/:id/deactivate` - Stop agent trading
-
-**Monitoring:**
-- `GET /api/agents/:id/signals` - Live pattern detections
-- `GET /api/agents/:id/recommendations` - AI trade recommendations
-- `GET /api/agents/:id/trades` - Executed trades
-- `GET /api/agents/:id/activity` - Activity log
-- `GET /api/agents/:id/portfolio` - Current portfolio state
-
-**Manual Control:**
-- `POST /api/agents/:id/recommendations/:recommendationId/approve` - Approve trade
-- `POST /api/agents/:id/recommendations/:recommendationId/reject` - Reject trade
-- `POST /api/agents/:id/trades/:tradeId/close` - Close position
-
-#### Data Flow
-
+**Trading Flow:**
 ```
-[TradeStation WebSocket]
-    ↓ Real-time bars
-[RealtimeScannerService]
-    ↓ Pattern detected (scored 0-100)
-[live_signals table] → status='DETECTED'
+Real-time 5min bar → Pattern detected (VWAP bounce, score 75)
     ↓
-[TradeOptimizerService]
-    ↓ Claude analyzes chart + signal + portfolio
-[trade_recommendations table] → status='PENDING'
+Claude Vision analyzes chart + portfolio context
     ↓
-[ExecutionEngineService]
-    ↓ Run 6 risk checks
-[risk_checks: PASS/FAIL]
-    ↓ If all pass
-[TradeStation API] → Place order
+Trade recommendation: BUY CTSH, size $5K, confidence 82%
     ↓
-[executed_trades table] → status='OPEN'
+6 risk checks: ALL PASS
     ↓
-[portfolio_state table] → Updated
+TradeStation order placed (paper trading)
+    ↓
+Position monitored (5-second intervals)
+    ↓
+Trailing stop: Activated at +2%, trails at 5%
+    ↓
+Exit: Trailing stop hit at +8.2% gain
 ```
 
-#### Status
+### 3. AI-Powered Backtesting
 
-**Phase 1 (Real-Time Foundation):** ✅ Complete
-- TradeStation OAuth integration
-- Account/position/order endpoints
-- Paper trading operational (SIM3113503M)
-- Database schema (9 tables)
+**Natural Language Strategy Generation:**
 
-**Phase 2 (Agent Brain):** ✅ Complete
-- Pattern recognition engine (6 patterns)
-- AI trade optimizer (Claude Vision)
-- Execution engine (6 risk checks)
-- API routes (14 endpoints)
-
-**Phase 3 (Portfolio Management):** ✅ Complete
-- Position monitoring (real-time, 5-second intervals)
-- Trailing stops (dynamic profit protection)
-- Risk metrics (Sharpe, Sortino, drawdown, win rate)
-- Performance analytics (equity curve, statistics)
-- API routes (21 total endpoints)
-
-**Phase 4 (Agent Dashboard):** ✅ Complete
-- Live trading interface with agent cards
-- Real-time position visualization (5-second refresh)
-- Performance analytics charts (equity, win/loss, drawdowns)
-- Manual trade controls (approve/reject, close, trailing stops)
-- Settings management for risk limits and strategies
-- Multi-agent monitoring and switching
-
-### Phase 4: Agent Dashboard (2025-10-28) 🆕
-
-**Live Trading Interface & Real-Time Monitoring**
-
-Phase 4 delivers a comprehensive frontend dashboard for monitoring and controlling autonomous trading agents in real-time.
-
-#### Dashboard Components
-
-1. **AgentDashboard** - Main Layout
-   - Agent selector with status cards (P&L, active/paused)
-   - Tab navigation (Overview, Positions, Signals, Trades, Performance, Settings)
-   - Real-time portfolio data refresh (every 5 seconds)
-   - Multi-agent support with quick switching
-
-2. **AgentOverview** - Status & Performance Summary
-   - Agent status (active/paused, timeframe, strategies)
-   - Portfolio metrics (equity, cash, P&L, open positions)
-   - Performance metrics (win rate, profit factor, Sharpe ratio, max drawdown)
-   - Risk limits display
-   - Recent activity log (last 10 events)
-   - Quick actions (activate/deactivate, start/stop monitoring)
-
-3. **PositionMonitor** - Open Positions Table
-   - Real-time position data (ticker, side, entry, size, P&L)
-   - Stop loss, take profit, and trailing stop levels
-   - Position duration tracking
-   - Manual close button
-   - Enable/adjust trailing stop button
-   - Color-coded P&L (green/red)
-   - Auto-refresh every 5 seconds
-
-4. **SignalFeed** - Live Pattern Detections
-   - Pending trade recommendations with AI analysis
-   - Signal details (pattern type, quality score, multi-timeframe confirmation)
-   - Trade details (entry, stop, target, position size, confidence)
-   - Risk check results (6 checks with pass/fail status)
-   - Manual approve/reject buttons
-   - Recent signal history with status badges
-
-5. **TradeHistory** - Historical Trades
-   - Trade table with filters (ALL, OPEN, CLOSED)
-   - Summary statistics (total trades, win rate, total P&L, avg win/loss)
-   - Trade details (date, ticker, side, entry/exit, P&L, exit reason, confidence)
-   - Exit reason badges (stop hit, target hit, trailing stop, time exit, manual)
-   - Pattern type display
-   - Sortable columns
-
-6. **PerformanceCharts** - Visual Analytics
-   - Equity curve (line chart)
-   - Win/loss distribution (pie chart)
-   - Average win vs loss (bar chart)
-   - Key metrics cards (total trades, win rate, profit factor, Sharpe ratio)
-   - Risk metrics (max/current drawdown, Sortino ratio)
-   - Position sizing stats (largest win/loss, avg position size)
-
-7. **AgentSettings** - Configuration Management
-   - Basic info (name, timeframe)
-   - Strategy selection (6 available patterns with checkboxes)
-   - Risk limits form (6 configurable limits)
-   - Save/reset buttons
-   - Delete agent button with confirmation
-
-#### User Flows
-
-**Activate Agent:**
-1. Select agent card
-2. Click "Activate" button
-3. Confirm action in modal
-4. Agent status → Active
-5. Monitoring starts automatically
-
-**Manual Trade Execution:**
-1. Signal appears in Signal Feed (status: DETECTED)
-2. AI analyzes → Recommendation appears (status: PENDING)
-3. Review trade details, confidence score, risk checks
-4. Click "Execute Trade" or "Reject"
-5. If approved → Trade appears in Positions tab
-6. Signal status → EXECUTED
-
-**Close Position:**
-1. View position in Positions tab
-2. Click "Close" button
-3. Confirm with current price and estimated P&L
-4. Position closes → Moves to Trade History
-5. Portfolio metrics update
-
-**Enable Trailing Stop:**
-1. Select open position
-2. Click "Enable Trailing" button
-3. Enter trail % and activation %
-4. Trailing stop indicator appears in table
-5. Stop auto-adjusts as price moves favorably
-
-#### Technical Stack
-
-**Frontend:**
-- React 19 with TypeScript
-- TailwindCSS for styling
-- Recharts for performance charts
-- date-fns for time formatting
-- Axios for API calls
-
-**State Management:**
-- React hooks (useState, useEffect)
-- Real-time polling (5-second intervals)
-- Optimistic updates for user actions
-
-**Components Created (8 files):**
+Input:
 ```
-frontend/src/components/TradingAgents/
-├── AgentDashboard.tsx       (360 lines)
-├── AgentOverview.tsx        (280 lines)
-├── PositionMonitor.tsx      (220 lines)
-├── SignalFeed.tsx           (240 lines)
-├── TradeHistory.tsx         (220 lines)
-├── PerformanceCharts.tsx    (240 lines)
-└── AgentSettings.tsx        (260 lines)
-
-frontend/src/services/
-└── tradingAgentApi.ts       (260 lines)
-
-frontend/src/types/
-└── tradingAgent.ts          (180 lines)
+"Short momentum stocks after hyperbolic moves.
+Entry when price closes below VWAP.
+Stop at previous day high.
+Target 20%.
+Max hold 10 days."
 ```
 
-#### Status
+Output:
+- Custom TypeScript backtest script
+- Entry/exit logic with precise conditions
+- Position sizing and risk management
+- Trade-by-trade logs with timestamps
+- P&L metrics and performance statistics
+- Confidence score and assumptions documented
 
-**Phase 4:** ✅ Complete (8 components, 2,260 lines of code)
-- Full dashboard with 6 tabs
-- Real-time data updates
-- Manual trade controls
-- Performance visualization
-- Settings management
+**Advanced Features:**
+- Multi-timeframe analysis (daily context + intraday entry)
+- Portfolio-level backtesting (multiple positions)
+- Slippage and commission modeling
+- Risk-adjusted metrics (Sharpe, Sortino)
+- Equity curve generation
 
-### Phase 6: Portfolio Management (2025-10-28) 🆕
+### 4. Visual AI Analysis (Claude Vision)
 
-**Real-Time Position Monitoring & Exit Management**
+**Multi-Sample Chart Analysis:**
+- Select 5-10 pattern matches
+- Click "Analyze with Claude"
+- AI analyzes dual charts (daily + intraday)
+- Receives:
+  - Common visual patterns
+  - Entry/exit recommendations
+  - Risk assessment
+  - Strategy refinements
 
-Building on the autonomous trading agent brain, Phase 3 adds comprehensive portfolio management with real-time monitoring, dynamic stop management, and performance analytics.
+**Chart Types:**
+- Daily: 30-day context window (1400x700px)
+- Intraday: 5-min bars ±5 days around signal
+- Volume overlays
+- VWAP lines
+- Moving averages (20, 50)
+- Entry/exit markers
 
-#### Core Services
+### 5. Dashboard & Monitoring
 
-1. **PositionMonitorService** - Real-Time Position Monitoring
-   - Monitors all open positions every 5 seconds
-   - 4 exit conditions: Stop loss, Take profit, Trailing stop, Time-based
-   - Real-time portfolio state updates (P&L, equity, exposure)
-   - Slippage protection (max 2% threshold)
-   - Automatic exit execution via TradeStation
-   - Start/stop monitoring per agent
+**Agent Dashboard - 6 Tabs:**
+1. **Overview** - Status, portfolio, metrics, activity log
+2. **Positions** - Open positions with P&L, trailing stops, manual close
+3. **Signals** - Live pattern detections with AI recommendations
+4. **Trades** - Historical trade log with filters
+5. **Performance** - Equity curve, win/loss charts, statistics
+6. **Settings** - Risk limits, strategy selection, agent config
 
-2. **TrailingStopService** - Dynamic Profit Protection
-   - Trailing stop activation at profit threshold (default +2%)
-   - High/low water mark tracking
-   - Automatic tightening as price moves favorably
-   - Never widens (only moves in favorable direction)
-   - ATR-based optimal trail percent calculation
-   - Statistics tracking (avg trail%, avg activation profit)
+**Real-Time Updates:**
+- Portfolio state: Every 5 seconds
+- Position P&L: Live updates
+- Signal feed: As detected
+- Activity log: Real-time events
 
-3. **RiskMetricsService** - Performance Analytics
-   - Daily metrics calculation (exposure, P&L, risk, trade stats)
-   - Sharpe ratio (risk-adjusted returns, annualized)
-   - Sortino ratio (downside risk only, annualized)
-   - Maximum drawdown & current drawdown tracking
-   - Win rate, profit factor, avg win/loss
-   - Equity curve generation for charting
-   - Auto-update after each trade close
-
-#### Exit Priority System
-
-1. **Stop Loss** (highest priority) - Prevent catastrophic loss
-2. **Trailing Stop** - Lock in profits dynamically
-3. **Take Profit** - Capture target gains
-4. **Time Exit** (lowest priority) - Cleanup stale positions
-
-Time-based exit rules:
-- Intraday: Close 5 minutes before market close (3:55 PM ET)
-- Swing: Max 5 trading days
-- Position: Max 20 trading days
-
-#### API Endpoints (7 new)
-
-**Position Monitoring:**
-- `POST /api/agents/:id/monitor/start` - Start monitoring
-- `POST /api/agents/:id/monitor/stop` - Stop monitoring
-
-**Trailing Stops:**
-- `POST /api/agents/:id/trades/:tradeId/trailing-stop` - Enable trailing stop
-  ```json
-  {
-    "trailPercent": 5,
-    "activationPercent": 2
-  }
-  ```
-
-**Risk Metrics:**
-- `GET /api/agents/:id/metrics` - Get metrics for date range
-- `GET /api/agents/:id/metrics/latest` - Get latest daily metrics
-- `GET /api/agents/:id/equity-curve` - Get equity curve data
-- `POST /api/agents/:id/metrics/calculate` - Manually calculate metrics
-
-#### Performance Metrics
-
-**Calculated Metrics:**
-- Exposure: Total, max position, avg position
-- P&L: Daily, cumulative, daily %
-- Risk: Max drawdown, current drawdown, Sharpe, Sortino
-- Trade stats: Total, wins, losses, win rate, avg win/loss, largest win/loss, profit factor
-
-**Formulas:**
-```typescript
-// Sharpe Ratio (annualized)
-sharpeRatio = (avgDailyReturn * 252) / (stdDev * sqrt(252))
-
-// Sortino Ratio (downside deviation only)
-sortinoRatio = (avgDailyReturn * 252) / (downsideStdDev * sqrt(252))
-
-// Max Drawdown
-maxDrawdown = max((peak - trough) / peak) * 100
-
-// Profit Factor
-profitFactor = totalWins / totalLosses
-```
-
-#### Status
-
-**Phase 3:** ✅ Complete (3 services, 1,340 lines of code)
-- PositionMonitorService: Real-time monitoring, 4 exit types
-- TrailingStopService: Dynamic stop management
-- RiskMetricsService: Full performance analytics
-
-**API Growth:** 14 → 21 endpoints (+50%)
-
-### Phase 4: Visual Analysis & Chart Generation (2025-10-26)
-
-### Claude Visual AI Analysis (2025-10-26)
-- **🎨 Visual pattern recognition** using Claude Vision API
-- **📊 Dual-chart generation** (daily context + intraday detail)
-- **🤖 AI-powered insights** from multi-sample chart analysis
-- **📈 1400x700px charts** with volume bars and price overlays
-- **💡 Strategy recommendations** based on visual patterns
-- Select multiple samples → "Analyze with Claude" → Get trading insights
-- Daily charts: 30-day context window for pattern discovery
-- Intraday charts: 5-min bars ±5 days around signal for entry/exit analysis
-
-### Chart Thumbnails (2025-10-26)
-- **On-demand chart generation** for all scan results
-- Server-side rendering with ChartJS (300x150px thumbnails)
-- SQLite caching for instant chart retrieval
-- Click "Chart" button in results table to view price charts
-- 30-day historical view for pattern analysis
-- ~100-200ms generation, <10ms cached lookups
-
-### Enhanced Scanner UI
-- Actions column in results table
-- Inline chart display (expand/collapse)
-- One-click "Save to Backtest Set" dropdown
-- Real-time chart loading with progress indicators
-- Seamless integration with existing scanner workflow
-
-### Phase 3 Features (Completed)
-- Scanner script persistence with metadata
-- Sample sets management (CRUD operations)
-- Memory-safe streaming (10K default limit)
-- Natural language scanner and backtest generation
-- Full audit trail for AI-generated code
-
-## 📋 Features
-
-### 1. Dual-Mode Pattern Scanner
-
-#### SQL Scanner (Fast & Free)
-- **Speed:** 1-2 seconds typical
-- **Use case:** Well-defined technical criteria
-- **Filters:** Price change, volume, RSI, SMA, consecutive days
-- **Memory:** Streaming execution, handles unlimited results safely
-
-**Example:**
-```json
-{
-  "universe": "russell2000",
-  "start_date": "2025-01-01",
-  "end_date": "2025-10-25",
-  "min_consecutive_up_days": 3,
-  "min_change_percent": 50,
-  "min_volume_ratio": 2
-}
-```
-
-#### Natural Language Scanner (AI-Powered)
-- **Capability:** Complex temporal patterns, multi-step logic
-- **Use case:** "Stocks that went up 100%+ in 3 days, then dropped 20%+"
-- **Process:** Claude generates custom TypeScript code
-- **Persistence:** Scripts saved to `backend/claude-generated-scripts/`
-
-**Example:**
-```json
-{
-  "query": "Find stocks in 2025 that have gone up 100% or more in 3 days, followed by -20% or more",
-  "universe": "russell2000",
-  "dateRange": {
-    "start": "2025-01-01",
-    "end": "2025-10-25"
-  }
-}
-```
-
-### 2. AI-Powered Backtesting
-
-Describe strategies in plain English and Claude generates executable TypeScript:
-
-**Input:**
-```
-Short FUBO after hyperbolic move on Jan 6, 2025.
-Entry: when price closes below previous day low.
-Stop loss: previous day high.
-Take profit: 40%.
-Max hold: 15 days.
-```
-
-**Output:**
-- Custom backtest script with entry/exit logic
-- Automatic date range selection
-- Documented assumptions and confidence score
-- Full trade logs and performance metrics
-- Saved script for review and reuse
-
-### 3. Backtest Sets Management
-
-Organize and track discovered patterns:
-- Create collections of promising setups
-- Track scan history and results
-- Add notes and tags to patterns
-- Frontend UI for visual management
-- API for programmatic access
-
-### 4. Pattern Analysis Workflow
-
-1. **Discover:** Use scanner to find patterns across universe
-2. **Collect:** Save promising candidates to sample sets
-3. **Backtest:** Generate and run strategy scripts on patterns
-4. **Validate:** Analyze results and refine parameters
-5. **Scale:** Apply validated strategies across new patterns
+---
 
 ## 🏃 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+
-- Polygon.io API key ([Get free key](https://polygon.io))
-- Anthropic API key for Claude integration ([Get key](https://console.anthropic.com))
+```bash
+Node.js 18+
+Polygon.io API key (free tier: 5 calls/min, unlimited with paid)
+Anthropic API key (Claude 3.7 Sonnet)
+TradeStation account (optional, for paper trading)
+```
 
 ### Installation
 
@@ -513,12 +384,19 @@ npm install
 
 ### Configuration
 
-Create `.env` in backend directory:
-
+Create `backend/.env`:
 ```env
 # Required
-POLYGON_API_KEY=your_polygon_key_here
-ANTHROPIC_API_KEY=your_anthropic_key_here
+POLYGON_API_KEY=your_polygon_key
+ANTHROPIC_API_KEY=your_anthropic_key
+
+# TradeStation (optional)
+TRADESTATION_API_KEY=your_ts_key
+TRADESTATION_API_SECRET=your_ts_secret
+TRADESTATION_ACCOUNT_ID=SIM1234567M
+
+# Tech Sector Watchlist (for intraday scanning)
+WATCHLIST_TICKERS=AAPL,GOOGL,MSFT,AMZN,META,NVDA,TSLA,AMD,INTC,CSCO,ORCL,QCOM,AVGO,TXN,NFLX,CRM,ADBE,ACN,NOW,SHOP,ZM,ETSY,CTSH,DXC,WBD,ON,LRCX,MU,GOOG
 
 # Optional
 DATABASE_PATH=./backtesting.db
@@ -542,217 +420,336 @@ npm run dev
 
 **Access:**
 - Frontend: http://localhost:5173
-- Backend API: http://localhost:3000
+- API: http://localhost:3000
+- Docs: http://localhost:3000/api-docs
+
+---
 
 ## 📖 Usage Examples
 
-### Scanner API
+### Example 1: Find Intraday VWAP Bounces
 
-#### Regular Scan (SQL-based)
 ```bash
-POST /api/scanner/scan
-Content-Type: application/json
+curl -X POST http://localhost:3000/api/scanner/scan/natural \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "Find VWAP bounce setups on 5-minute charts with price bouncing from VWAP support. Stock in uptrend, volume > 1.2x average, time between 10 AM - 3 PM ET",
+    "universe": "tech_sector",
+    "dateRange": {
+      "start": "2025-10-24",
+      "end": "2025-10-29"
+    }
+  }'
+```
 
+**Response:**
+```json
 {
-  "universe": "russell2000",
-  "start_date": "2025-01-01",
-  "end_date": "2025-10-25",
-  "min_consecutive_up_days": 3,
-  "min_change_percent": 50,
-  "min_volume_ratio": 2,
-  "limit": 100
+  "success": true,
+  "total_matches": 10,
+  "scan_time_ms": 52323,
+  "matches": [
+    {
+      "ticker": "CTSH",
+      "date": "2025-10-28",
+      "score": 73,
+      "metrics": {
+        "price": 68.2,
+        "vwap": 68.0,
+        "distance_from_vwap_percent": 0.3,
+        "volume_ratio": 2.12,
+        "rsi_14": 55.5
+      }
+    }
+  ]
 }
 ```
 
-**Response:** 16 matches in ~1.6 seconds
+### Example 2: Create Autonomous Trading Agent
 
-#### Natural Language Scan (AI-powered)
 ```bash
-POST /api/scanner/scan/natural
-Content-Type: application/json
+curl -X POST http://localhost:3000/api/agents \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "VWAP Bounce Hunter",
+    "accountId": "SIM3113503M",
+    "timeframe": "intraday",
+    "strategies": ["vwap-bounce"],
+    "riskLimits": {
+      "maxPositionSize": 10000,
+      "maxPortfolioExposure": 50,
+      "maxDailyLoss": 500,
+      "maxConcurrentPositions": 5,
+      "minConfidenceScore": 70,
+      "maxCorrelation": 0.7
+    }
+  }'
+```
 
+### Example 3: Backtest Strategy
+
+```bash
+curl -X POST http://localhost:3000/api/backtests/execute-intelligent \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Buy VWAP bounces on AAPL. Entry when price bounces above VWAP with volume confirmation. Stop at -2%, target +5%. Max hold 2 days.",
+    "ticker": "AAPL",
+    "timeframe": "5min",
+    "strategyType": "momentum"
+  }'
+```
+
+---
+
+## 🗺️ Roadmap & Next Steps
+
+### ✅ Current Status: Phase 5 Complete
+
+**Recent Achievements:**
+- ✅ Intraday scanner generation (VWAP patterns)
+- ✅ 5-minute bar data pipeline
+- ✅ Tech sector universe (65 stocks)
+- ✅ Natural language → execution pipeline
+- ✅ Autonomous trading agents (6 patterns)
+- ✅ Dashboard with real-time monitoring
+
+### 🎯 Suggested Next Steps
+
+#### **Priority 1: Expand Intraday Pattern Library**
+
+**Goal:** Build comprehensive day trading pattern detection
+
+**Tasks:**
+1. **Opening Range Breakout (ORB)**
+   - First 30-min range detection
+   - Volume confirmation
+   - Breakout timing (9:45-10:30 AM optimal)
+
+2. **VWAP Rejection Shorts**
+   - Price fails to reclaim VWAP
+   - Multiple tests with declining volume
+   - Entry on lower high below VWAP
+
+3. **Time-Based Patterns**
+   - Morning momentum (9:30-10:30)
+   - Lunch consolidation (11:30-1:00)
+   - Afternoon breakouts (2:00-3:30)
+   - Power hour momentum (3:00-4:00)
+
+4. **Multi-Timeframe Confirmation**
+   - 1min aggressive entries
+   - 5min primary timeframe
+   - 15min trend confirmation
+   - Daily higher timeframe bias
+
+**Implementation:**
+```typescript
+// Add to realtime-scanner.service.ts patterns
 {
-  "query": "Find stocks with hyperbolic moves followed by 20%+ reversals",
-  "universe": "russell2000",
-  "dateRange": {
-    "start": "2025-01-01",
-    "end": "2025-10-25"
-  }
+  name: 'orb-breakout',
+  description: 'First 30-min range breakout with volume',
+  timeframes: ['1min', '5min'],
+  requiredBars: 50,
+  scanner: detectORBBreakout
 }
 ```
 
-**Response:** 50 matches in ~15 seconds + generated script saved
+#### **Priority 2: Enhanced Risk Management**
 
-### Backtest API
+**Goal:** Improve position sizing and portfolio-level risk
 
-#### Intelligent Backtest Execution
-```bash
-POST /api/backtests/execute-intelligent
-Content-Type: application/json
+**Tasks:**
+1. **Dynamic Position Sizing**
+   - Kelly Criterion integration (already built)
+   - ATR-based sizing (volatility adjustment)
+   - Account growth scaling
+   - Drawdown reduction modes
 
-{
-  "prompt": "Short FUBO after Jan 6 hyperbolic move. Entry when close < prev low. Stop at prev high. 40% target. Max 15 days.",
-  "ticker": "FUBO",
-  "timeframe": "1day",
-  "strategyType": "orb"
+2. **Portfolio Heat Management**
+   - Sector exposure limits (max 30% per sector)
+   - Market cap diversification
+   - Beta-weighted exposure
+   - Correlation clustering detection
+
+3. **Adaptive Risk Limits**
+   - Reduce size after losing streak
+   - Increase confidence threshold after losses
+   - Pause trading on daily loss limit
+   - Auto-restart on new trading day
+
+4. **Slippage & Commission Modeling**
+   - Realistic fill simulation
+   - Spread cost estimation
+   - Time-of-day liquidity adjustment
+   - Market impact modeling
+
+**Implementation:**
+```typescript
+// Enhanced risk limits
+riskLimits: {
+  // Existing
+  maxPositionSize: 10000,
+  maxPortfolioExposure: 50,
+
+  // New
+  maxSectorExposure: 30,        // 30% per sector
+  maxBetaWeightedDelta: 50000,  // Portfolio beta limit
+  maxCorrelatedPositions: 3,    // Max 3 correlated stocks
+  adaptiveScaling: true,        // Enable adaptive sizing
+  slippageModel: 'realistic'    // Use slippage estimates
 }
 ```
 
-**Response includes:**
-- Trade-by-trade logs
-- P&L metrics
-- Script path and metadata
-- Claude's assumptions
-- Confidence score
+#### **Priority 3: Real-Time Data Optimization**
 
-### Backtest Sets API
+**Goal:** Reduce latency and improve data freshness
 
-```bash
-# Create sample set
-POST /api/scanner/backtest-sets
-{
-  "name": "Hyperbolic Reversals 2025",
-  "description": "100%+ gains followed by 20%+ drops",
-  "pattern_type": "mean_reversion"
-}
+**Tasks:**
+1. **WebSocket Integration**
+   - Replace polling with WebSocket for bars
+   - Eliminate 5-second delay
+   - Real-time VWAP calculation
+   - Sub-second pattern detection
 
-# Add scan result
-POST /api/scanner/backtest-sets/{id}/results
-{
-  "ticker": "FUBO",
-  "start_date": "2025-01-02",
-  "end_date": "2025-01-13",
-  "peak_date": "2025-01-06",
-  "notes": "251% gain, 53x volume, RSI 91.5"
-}
+2. **Data Caching Strategy**
+   - Redis for hot data (current bars)
+   - SQLite for cold data (historical)
+   - In-memory lookups for active tickers
+   - TTL-based cache invalidation
 
-# Get all sample sets
-GET /api/scanner/backtest-sets
+3. **Incremental VWAP Updates**
+   - Don't recalculate full day on each bar
+   - Maintain running cumulative sums
+   - Update only new bar contribution
+   - 10x speed improvement
 
-# Get results for a set
-GET /api/scanner/backtest-sets/{id}/results
+4. **Parallel Pattern Scanning**
+   - Scan multiple tickers concurrently
+   - Use worker threads for heavy computation
+   - Priority queue (active positions first)
+   - Batched database writes
+
+**Architecture:**
+```
+TradeStation WebSocket → [Kafka Queue] → Pattern Scanner Workers (4x)
+                              ↓
+                         Redis Cache (hot data)
+                              ↓
+                    SQLite (historical + audit trail)
 ```
 
-## 🏗️ Architecture
+#### **Priority 4: Paper Trading Validation**
 
-### Backend Stack
+**Goal:** Validate all patterns with real market data
 
-**Core Services:**
-- `scanner.service.ts` - Dual-mode scanner (SQL + AI)
-- `claude.service.ts` - AI script generation
-- `claude-analysis.service.ts` - Visual AI pattern analysis
-- `backtest-router.service.ts` - Intelligent strategy routing
-- `script-execution.service.ts` - Safe TypeScript execution
-- `backtest-set.service.ts` - Pattern collection management
-- `chart-generator.service.ts` - Server-side chart rendering
-- `polygon-intraday.service.ts` - 5-min bar data fetching
-- `universe-data.service.ts` - Market data management
+**Tasks:**
+1. **Forward Testing Framework**
+   - Run agents on paper trading for 30 days
+   - Track actual fills vs theoretical
+   - Measure slippage and reject rates
+   - Compare results to backtest expectations
 
-**API Routes:**
-- `/api/scanner/*` - Pattern scanning endpoints
-- `/api/backtests/*` - Strategy backtesting
-- `/api/analysis/*` - Claude visual analysis
-- `/api/charts/*` - Chart generation and thumbnails
-- `/api/data/*` - Market data management
-- `/api/scanner/backtest-sets/*` - Sample sets CRUD
+2. **Pattern Performance Tracking**
+   - Win rate by pattern type
+   - Avg hold time by pattern
+   - Best/worst time-of-day
+   - Market condition correlation
 
-**Data Storage:**
-- SQLite database for market data and metrics
-- Script files: `backend/claude-generated-scripts/`
-- Metadata: JSON files paired with each script
+3. **Strategy Leaderboard**
+   - Rank patterns by Sharpe ratio
+   - Identify high-conviction setups
+   - Filter low-performing patterns
+   - Optimize strategy mix per agent
 
-### Frontend Stack
+4. **Alerts & Notifications**
+   - Discord/Slack integration
+   - Trade execution alerts
+   - Daily performance summary
+   - Risk limit warnings
 
-- **Framework:** React 18 + TypeScript
-- **Build Tool:** Vite
-- **Styling:** TailwindCSS v4
-- **API Client:** Axios
-- **Components:**
-  - `BacktestForm.tsx` - Natural language strategy input
-  - `ResultsDisplay.tsx` - Trade logs and metrics
-  - `BacktestSetManager.tsx` - Pattern collection UI
+#### **Priority 5: Advanced Analytics**
+
+**Goal:** Deep insights into strategy performance
+
+**Tasks:**
+1. **Trade Attribution Analysis**
+   - P&L breakdown by pattern type
+   - Win/loss by time of day
+   - Performance by market condition
+   - Holding period analysis
+
+2. **Market Regime Detection**
+   - Volatility clustering (VIX levels)
+   - Trend vs range-bound markets
+   - High/low volume environments
+   - Adapt strategy mix by regime
+
+3. **Machine Learning Enhancements**
+   - Train classifiers on historical patterns
+   - Predict pattern success probability
+   - Optimize entry/exit timing
+   - Feature importance analysis
+
+4. **Scenario Analysis**
+   - Monte Carlo simulation
+   - Stress testing (2008, 2020, 2022)
+   - Drawdown recovery analysis
+   - Capital allocation optimization
+
+---
 
 ## 📊 Real Results
 
-### Hyperbolic Short Strategy (2025 Analysis)
+### Intraday VWAP Scanner (2025-10-29)
+
+**Test:** Natural language intraday pattern detection
+
+**Query:** "Find VWAP bounce setups on 5-minute charts with price bouncing from VWAP support"
+
+**Results:**
+- ✅ **10 matches found** (tech sector, 5 days)
+- ✅ **Scan time:** 52 seconds
+- ✅ **Pattern quality:** Scores 65-73 (high confidence)
+- ✅ **Correct methodology:** Uses 5min bars, calculates cumulative VWAP
+- ✅ **Time filtering:** 10 AM - 3 PM ET (optimal liquidity)
+
+**Top Setups:**
+1. CTSH (Cognizant) - 73 score, 10/28, 13:15
+2. ETSY - 73 score, 10/27, 14:30
+3. DXC - 72 score, 10/24, 11:45
+4. ZM (Zoom) - 70 score, 10/28, 12:30
+
+**Key Insights:**
+- ✅ VWAP bounces are detectable with AI-generated scanners
+- ✅ Volume confirmation (1.2-3.6x) critical for quality
+- ✅ Distance from VWAP <0.3% indicates precision touch
+- ✅ RSI 40-70 range filters out extremes
+- ⚡ Ready for autonomous agent deployment
+
+### Hyperbolic Short Strategy (2025-10-25)
 
 **Test:** Mean reversion shorts after extreme upward moves
 
-**Scanner Query:**
+**Scanner Criteria:**
 - 3+ consecutive up days
 - 50%+ total gain
 - 2x+ volume ratio
 
 **Results:**
-- **16 candidates found** (Russell 2000, 10 months)
-- **4 backtested:** FUBO, PRAX, BYND, REPL
-- **Win rate:** 67% (2 wins, 1 loss, 1 script error)
-- **Average win:** +3.6%
-- **Average loss:** -6.4%
+- ✅ **16 candidates found** (Russell 2000, 10 months)
+- ✅ **4 backtested:** FUBO, PRAX, BYND, REPL
+- ✅ **Win rate:** 67% (2 wins, 1 loss, 1 script error)
+- ✅ **Average win:** +3.6%
+- ⚠️ **Average loss:** -6.4%
 
 **Key Insights:**
-- ✅ Reversals are real (67% of hyperbolic moves reversed)
-- ⚠️ Entry timing critical (5-7 days after peak optimal)
-- ❌ 40% profit target too aggressive (0% hit rate)
-- ✅ 20% target more realistic based on actual price action
-- ⚠️ AI script generation has 25% failure rate (needs improvement)
+- ✅ Reversals after hyperbolic moves are real
+- ⚠️ Entry timing critical (5-7 days post-peak optimal)
+- ❌ 40% profit target too aggressive
+- ✅ 20% target more realistic
+- 📖 See: `ai-convo-history/2025-10-25-backtest-results-analysis.md`
 
-**See:** `ai-convo-history/2025-10-25-backtest-results-analysis.md`
-
-## 📁 Project Structure
-
-```
-ai-backtest/
-├── backend/
-│   ├── src/
-│   │   ├── api/
-│   │   │   ├── routes/
-│   │   │   │   ├── scanner.ts           # Scanner endpoints
-│   │   │   │   ├── backtests.ts         # Backtest endpoints
-│   │   │   │   ├── backtest-sets.ts       # Sample sets CRUD
-│   │   │   │   └── data.ts              # Data management
-│   │   │   └── server.ts
-│   │   ├── services/
-│   │   │   ├── scanner.service.ts       # Dual-mode scanner
-│   │   │   ├── claude.service.ts        # AI integration
-│   │   │   ├── backtest-router.service.ts  # Strategy routing
-│   │   │   ├── script-execution.service.ts # Script runner
-│   │   │   ├── backtest-set.service.ts    # Pattern management
-│   │   │   ├── polygon.service.ts       # Market data
-│   │   │   └── universe-data.service.ts # Universe management
-│   │   ├── database/
-│   │   │   ├── db.ts                    # SQLite connection
-│   │   │   └── schema.sql               # Database schema
-│   │   └── types/
-│   │       ├── scanner.types.ts
-│   │       ├── backtest.types.ts
-│   │       └── backtest-set.types.ts
-│   ├── claude-generated-scripts/       # AI-generated code
-│   │   ├── scanner-*.ts                 # Scanner scripts
-│   │   ├── scanner-*.json               # Scanner metadata
-│   │   ├── claude-*-{ticker}.ts         # Backtest scripts
-│   │   └── claude-*-{ticker}.json       # Backtest metadata
-│   └── package.json
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── BacktestForm.tsx
-│   │   │   ├── ResultsDisplay.tsx
-│   │   │   └── BacktestSetManager.tsx     # NEW
-│   │   ├── services/
-│   │   │   ├── api.ts
-│   │   │   └── backtestSetsApi.ts         # NEW
-│   │   ├── App.tsx
-│   │   └── main.tsx
-│   └── package.json
-├── ai-convo-history/                    # Analysis & documentation
-│   ├── 2025-10-25-backtest-results-analysis.md
-│   ├── 2025-10-25-memory-management-fix.md
-│   ├── 2025-10-26-scanner-script-persistence.md
-│   └── ...
-├── ORIGINAL_REQUIREMENTS.md
-└── README.md
-```
+---
 
 ## 🛠️ Development
 
@@ -764,11 +761,14 @@ cd backend
 # Development with auto-reload
 npm run dev
 
-# TypeScript compilation
+# Build TypeScript
 npm run build
 
-# Production
-npm start
+# Run tests
+npm test
+
+# Database reset
+rm backtesting.db && npm start
 ```
 
 ### Frontend Development
@@ -782,171 +782,140 @@ npm run dev
 # Production build
 npm run build
 
-# Preview production
+# Preview production build
 npm run preview
 ```
 
-### Database Management
+### Data Management
 
 ```bash
-# Reset database
-rm backend/backtesting.db
-cd backend && npm start  # Auto-recreates
-
-# Populate Russell 2000 universe
+# Backfill tech sector (5-minute bars, 30 days)
 cd backend
-npx ts-node populate-russell2000.ts
+npx ts-node backfill-tech-sector-intraday.ts
 
-# Backfill historical data
-POST /api/scanner/universes/russell2000/backfill
-{
-  "start_date": "2025-01-01",
-  "end_date": "2025-10-25",
-  "batch_size": 10
-}
+# Backfill tech sector (daily bars, 1 year)
+npx ts-node backfill-tech-sector-daily.ts
+
+# Create universe
+npx ts-node create-tech-universe.ts
+
+# Fix time_of_day field (if needed)
+npx ts-node fix-time-of-day.ts
 ```
+
+---
 
 ## 📚 Documentation
 
-### Core Documentation
-- **README.md** - This file (overview and quick start)
-- **ORIGINAL_REQUIREMENTS.md** - Original project requirements
+### Technical Documentation
+- **README.md** - This file (overview, quick start, roadmap)
+- **ORIGINAL_REQUIREMENTS.md** - Initial project requirements
+- **backend/src/services/** - Inline code documentation
 
-### Analysis & Insights
-- **2025-10-25-backtest-results-analysis.md** - Hyperbolic short strategy results (67% win rate)
-- **2025-10-25-memory-management-fix.md** - Scanner streaming implementation
-- **2025-10-26-scanner-script-persistence.md** - Script saving implementation
-- **2025-10-26-scanner-log-verification.md** - Natural language scanner execution
+### Analysis Documents
+All in `ai-convo-history/`:
+- **2025-10-29-vwap-bounce-scanner-prompt.md** - VWAP scanner prompts (5 variations)
+- **2025-10-25-backtest-results-analysis.md** - Hyperbolic short strategy (67% win rate)
+- **2025-10-26-scanner-script-persistence.md** - AI script saving implementation
+- **2025-10-25-memory-management-fix.md** - Scanner streaming architecture
 
-### Historical
-All dated markdown files in `ai-convo-history/` folder document features, decisions, and analysis.
+---
 
 ## 🐛 Troubleshooting
 
 ### Scanner Issues
 
-**Memory errors:**
-- Scanner now uses streaming - should not occur
-- Default 10K limit prevents runaway queries
-- Check query validation warnings in logs
+**No matches found:**
+```bash
+# Verify universe exists
+sqlite3 backend/backtesting.db "SELECT * FROM universe WHERE name='tech_sector'"
+
+# Check data availability
+sqlite3 backend/backtesting.db "SELECT ticker, COUNT(*) FROM ohlcv_data WHERE timeframe='5min' GROUP BY ticker"
+
+# Run test scanner directly
+cd backend
+npx ts-node scanner-XXXXX.ts  # Use actual generated scanner file
+```
 
 **Script generation fails:**
-- Current 25% failure rate for complex patterns
-- Check `claude-generated-scripts/` for error details
-- Retry or simplify query
-
-### Backend Issues
-
-**Database:**
 ```bash
-rm backend/backtesting.db
-cd backend && npm start
+# Check Claude API key
+echo $ANTHROPIC_API_KEY
+
+# Review generated script for errors
+cat backend/claude-generated-scripts/scanner-*.ts
+
+# Check system prompt updates
+git log --oneline backend/src/services/claude.service.ts
 ```
 
-**TypeScript errors:**
+### Data Issues
+
+**Missing 5-minute bars:**
+```bash
+# Re-run backfill
+cd backend
+npx ts-node backfill-tech-sector-intraday.ts
+
+# Check Polygon API status
+curl "https://api.polygon.io/v2/aggs/ticker/AAPL/range/5/minute/2025-10-28/2025-10-29?apiKey=YOUR_KEY"
+```
+
+**time_of_day is NULL:**
 ```bash
 cd backend
-rm -rf node_modules package-lock.json
-npm install
+npx ts-node fix-time-of-day.ts
+
+# Verify fix
+sqlite3 backtesting.db "SELECT COUNT(*) FROM ohlcv_data WHERE timeframe='5min' AND time_of_day IS NULL"
 ```
-
-### Frontend Issues
-
-**Build errors:**
-```bash
-cd frontend
-rm -rf node_modules package-lock.json
-npm install
-npm run dev
-```
-
-**CORS:**
-- Verify backend on port 3000
-- Check `vite.config.ts` proxy config
 
 ### API Issues
 
-**Polygon rate limits:**
-- Free tier: 5 calls/minute
-- Use cached data when possible
-- Implement delays between requests
+**CORS errors:**
+- Verify backend on port 3000
+- Check `frontend/vite.config.ts` proxy settings
+- Restart both frontend and backend
 
-**Anthropic API:**
-- Monitor credit balance
-- Each scan/backtest consumes tokens
-- Script generation: ~$0.02-0.10 per execution
+**Rate limits:**
+- Polygon free tier: 5 calls/minute
+- Use unlimited plan for production
+- Add delays in backfill scripts
 
-## 🗺️ Roadmap
-
-### Current Status: Phase 4 In Progress ⚡
-
-**Phase 3 Complete:**
-- ✅ Dual-mode scanner (SQL + AI)
-- ✅ Scanner script persistence
-- ✅ Sample sets management
-- ✅ Memory-safe streaming
-- ✅ Scan history tracking
-- ✅ Natural language backtesting
-- ✅ Script metadata and audit trail
-
-**Phase 4 Complete:**
-- ✅ **Claude Visual AI Analysis** - Pattern recognition using Claude Vision API
-  - Multi-sample chart analysis with AI insights
-  - Dual-chart generation (daily + intraday)
-  - Strategy recommendations from visual patterns
-  - 1400x700px charts with volume overlays
-- ✅ **Chart Thumbnails** - On-demand chart generation for scan results
-  - Server-side chart rendering with ChartJS
-  - SQLite caching for instant retrieval
-  - Inline chart display in scanner results
-  - One-click save to sample sets
-- ✅ **US Stocks Universe** - Full market data backfill support
-  - 6,059 US stocks (common, ADRs, preferred)
-  - Automated 5-year historical data backfill
-  - Batch processing with configurable rates
-
-**Next Priorities:**
-
-### Phase 5: Advanced Features
-
-- Real-time pattern detection
-- Portfolio-level backtesting
-- Strategy comparison framework
-- Interactive parameter optimization
-- WebSocket for live updates
-- Multi-timeframe chart analysis
-- Export to CSV/PDF
-- Dark mode
+---
 
 ## 🤝 Contributing
 
-This is an active research project. Key areas for contribution:
+This is an active research and development project. Areas for contribution:
 
-1. **AI Script Generation:** Improve Claude prompts for better script quality
-2. **Pattern Detection:** Add new scanner filters and pattern types
-3. **Strategy Library:** Contribute validated strategy templates
-4. **Documentation:** Analysis documents and use cases
-5. **Testing:** Validate strategies across different market conditions
+1. **Pattern Library** - Add new intraday pattern detectors
+2. **Risk Models** - Improve position sizing and portfolio risk
+3. **AI Prompts** - Enhance Claude system prompts for better script generation
+4. **Strategy Templates** - Contribute validated strategy scripts
+5. **Documentation** - Add tutorials, examples, analysis reports
+
+---
 
 ## 📄 License
 
 MIT
 
-## 💬 Support
-
-- **Issues:** [GitHub Issues](https://github.com/edkim/ai-backtest/issues)
-- **Analysis:** See `ai-convo-history/` folder
-- **Examples:** Hyperbolic short strategy analysis shows complete workflow
+---
 
 ## 🙏 Acknowledgments
 
-- **Polygon.io** - Market data API
-- **Anthropic Claude** - AI script generation
-- **React & Vite** - Frontend framework
-- **TailwindCSS** - UI styling
+- **Anthropic Claude** - AI-powered script generation and visual analysis
+- **Polygon.io** - Comprehensive market data API
+- **TradeStation** - Paper trading and live execution
+- **React + Vite** - Modern frontend framework
+- **TailwindCSS v4** - Beautiful, responsive UI
+- **Chart.js** - Server-side chart rendering
 
 ---
 
-**Built with Claude Code** - AI-powered pattern discovery and strategy backtesting platform
+**Built with Claude Code** 🤖
 
-*Last updated: 2025-10-27*
+*An autonomous trading platform where natural language becomes production trading strategies.*
+
+*Last updated: 2025-10-29*
