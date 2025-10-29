@@ -663,24 +663,267 @@ Please generate a complete, runnable TypeScript backtest script following the st
   private buildScannerSystemPrompt(): string {
     return `You are generating a stock scanner script based on user's natural language criteria.
 
-Your task is to generate a complete, runnable TypeScript scanner that queries the daily_metrics table to find matching stock patterns.
+Your task is to generate a complete, runnable TypeScript scanner that queries the appropriate database table(s) to find matching stock patterns.
 
-## Available Data in daily_metrics Table
+## ⚠️ CRITICAL: Data Table Selection Rules
 
-Each row contains daily metrics for a stock ticker on a specific date:
+**YOU MUST follow these rules when deciding which table to query:**
 
+1. **If user mentions ANY of these keywords, YOU MUST use ohlcv_data table with 5-minute bars:**
+   - "VWAP", "vwap", "volume-weighted average price"
+   - "5-minute", "5min", "1-minute", "intraday bars"
+   - "time of day", "morning", "afternoon", "opening range"
+   - "intraday", "within the day", "during the day"
+   - Any mention of sub-daily timeframes
+
+2. **VWAP CANNOT be calculated from daily data!**
+   - VWAP is cumulative throughout the trading day using intraday bars
+   - SMA_20 is NOT a substitute for VWAP
+   - Daily approximations of VWAP patterns are NOT acceptable
+   - If user wants VWAP, you MUST query ohlcv_data with timeframe='5min'
+
+3. **Use daily_metrics ONLY when:**
+   - User explicitly asks for daily/multi-day patterns
+   - Pattern spans multiple days (High-Tight Flag, Cup and Handle, etc.)
+   - No mention of intraday timeframes or VWAP
+   - Keywords: "days", "weeks", "daily", "swing trade"
+
+## Available Data Tables
+
+### Table 1: ohlcv_data (INTRADAY - Use for VWAP and intraday patterns)
+
+**Schema:**
+- ticker: Stock symbol (TEXT)
+- timestamp: Unix timestamp in milliseconds (INTEGER)
+- timeframe: '5min', '1min', '15min', '1h', '1d' (TEXT)
+- open, high, low, close: Price values (REAL)
+- volume: Share volume (REAL)
+- time_of_day: Time in 'HH:MM' format, e.g., '09:30', '14:15' (TEXT)
+
+**Query Example:**
+\`\`\`sql
+-- Get 5-minute bars for a specific date
+SELECT timestamp, open, high, low, close, volume, time_of_day
+FROM ohlcv_data
+WHERE ticker = 'AAPL'
+  AND timeframe = '5min'
+  AND date(timestamp/1000, 'unixepoch') = '2025-10-29'
+ORDER BY timestamp ASC
+\`\`\`
+
+**Important:**
+- Market hours: 09:30 - 16:00 ET
+- Intraday data available for ~60+ tech sector stocks
+- Always filter by timeframe = '5min' for intraday analysis
+
+### Table 2: daily_metrics (DAILY - Use for multi-day patterns only)
+
+**Schema:**
 - ticker, date, open, high, low, close, volume
 - change_percent (daily % change)
-- change_5d_percent (5-day % change)
-- change_10d_percent (10-day % change)
+- change_5d_percent, change_10d_percent
 - volume_ratio (volume / 30-day average)
 - consecutive_up_days, consecutive_down_days
 - rsi_14 (14-day RSI)
-- sma_20, sma_50 (20-day and 50-day simple moving averages)
-- price_to_sma20_percent, price_to_sma50_percent (% distance from SMAs)
-- high_low_range_percent ((high-low)/open as %)
+- sma_20, sma_50 (20-day and 50-day SMAs)
+- price_to_sma20_percent, price_to_sma50_percent
+- high_low_range_percent
 
-## Scanner Script Structure
+### VWAP Calculation (For Intraday Patterns)
+
+When user mentions "VWAP", "VWAP bounce", "VWAP support", or similar:
+
+**Formula:**
+\`\`\`
+Typical Price = (high + low + close) / 3
+VWAP = Σ(Typical Price × Volume) / Σ(Volume)
+\`\`\`
+
+**Implementation Pattern:**
+\`\`\`typescript
+// Calculate VWAP for each trading day
+function calculateVWAP(bars: any[]): number {
+  let cumVolume = 0;
+  let cumVolumePrice = 0;
+
+  for (const bar of bars) {
+    const typicalPrice = (bar.high + bar.low + bar.close) / 3;
+    cumVolumePrice += typicalPrice * bar.volume;
+    cumVolume += bar.volume;
+  }
+
+  return cumVolume === 0 ? 0 : cumVolumePrice / cumVolume;
+}
+
+// Query 5-minute bars for a specific day
+const bars = db.prepare(\`
+  SELECT timestamp, open, high, low, close, volume, time_of_day
+  FROM ohlcv_data
+  WHERE ticker = ?
+    AND timeframe = '5min'
+    AND date(timestamp/1000, 'unixepoch') = ?
+  ORDER BY timestamp ASC
+\`).all(ticker, dateStr);
+
+// Calculate running VWAP for each bar
+const barsWithVWAP = [];
+let cumVol = 0, cumVolPrice = 0;
+for (const bar of bars) {
+  const typical = (bar.high + bar.low + bar.close) / 3;
+  cumVolPrice += typical * bar.volume;
+  cumVol += bar.volume;
+  barsWithVWAP.push({
+    ...bar,
+    vwap: cumVol === 0 ? 0 : cumVolPrice / cumVol
+  });
+}
+\`\`\`
+
+**VWAP Bounce Detection Pattern:**
+\`\`\`typescript
+// Detect VWAP bounce: price touches VWAP then bounces up
+for (let i = 10; i < barsWithVWAP.length; i++) {
+  const current = barsWithVWAP[i];
+  const previous = barsWithVWAP.slice(i - 10, i);
+
+  // Check if price recently touched VWAP (within 0.3%)
+  const touchedVWAP = previous.some(bar => {
+    const distance = Math.abs(bar.low - bar.vwap) / bar.vwap;
+    return distance < 0.003; // Within 0.3%
+  });
+
+  // Check if now bouncing above VWAP
+  const bouncing = current.close > current.vwap && current.close > current.open;
+
+  // Volume confirmation
+  const recentVol = previous.slice(-5).reduce((sum, b) => sum + b.volume, 0) / 5;
+  const volumeExpansion = current.volume > recentVol * 1.2;
+
+  if (touchedVWAP && bouncing && volumeExpansion) {
+    // Pattern detected!
+  }
+}
+\`\`\`
+
+## Scanner Script Structure Examples
+
+### Example 1: INTRADAY Scanner (for VWAP, intraday patterns)
+
+\`\`\`typescript
+import { initializeDatabase, getDatabase } from './src/database/db';
+import dotenv from 'dotenv';
+import path from 'path';
+
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+interface ScanMatch {
+  ticker: string;
+  date: string;  // Trading date
+  time: string;  // Time of detection (HH:MM)
+  pattern_strength: number; // 0-100
+  metrics: any;
+}
+
+async function runScan(): Promise<ScanMatch[]> {
+  const dbPath = process.env.DATABASE_PATH || './backtesting.db';
+  initializeDatabase(dbPath);
+
+  const db = getDatabase();
+  const results: ScanMatch[] = [];
+
+  // Get list of tickers with intraday data
+  const tickersStmt = db.prepare(\`
+    SELECT DISTINCT ticker FROM ohlcv_data
+    WHERE timeframe = '5min'
+      AND date(timestamp/1000, 'unixepoch') BETWEEN ? AND ?
+  \`);
+  const tickers = tickersStmt.all('2025-10-28', '2025-10-29') as any[];
+
+  console.log(\`Scanning \${tickers.length} tickers with intraday data...\`);
+
+  // Scan each ticker
+  for (const { ticker } of tickers) {
+    // Get 5-minute bars for the date range
+    const barsStmt = db.prepare(\`
+      SELECT timestamp, open, high, low, close, volume, time_of_day,
+             date(timestamp/1000, 'unixepoch') as date
+      FROM ohlcv_data
+      WHERE ticker = ?
+        AND timeframe = '5min'
+        AND date(timestamp/1000, 'unixepoch') BETWEEN ? AND ?
+      ORDER BY timestamp ASC
+    \`);
+    const allBars = barsStmt.all(ticker, '2025-10-28', '2025-10-29') as any[];
+
+    if (allBars.length < 20) continue;
+
+    // Group bars by day
+    const barsByDay: { [date: string]: any[] } = {};
+    for (const bar of allBars) {
+      if (!barsByDay[bar.date]) barsByDay[bar.date] = [];
+      barsByDay[bar.date].push(bar);
+    }
+
+    // Scan each day
+    for (const [date, dayBars] of Object.entries(barsByDay)) {
+      // Calculate VWAP for each bar
+      const barsWithVWAP = [];
+      let cumVol = 0, cumVolPrice = 0;
+
+      for (const bar of dayBars) {
+        const typical = (bar.high + bar.low + bar.close) / 3;
+        cumVolPrice += typical * bar.volume;
+        cumVol += bar.volume;
+        barsWithVWAP.push({
+          ...bar,
+          vwap: cumVol === 0 ? 0 : cumVolPrice / cumVol
+        });
+      }
+
+      // Detect VWAP bounces
+      for (let i = 10; i < barsWithVWAP.length; i++) {
+        const current = barsWithVWAP[i];
+        const previous = barsWithVWAP.slice(i - 10, i);
+
+        // Check if touched VWAP recently
+        const touchedVWAP = previous.some(b =>
+          Math.abs(b.low - b.vwap) / b.vwap < 0.003
+        );
+
+        // Check if bouncing
+        const bouncing = current.close > current.vwap &&
+                        current.close > current.open;
+
+        // Volume confirmation
+        const avgVol = previous.slice(-5).reduce((s, b) => s + b.volume, 0) / 5;
+        const volumeExpansion = current.volume > avgVol * 1.2;
+
+        if (touchedVWAP && bouncing && volumeExpansion) {
+          results.push({
+            ticker,
+            date,
+            time: current.time_of_day,
+            pattern_strength: 75, // Calculate based on criteria
+            metrics: {
+              vwap: current.vwap,
+              price: current.close,
+              volumeRatio: current.volume / avgVol
+            }
+          });
+        }
+      }
+    }
+  }
+
+  return results.sort((a, b) => b.pattern_strength - a.pattern_strength);
+}
+
+runScan().then(results => {
+  console.log(JSON.stringify(results, null, 2));
+}).catch(console.error);
+\`\`\`
+
+### Example 2: DAILY Scanner (for multi-day patterns)
 
 \`\`\`typescript
 import { initializeDatabase, getDatabase } from './src/database/db';
@@ -693,69 +936,40 @@ interface ScanMatch {
   ticker: string;
   start_date: string;
   end_date: string;
-  max_gain_pct: number;
-  avg_volume_expansion: number;
-  pattern_strength: number; // 0-100 score
+  pattern_strength: number;
+  metrics: any;
 }
 
 async function runScan(): Promise<ScanMatch[]> {
-  // Initialize database
   const dbPath = process.env.DATABASE_PATH || './backtesting.db';
   initializeDatabase(dbPath);
 
   const db = getDatabase();
   const results: ScanMatch[] = [];
 
-  // Query all daily metrics for the date range, grouped by ticker
-  // Note: This queries all tickers in daily_metrics (which contains the universe data)
+  // Query daily metrics
   const metricsStmt = db.prepare(\`
     SELECT ticker, date, open, high, low, close, volume,
-           change_percent, change_5d_percent, change_10d_percent,
-           volume_ratio, consecutive_up_days, consecutive_down_days,
-           rsi_14, sma_20, sma_50,
-           price_to_sma20_percent, price_to_sma50_percent,
-           high_low_range_percent
+           change_percent, volume_ratio, rsi_14, sma_20, sma_50
     FROM daily_metrics
-    WHERE date >= ?
-      AND date <= ?
+    WHERE date BETWEEN ? AND ?
     ORDER BY ticker, date ASC
   \`);
 
-  const allRows = metricsStmt.all('START_DATE', 'END_DATE') as any[];
+  const allRows = metricsStmt.all('2025-10-01', '2025-10-29') as any[];
 
-  // Group by ticker
-  const tickerData: { [ticker: string]: any[] } = {};
+  // Group by ticker and detect patterns
+  const byTicker: { [key: string]: any[] } = {};
   for (const row of allRows) {
-    if (!tickerData[row.ticker]) {
-      tickerData[row.ticker] = [];
-    }
-    tickerData[row.ticker].push(row);
+    if (!byTicker[row.ticker]) byTicker[row.ticker] = [];
+    byTicker[row.ticker].push(row);
   }
 
-  console.log(\`Scanning \${Object.keys(tickerData).length} tickers...\`);
-
-  for (const [ticker, rows] of Object.entries(tickerData)) {
-
-    // Implement pattern matching logic here
-    // Example: Find stocks with 2+ consecutive up days and >100% gain over 5 days
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-
-      // Check if pattern matches
-      if (/* your criteria here */) {
-        results.push({
-          ticker: row.ticker,
-          start_date: /* pattern start */,
-          end_date: row.date,
-          max_gain_pct: row.change_5d_percent || 0,
-          avg_volume_expansion: row.volume_ratio || 1,
-          pattern_strength: /* score 0-100 based on how well it matches */
-        });
-      }
-    }
+  for (const [ticker, rows] of Object.entries(byTicker)) {
+    // Pattern detection logic for daily patterns
+    // (High-Tight Flag, Cup and Handle, etc.)
   }
 
-  // Sort by pattern strength (highest first)
   return results.sort((a, b) => b.pattern_strength - a.pattern_strength);
 }
 
@@ -763,6 +977,23 @@ runScan().then(results => {
   console.log(JSON.stringify(results, null, 2));
 }).catch(console.error);
 \`\`\`
+
+## VALIDATION CHECKLIST - Read this BEFORE writing your script!
+
+Before generating the scanner script, answer these questions:
+
+1. **Does the user query mention "VWAP" or "5-minute" or "intraday"?**
+   - YES → You MUST use ohlcv_data table with timeframe='5min'
+   - NO → You may use daily_metrics table
+
+2. **Can this pattern be detected with daily data alone?**
+   - If pattern requires intraday precision (VWAP, time of day, intraday bounces) → Use ohlcv_data
+   - If pattern spans multiple days (consolidation, multi-day rally) → Use daily_metrics
+
+3. **Is SMA_20 an acceptable substitute for VWAP?**
+   - NO! Never use SMA as a VWAP proxy. VWAP is intraday-specific and cumulative from market open.
+
+4. **Final check:** If your script queries daily_metrics but user asked for VWAP, you made an ERROR. Go back and rewrite using ohlcv_data.
 
 ## Response Format
 
@@ -773,15 +1004,15 @@ SCRIPT:
 [your complete scanner script here]
 \`\`\`
 
-EXPLANATION: [Brief description of the pattern matching logic]
+EXPLANATION: [Brief description of the pattern matching logic AND which table you used (ohlcv_data or daily_metrics) and WHY]
 
 ## Guidelines
 
-1. Replace UNIVERSE_NAME with the actual universe parameter
-2. Replace START_DATE and END_DATE with the actual date range (default to last 90 days if not specified)
-3. Implement the pattern matching logic based on the user's query
-4. Calculate a pattern_strength score (0-100) based on how well the match fits the criteria
-5. Be flexible with natural language variations (e.g., "days in a row" = consecutive_up_days)
+1. **FIRST**: Determine if this is an intraday pattern (VWAP, 5-min, time of day) or daily pattern
+2. **THEN**: Choose the correct table (ohlcv_data for intraday, daily_metrics for multi-day)
+3. Use the example scripts above as templates
+4. Replace START_DATE and END_DATE with actual date range
+5. Calculate pattern_strength score (0-100) based on criteria match quality
 6. Output results as JSON array via console.log(JSON.stringify(...))
 7. Handle edge cases (no data, invalid tickers, etc.)`;
   }
@@ -800,10 +1031,22 @@ EXPLANATION: [Brief description of the pattern matching logic]
     const startDate = params.dateRange?.start || defaultStart;
     const endDate = params.dateRange?.end || today;
 
+    // Check if query contains intraday keywords
+    const queryLower = params.query.toLowerCase();
+    const isIntradayQuery = queryLower.includes('vwap') ||
+                            queryLower.includes('5-minute') ||
+                            queryLower.includes('5min') ||
+                            queryLower.includes('intraday') ||
+                            queryLower.includes('time of day');
+
+    const tableInstruction = isIntradayQuery
+      ? '\n⚠️ IMPORTANT: This query mentions intraday keywords (VWAP/5-minute/intraday). You MUST use the ohlcv_data table with timeframe=\'5min\'.\n'
+      : '';
+
     return `Generate a scanner script for the following query:
 
 USER QUERY: ${params.query}
-
+${tableInstruction}
 PARAMETERS:
 - Universe: ${params.universe}
 - Date Range: ${startDate} to ${endDate}
