@@ -7,6 +7,7 @@ import { Router, Request, Response } from 'express';
 import tradingAgentService from '../../services/trading-agent.service';
 import tradestationService from '../../services/tradestation.service';
 import logger from '../../services/logger.service';
+import { getDatabase } from '../../database/db';
 
 const router = Router();
 
@@ -432,8 +433,8 @@ router.get('/:id/signals', async (req: Request, res: Response) => {
 
     query += ` ORDER BY detection_time DESC LIMIT 100`;
 
-    const db = await import('../../services/database.service');
-    const signals = await db.DatabaseService.prototype.all(query, params);
+    const db = getDatabase();
+    const signals = db.prepare(query).all(...params);
 
     res.json({ signals });
 
@@ -465,8 +466,8 @@ router.get('/:id/recommendations', async (req: Request, res: Response) => {
 
     query += ` ORDER BY created_at DESC LIMIT 100`;
 
-    const db = await import('../../services/database.service');
-    const recommendations = await db.DatabaseService.prototype.all(query, params);
+    const db = getDatabase();
+    const recommendations = db.prepare(query).all(...params);
 
     res.json({ recommendations });
 
@@ -487,11 +488,9 @@ router.post('/:id/recommendations/:recommendationId/approve', async (req: Reques
   try {
     const { recommendationId } = req.params;
 
-    const db = await import('../../services/database.service');
-    await db.DatabaseService.prototype.run(
-      `UPDATE trade_recommendations SET status = 'APPROVED', updated_at = datetime('now') WHERE id = ?`,
-      [recommendationId]
-    );
+    const db = getDatabase();
+    db.prepare(`UPDATE trade_recommendations SET status = 'APPROVED', updated_at = datetime('now') WHERE id = ?`)
+      .run(recommendationId);
 
     res.json({ message: 'Recommendation approved' });
 
@@ -513,11 +512,9 @@ router.post('/:id/recommendations/:recommendationId/reject', async (req: Request
     const { recommendationId } = req.params;
     const { reason } = req.body;
 
-    const db = await import('../../services/database.service');
-    await db.DatabaseService.prototype.run(
-      `UPDATE trade_recommendations SET status = 'REJECTED', updated_at = datetime('now') WHERE id = ?`,
-      [recommendationId]
-    );
+    const db = getDatabase();
+    db.prepare(`UPDATE trade_recommendations SET status = 'REJECTED', updated_at = datetime('now') WHERE id = ?`)
+      .run(recommendationId);
 
     // Log rejection reason
     if (reason) {
@@ -561,8 +558,8 @@ router.get('/:id/trades', async (req: Request, res: Response) => {
 
     query += ` ORDER BY entry_time DESC LIMIT 100`;
 
-    const db = await import('../../services/database.service');
-    const trades = await db.DatabaseService.prototype.all(query, params);
+    const db = getDatabase();
+    const trades = db.prepare(query).all(...params);
 
     res.json({ trades });
 
