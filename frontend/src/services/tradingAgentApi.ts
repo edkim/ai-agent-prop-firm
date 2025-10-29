@@ -130,8 +130,8 @@ export const tradingAgentApi = {
     status?: string;
     limit?: number;
   }): Promise<LiveSignal[]> {
-    const response = await apiClient.get<LiveSignal[]>(`/${agentId}/signals`, { params });
-    return response.data;
+    const response = await apiClient.get<{ signals: LiveSignal[] }>(`/${agentId}/signals`, { params });
+    return response.data.signals || [];
   },
 
   // ===== Recommendations =====
@@ -143,8 +143,8 @@ export const tradingAgentApi = {
     status?: string;
     limit?: number;
   }): Promise<TradeRecommendation[]> {
-    const response = await apiClient.get<TradeRecommendation[]>(`/${agentId}/recommendations`, { params });
-    return response.data;
+    const response = await apiClient.get<{ recommendations: TradeRecommendation[] }>(`/${agentId}/recommendations`, { params });
+    return response.data.recommendations || [];
   },
 
   /**
@@ -174,8 +174,8 @@ export const tradingAgentApi = {
     limit?: number;
     offset?: number;
   }): Promise<ExecutedTrade[]> {
-    const response = await apiClient.get<ExecutedTrade[]>(`/${agentId}/trades`, { params });
-    return response.data;
+    const response = await apiClient.get<{ trades: ExecutedTrade[] }>(`/${agentId}/trades`, { params });
+    return response.data.trades || [];
   },
 
   /**
@@ -206,8 +206,8 @@ export const tradingAgentApi = {
     startDate?: string;
     endDate?: string;
   }): Promise<RiskMetrics[]> {
-    const response = await apiClient.get<RiskMetrics[]>(`/${agentId}/metrics`, { params });
-    return response.data;
+    const response = await apiClient.get<{ metrics: RiskMetrics[] }>(`/${agentId}/metrics`, { params });
+    return response.data.metrics || [];
   },
 
   /**
@@ -225,8 +225,8 @@ export const tradingAgentApi = {
     startDate?: string;
     endDate?: string;
   }): Promise<EquityCurveDataPoint[]> {
-    const response = await apiClient.get<EquityCurveDataPoint[]>(`/${agentId}/equity-curve`, { params });
-    return response.data;
+    const response = await apiClient.get<{ equityCurve: EquityCurveDataPoint[] }>(`/${agentId}/equity-curve`, { params });
+    return response.data.equityCurve || [];
   },
 
   /**
@@ -246,7 +246,7 @@ export const tradingAgentApi = {
     limit?: number;
     activityType?: string;
   }): Promise<AgentActivity[]> {
-    const response = await apiClient.get<AgentActivity[]>(`/${agentId}/activity`, { params });
-    return response.data;
+    const response = await apiClient.get<{ activity: AgentActivity[] }>(`/${agentId}/activity`, { params });
+    return response.data.activity || [];
   },
 };
