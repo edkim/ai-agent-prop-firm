@@ -3,9 +3,9 @@
  * Real-time position monitoring and exit management
  */
 
-import { DatabaseService } from './database.service';
-import { TradingAgentService } from './trading-agent.service';
-import { TradeStationService } from './tradestation.service';
+import { getDatabase } from '../database/db';
+import tradingAgentService from './trading-agent.service';
+import tradestationService from './tradestation.service';
 import { ExecutionEngineService } from './execution-engine.service';
 import { ExecutedTrade, TradingAgent } from '../types/trading-agent.types';
 
@@ -24,18 +24,12 @@ interface PositionUpdate {
 }
 
 export class PositionMonitorService {
-  private db: DatabaseService;
-  private tradingAgentService: TradingAgentService;
-  private tradeStationService: TradeStationService;
   private executionEngine: ExecutionEngineService;
   private monitoringIntervals: Map<string, NodeJS.Timeout>;
   private readonly MONITOR_INTERVAL_MS = 5000; // 5 seconds
   private readonly MAX_SLIPPAGE_PERCENT = 2;
 
   constructor() {
-    this.db = new DatabaseService();
-    this.tradingAgentService = new TradingAgentService();
-    this.tradeStationService = new TradeStationService();
     this.executionEngine = new ExecutionEngineService();
     this.monitoringIntervals = new Map();
   }
@@ -81,7 +75,7 @@ export class PositionMonitorService {
   async monitorPositions(agentId: string): Promise<void> {
     try {
       // Get agent
-      const agent = await this.tradingAgentService.getAgent(agentId);
+      const agent = await tradingAgentService.getAgent(agentId);
       if (!agent || !agent.active) {
         return; // Agent inactive, skip monitoring
       }
@@ -306,7 +300,7 @@ export class PositionMonitorService {
       console.error('[PositionMonitor] Error executing exit:', error);
 
       // Log error activity
-      await this.tradingAgentService.logActivity(
+      await tradingAgentService.logActivity(
         trade.agentId,
         'ERROR',
         `Failed to execute exit for ${trade.ticker}: ${error.message}`,
@@ -343,7 +337,7 @@ export class PositionMonitorService {
     currentPrice: number
   ): Promise<void> {
     try {
-      const portfolioState = await this.tradingAgentService.getPortfolioState(agentId);
+      const portfolioState = await tradingAgentService.getPortfolioState(agentId);
       if (!portfolioState) return;
 
       const position = portfolioState.positions[ticker];
@@ -394,7 +388,7 @@ export class PositionMonitorService {
       try {
         // In production, use TradeStation WebSocket for real-time prices
         // For now, use last known price or quote API
-        const quote = await this.tradeStationService.getQuote(ticker);
+        const quote = await tradestationService.getQuote(ticker);
 
         prices.set(ticker, {
           ticker,
@@ -522,7 +516,7 @@ export class PositionMonitorService {
     }
 
     // Get current price
-    const quote = await this.tradeStationService.getQuote(trade.ticker);
+    const quote = await tradestationService.getQuote(trade.ticker);
     const currentPrice = quote.last || quote.bid;
 
     // Check if position has reached activation threshold
@@ -558,7 +552,7 @@ export class PositionMonitorService {
     console.log(`[PositionMonitor] ✅ Trailing stop enabled for ${trade.ticker}: ${trailPercent}% @ $${trailingStop.toFixed(2)}`);
 
     // Log activity
-    await this.tradingAgentService.logActivity(
+    await tradingAgentService.logActivity(
       trade.agent_id,
       'STATUS_CHANGE',
       `Trailing stop enabled: ${trailPercent}% @ $${trailingStop.toFixed(2)}`,

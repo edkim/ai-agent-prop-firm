@@ -4,7 +4,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { DatabaseService } from './database.service';
+import { getDatabase } from '../database/db';
 import { LiveSignal, SignalData } from '../types/trading-agent.types';
 
 interface OHLCVBar {
@@ -36,12 +36,11 @@ interface TechnicalIndicators {
 }
 
 export class RealtimeScannerService {
-  private db: DatabaseService;
   private readonly DEDUPLICATION_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
   private readonly PATTERN_MATURITY_MIN_BARS = 20;
 
   constructor() {
-    this.db = new DatabaseService();
+    // No initialization needed - uses getDatabase() directly
   }
 
   /**
@@ -259,7 +258,8 @@ export class RealtimeScannerService {
         AND detection_time > datetime(?, 'unixepoch', 'localtime')
     `;
 
-    const result = await this.db.get(query, [ticker, patternType, Math.floor(windowStart / 1000)]);
+    const db = getDatabase();
+    const result = db.prepare(query).get(ticker, patternType, Math.floor(windowStart / 1000)) as { count: number };
     return result.count > 0;
   }
 
@@ -289,7 +289,8 @@ export class RealtimeScannerService {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    await this.db.run(query, [
+    const db = getDatabase();
+    db.prepare(query).run(
       signal.id,
       signal.agentId,
       signal.ticker,
@@ -299,7 +300,7 @@ export class RealtimeScannerService {
       signal.status,
       signal.createdAt.toISOString(),
       signal.updatedAt.toISOString()
-    ]);
+    );
 
     console.log(`[RealtimeScanner] 🎯 Signal emitted: ${pattern.type} on ${pattern.ticker} (quality: ${pattern.quality})`);
 
@@ -596,7 +597,8 @@ export class RealtimeScannerService {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
     `;
 
-    await this.db.run(query, [
+    const db = getDatabase();
+    db.prepare(query).run(
       bar.ticker,
       bar.timestamp,
       bar.open,
@@ -605,7 +607,7 @@ export class RealtimeScannerService {
       bar.close,
       bar.volume,
       bar.timeframe
-    ]);
+    );
   }
 
   /**
@@ -619,7 +621,8 @@ export class RealtimeScannerService {
       LIMIT ?
     `;
 
-    const rows = await this.db.all(query, [ticker, timeframe, limit]);
+    const db = getDatabase();
+    const rows = db.prepare(query).all(ticker, timeframe, limit) as any[];
     return rows.reverse().map(row => ({
       ticker: row.ticker,
       timestamp: row.timestamp,
