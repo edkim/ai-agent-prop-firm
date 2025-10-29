@@ -76,10 +76,53 @@ const dbPath = process.env.DATABASE_PATH || './backtesting.db';
 initializeDatabase(dbPath);
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`Database: ${dbPath}`);
+  console.log('');
+
+  // Auto-start trading services if enabled
+  if (process.env.AUTO_EXECUTION_ENABLED === 'true') {
+    try {
+      console.log('🤖 AUTO_EXECUTION_ENABLED is true, starting trading services...');
+      console.log('');
+
+      const tradingStartupService = (await import('../services/trading-startup.service')).default;
+      await tradingStartupService.start();
+    } catch (error: any) {
+      console.error('❌ Failed to start trading services:', error.message);
+      console.error('   Trading services will not be active. Check configuration and restart.');
+    }
+  } else {
+    console.log('ℹ️  Autonomous trading disabled (AUTO_EXECUTION_ENABLED not true)');
+    console.log('   Set AUTO_EXECUTION_ENABLED=true in .env to enable');
+  }
 });
+
+// Graceful shutdown
+const gracefulShutdown = async (signal: string) => {
+  console.log('');
+  console.log(`${signal} received, shutting down gracefully...`);
+
+  try {
+    // Stop trading services
+    const tradingStartupService = (await import('../services/trading-startup.service')).default;
+    await tradingStartupService.stop();
+
+    // Close database
+    const { closeDatabase } = await import('../database/db');
+    closeDatabase();
+
+    console.log('✅ Shutdown complete');
+    process.exit(0);
+  } catch (error: any) {
+    console.error('Error during shutdown:', error);
+    process.exit(1);
+  }
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 export default app;

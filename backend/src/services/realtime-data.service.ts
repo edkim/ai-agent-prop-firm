@@ -1,10 +1,10 @@
 /**
- * Real-Time Data Service
- * Manages WebSocket connection to Polygon.io for live market data streaming
+ * Real-Time Data Service (REST API Polling)
+ * Polls Polygon.io REST API for latest 5-minute bars
  */
 
-import { WebSocketClient, IStocksEvent } from '@polygon.io/client-js';
 import { getDatabase } from '../database/db';
+import { PolygonService } from './polygon.service';
 import logger from './logger.service';
 
 const POLYGON_API_KEY = process.env.POLYGON_API_KEY;
@@ -21,15 +21,21 @@ interface Bar {
 }
 
 class RealtimeDataService {
-  private wsClient: WebSocketClient | null = null;
+  private polygonService: PolygonService;
   private subscribedTickers: Set<string> = new Set();
   private isConnected: boolean = false;
-  private reconnectAttempts: number = 0;
-  private maxReconnectAttempts: number = 10;
+  private pollingInterval: NodeJS.Timeout | null = null;
   private dataCallbacks: ((bar: Bar) => void)[] = [];
+  private lastFetchTimestamps: Map<string, number> = new Map();
+  private readonly POLL_INTERVAL_MS = 60000; // 60 seconds
+  private readonly TIMEFRAME = '5min';
+
+  constructor() {
+    this.polygonService = new PolygonService(POLYGON_API_KEY);
+  }
 
   /**
-   * Initialize and connect to Polygon WebSocket
+   * Initialize and start polling
    */
   async connect(): Promise<void> {
     if (!POLYGON_API_KEY) {
@@ -37,61 +43,134 @@ class RealtimeDataService {
     }
 
     if (this.isConnected) {
-      logger.warn('Already connected to Polygon WebSocket');
+      logger.warn('Already connected to Polygon REST API');
       return;
     }
 
     try {
-      logger.info('📡 Connecting to Polygon WebSocket...');
+      logger.info('📡 Starting Polygon REST API polling...');
 
-      // Create WebSocket client
-      this.wsClient = new WebSocketClient({
-        apiKey: POLYGON_API_KEY,
-        feed: 'delayed.polygon.io', // Use 'delayed.polygon.io' for free tier
-        market: 'stocks',
-      });
+      this.isConnected = true;
 
-      // Handle connection
-      this.wsClient.onConnect(() => {
-        this.isConnected = true;
-        this.reconnectAttempts = 0;
-        logger.info('✅ Connected to Polygon WebSocket');
-      });
+      // Start polling immediately
+      await this.pollLatestBars();
 
-      // Handle disconnection
-      this.wsClient.onDisconnect(() => {
-        this.isConnected = false;
-        logger.warn('❌ Disconnected from Polygon WebSocket');
-        this.handleDisconnection();
-      });
+      // Set up recurring polling
+      this.pollingInterval = setInterval(async () => {
+        try {
+          await this.pollLatestBars();
+        } catch (error: any) {
+          logger.error('Error in polling loop:', error.message);
+        }
+      }, this.POLL_INTERVAL_MS);
 
-      // Handle errors
-      this.wsClient.onError((error: Error) => {
-        logger.error('Polygon WebSocket error:', error);
-      });
-
-      // Handle aggregate bars (1-min, 5-min, etc.)
-      this.wsClient.onAggregateSecond((event: IStocksEvent) => {
-        this.handleAggregateBar(event, '1min');
-      });
-
-      // Connect
-      await this.wsClient.connect();
+      logger.info(`✅ Polling started - checking every ${this.POLL_INTERVAL_MS / 1000}s`);
 
     } catch (error: any) {
-      logger.error('Failed to connect to Polygon WebSocket:', error);
+      logger.error('Failed to start polling:', error);
+      this.isConnected = false;
       throw error;
     }
   }
 
   /**
-   * Subscribe to real-time data for specific tickers
+   * Poll Polygon API for latest bars for all subscribed tickers
    */
-  async subscribeToTickers(tickers: string[]): Promise<void> {
-    if (!this.wsClient || !this.isConnected) {
-      throw new Error('WebSocket not connected. Call connect() first.');
+  private async pollLatestBars(): Promise<void> {
+    if (this.subscribedTickers.size === 0) {
+      return;
     }
 
+    const now = Date.now();
+    const tickers = Array.from(this.subscribedTickers);
+
+    logger.info(`🔄 Polling ${tickers.length} tickers for latest 5-min bars...`);
+
+    // Fetch latest bars for all tickers in parallel
+    const fetchPromises = tickers.map(ticker => this.fetchLatestBarForTicker(ticker, now));
+
+    try {
+      await Promise.allSettled(fetchPromises);
+      logger.info(`✅ Poll complete - checked ${tickers.length} tickers`);
+    } catch (error: any) {
+      logger.error('Error during parallel fetch:', error);
+    }
+  }
+
+  /**
+   * Fetch latest bar for a specific ticker
+   */
+  private async fetchLatestBarForTicker(ticker: string, now: number): Promise<void> {
+    try {
+      // Get last fetch timestamp or default to 30 minutes ago
+      const lastTimestamp = this.lastFetchTimestamps.get(ticker) || (now - 30 * 60 * 1000);
+
+      // Fetch bars from last timestamp to now
+      const fromDate = new Date(lastTimestamp).toISOString().split('T')[0];
+      const toDate = new Date(now).toISOString().split('T')[0];
+
+      const bars = await this.polygonService.fetchAggregates(
+        ticker,
+        5, // 5-minute bars
+        'minute',
+        fromDate,
+        toDate,
+        100 // Limit to recent bars
+      );
+
+      if (bars.length === 0) {
+        return;
+      }
+
+      // Process new bars
+      let newBarsCount = 0;
+      for (const polygonBar of bars) {
+        // Skip if we've already processed this bar
+        if (polygonBar.t <= lastTimestamp) {
+          continue;
+        }
+
+        const bar: Bar = {
+          ticker: ticker.toUpperCase(),
+          timestamp: polygonBar.t,
+          open: polygonBar.o,
+          high: polygonBar.h,
+          low: polygonBar.l,
+          close: polygonBar.c,
+          volume: polygonBar.v,
+          timeframe: this.TIMEFRAME
+        };
+
+        // Validate bar
+        if (!this.validateBar(bar)) {
+          continue;
+        }
+
+        // Store in database
+        this.storeBar(bar);
+
+        // Notify callbacks
+        this.notifyCallbacks(bar);
+
+        newBarsCount++;
+
+        // Update last timestamp
+        this.lastFetchTimestamps.set(ticker, polygonBar.t);
+      }
+
+      if (newBarsCount > 0) {
+        logger.info(`📊 ${ticker}: ${newBarsCount} new 5-min bar(s)`);
+      }
+
+    } catch (error: any) {
+      logger.error(`Error fetching bars for ${ticker}:`, error.message);
+    }
+  }
+
+  /**
+   * Subscribe to tickers for polling
+   */
+  async subscribeToTickers(tickers: string[]): Promise<void> {
     const newTickers = tickers.filter(t => !this.subscribedTickers.has(t));
 
     if (newTickers.length === 0) {
@@ -99,18 +178,21 @@ class RealtimeDataService {
       return;
     }
 
-    try {
-      // Subscribe to aggregate (second) bars
-      for (const ticker of newTickers) {
-        this.wsClient.subscribeToAggregateSecond(ticker);
-        this.subscribedTickers.add(ticker);
-        logger.info(`📊 Subscribed to ${ticker}`);
-      }
+    for (const ticker of newTickers) {
+      this.subscribedTickers.add(ticker);
+      logger.info(`📊 Subscribed to ${ticker}`);
+    }
 
-      logger.info(`✅ Subscribed to ${newTickers.length} ticker(s)`);
-    } catch (error: any) {
-      logger.error('Failed to subscribe to tickers:', error);
-      throw error;
+    logger.info(`✅ Subscribed to ${newTickers.length} ticker(s)`);
+
+    // If already polling, fetch data for new tickers immediately
+    if (this.isConnected) {
+      const now = Date.now();
+      for (const ticker of newTickers) {
+        this.fetchLatestBarForTicker(ticker, now).catch(err => {
+          logger.error(`Initial fetch failed for ${ticker}:`, err.message);
+        });
+      }
     }
   }
 
@@ -118,14 +200,10 @@ class RealtimeDataService {
    * Unsubscribe from specific tickers
    */
   async unsubscribeFromTickers(tickers: string[]): Promise<void> {
-    if (!this.wsClient || !this.isConnected) {
-      return;
-    }
-
     for (const ticker of tickers) {
       if (this.subscribedTickers.has(ticker)) {
-        this.wsClient.unsubscribeFromAggregateSecond(ticker);
         this.subscribedTickers.delete(ticker);
+        this.lastFetchTimestamps.delete(ticker);
         logger.info(`📊 Unsubscribed from ${ticker}`);
       }
     }
@@ -139,42 +217,16 @@ class RealtimeDataService {
   }
 
   /**
-   * Handle incoming aggregate bar data
+   * Notify all callbacks of new bar
    */
-  private handleAggregateBar(event: IStocksEvent, timeframe: string): void {
-    try {
-      const bar: Bar = {
-        ticker: event.pair.toUpperCase(),
-        timestamp: event.start || Date.now(),
-        open: event.open || 0,
-        high: event.high || 0,
-        low: event.low || 0,
-        close: event.close || 0,
-        volume: event.volume || 0,
-        timeframe
-      };
-
-      // Validate bar data
-      if (!this.validateBar(bar)) {
-        logger.warn(`⚠️ Invalid bar data for ${bar.ticker}`, bar);
-        return;
+  private notifyCallbacks(bar: Bar): void {
+    this.dataCallbacks.forEach(callback => {
+      try {
+        callback(bar);
+      } catch (error: any) {
+        logger.error('Error in bar callback:', error);
       }
-
-      // Store in database
-      this.storeBar(bar);
-
-      // Notify callbacks
-      this.dataCallbacks.forEach(callback => {
-        try {
-          callback(bar);
-        } catch (error: any) {
-          logger.error('Error in bar callback:', error);
-        }
-      });
-
-    } catch (error: any) {
-      logger.error('Error handling aggregate bar:', error);
-    }
+    });
   }
 
   /**
@@ -194,15 +246,7 @@ class RealtimeDataService {
       return false;
     }
 
-    // Check for stale data (more than 5 minutes old)
-    const now = Date.now();
-    const barAge = now - bar.timestamp;
-
-    if (barAge > 300000) { // 5 minutes
-      logger.warn(`⚠️ Stale bar for ${bar.ticker}: ${barAge / 1000}s old`);
-      return false;
-    }
-
+    // Don't check for stale data in REST polling - historical bars are expected
     return true;
   }
 
@@ -234,51 +278,19 @@ class RealtimeDataService {
   }
 
   /**
-   * Handle disconnection with exponential backoff
-   */
-  private async handleDisconnection(): Promise<void> {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      logger.error(`❌ Max reconnection attempts (${this.maxReconnectAttempts}) reached. Stopping.`);
-      return;
-    }
-
-    this.reconnectAttempts++;
-    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 60000);
-
-    logger.info(`🔄 Reconnecting to Polygon WebSocket (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${delay / 1000}s...`);
-
-    await new Promise(resolve => setTimeout(resolve, delay));
-
-    try {
-      await this.connect();
-
-      // Resubscribe to tickers
-      if (this.subscribedTickers.size > 0) {
-        const tickers = Array.from(this.subscribedTickers);
-        this.subscribedTickers.clear(); // Clear before resubscribing
-        await this.subscribeToTickers(tickers);
-      }
-
-    } catch (error: any) {
-      logger.error('Reconnection failed:', error);
-      this.handleDisconnection(); // Try again
-    }
-  }
-
-  /**
-   * Disconnect from Polygon WebSocket
+   * Disconnect and stop polling
    */
   async disconnect(): Promise<void> {
-    if (this.wsClient) {
-      try {
-        this.wsClient.disconnect();
-        this.isConnected = false;
-        this.subscribedTickers.clear();
-        logger.info('Disconnected from Polygon WebSocket');
-      } catch (error: any) {
-        logger.error('Error disconnecting:', error);
-      }
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
     }
+
+    this.isConnected = false;
+    this.subscribedTickers.clear();
+    this.lastFetchTimestamps.clear();
+
+    logger.info('Disconnected from Polygon REST API - polling stopped');
   }
 
   /**
@@ -292,7 +304,7 @@ class RealtimeDataService {
     return {
       connected: this.isConnected,
       subscribedTickers: Array.from(this.subscribedTickers),
-      reconnectAttempts: this.reconnectAttempts
+      reconnectAttempts: 0 // Not applicable for REST polling
     };
   }
 
@@ -313,6 +325,9 @@ class RealtimeDataService {
     return bars.reverse(); // Return in chronological order
   }
 }
+
+// Export class for instantiation
+export { RealtimeDataService };
 
 // Singleton instance
 const realtimeDataService = new RealtimeDataService();

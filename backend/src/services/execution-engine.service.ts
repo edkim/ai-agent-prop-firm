@@ -4,9 +4,9 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { DatabaseService } from './database.service';
-import { TradingAgentService } from './trading-agent.service';
-import { TradeStationService } from './tradestation.service';
+import { getDatabase } from '../database/db';
+import tradingAgentService from './trading-agent.service';
+import tradestationService from './tradestation.service';
 import {
   TradeRecommendation,
   TradingAgent,
@@ -28,14 +28,8 @@ interface ExecutionResult {
 }
 
 export class ExecutionEngineService {
-  private db: DatabaseService;
-  private tradingAgentService: TradingAgentService;
-  private tradeStationService: TradeStationService;
-
   constructor() {
-    this.db = new DatabaseService();
-    this.tradingAgentService = new TradingAgentService();
-    this.tradeStationService = new TradeStationService();
+    // No initialization needed - uses singletons
   }
 
   /**
@@ -46,7 +40,7 @@ export class ExecutionEngineService {
       console.log(`[ExecutionEngine] ⚖️ Processing recommendation: ${recommendation.ticker} @ $${recommendation.entryPrice}`);
 
       // Get agent
-      const agent = await this.tradingAgentService.getAgent(recommendation.agentId);
+      const agent = tradingAgentService.getAgent(recommendation.agentId);
       if (!agent) {
         throw new Error(`Agent not found: ${recommendation.agentId}`);
       }
@@ -80,7 +74,7 @@ export class ExecutionEngineService {
         await this.rejectRecommendation(recommendation, failedChecks);
 
         // Log activity
-        await this.tradingAgentService.logActivity(
+        await tradingAgentService.logActivity(
           agent.id,
           'RISK_LIMIT_HIT',
           `Trade rejected: ${failedChecks}`,
@@ -108,7 +102,7 @@ export class ExecutionEngineService {
       await this.updateRecommendationStatus(recommendation.id, 'EXECUTED');
 
       // Log activity
-      await this.tradingAgentService.logActivity(
+      await tradingAgentService.logActivity(
         agent.id,
         'ORDER_PLACED',
         `Order placed: ${recommendation.side} ${recommendation.positionSize} ${recommendation.ticker} @ $${recommendation.entryPrice}`,
@@ -124,7 +118,7 @@ export class ExecutionEngineService {
       console.error('[ExecutionEngine] Error processing recommendation:', error);
 
       // Log error
-      await this.tradingAgentService.logActivity(
+      await tradingAgentService.logActivity(
         recommendation.agentId,
         'ERROR',
         `Execution error: ${error.message}`,
@@ -147,7 +141,7 @@ export class ExecutionEngineService {
     recommendation: TradeRecommendation,
     agent: TradingAgent
   ): Promise<RiskCheckResults> {
-    const portfolioState = await this.tradingAgentService.getPortfolioState(agent.id);
+    const portfolioState = await tradingAgentService.getPortfolioState(agent.id);
     if (!portfolioState) {
       throw new Error(`Portfolio state not found for agent ${agent.id}`);
     }
@@ -300,7 +294,7 @@ export class ExecutionEngineService {
     agent: TradingAgent
   ): Promise<ExecutedTrade> {
     // Place order via TradeStation
-    const orderResult = await this.tradeStationService.placeOrder(agent.accountId, {
+    const orderResult = await tradestationService.placeOrder(agent.accountId, {
       symbol: recommendation.ticker,
       quantity: recommendation.positionSize,
       side: recommendation.side === 'LONG' ? 'Buy' : 'Sell',
@@ -349,7 +343,8 @@ export class ExecutionEngineService {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    await this.db.run(query, [
+    const db = getDatabase();
+    db.prepare(query).run(
       trade.id,
       trade.agentId,
       trade.recommendationId,
@@ -366,14 +361,14 @@ export class ExecutionEngineService {
       trade.confidenceScore,
       trade.createdAt.toISOString(),
       trade.updatedAt.toISOString()
-    ]);
+    );
   }
 
   /**
    * Update portfolio state after trade entry
    */
   private async updatePortfolioStateAfterEntry(agentId: string, trade: ExecutedTrade): Promise<void> {
-    const portfolioState = await this.tradingAgentService.getPortfolioState(agentId);
+    const portfolioState = await tradingAgentService.getPortfolioState(agentId);
     if (!portfolioState) return;
 
     // Deduct cash
@@ -409,7 +404,8 @@ export class ExecutionEngineService {
       WHERE agent_id = ?
     `;
 
-    await this.db.run(query, [
+    const db = getDatabase(); if(false){}
+    db.prepare(query).run(
       portfolioState.cash,
       JSON.stringify(portfolioState.positions),
       portfolioState.totalEquity,
@@ -417,7 +413,7 @@ export class ExecutionEngineService {
       portfolioState.totalExposure,
       portfolioState.lastUpdated.toISOString(),
       agentId
-    ]);
+    );
   }
 
   /**
@@ -448,7 +444,8 @@ export class ExecutionEngineService {
       WHERE id = ?
     `;
 
-    await this.db.run(query, [status, recommendationId]);
+    const db2 = getDatabase();
+    db2.prepare(query).run(status, recommendationId);
   }
 
   /**
@@ -464,7 +461,8 @@ export class ExecutionEngineService {
       WHERE id = ?
     `;
 
-    await this.db.run(query, [JSON.stringify(riskChecks), recommendationId]);
+    const db3 = getDatabase();
+    db3.prepare(query).run(JSON.stringify(riskChecks), recommendationId);
   }
 
   /**
@@ -481,7 +479,8 @@ export class ExecutionEngineService {
 
     query += ` ORDER BY entry_time DESC`;
 
-    const rows = await this.db.all(query, params);
+    const db = getDatabase();
+    const rows = db.prepare(query).all(...params) as any[];
 
     return rows.map(row => ({
       id: row.id,
@@ -528,7 +527,8 @@ export class ExecutionEngineService {
   ): Promise<ExecutedTrade> {
     // Get the trade
     const query = `SELECT * FROM executed_trades WHERE id = ?`;
-    const row = await this.db.get(query, [tradeId]);
+    const db = getDatabase();
+    const row = db.prepare(query).get(tradeId) as any;
 
     if (!row) {
       throw new Error(`Trade not found: ${tradeId}`);
@@ -554,20 +554,21 @@ export class ExecutionEngineService {
       WHERE id = ?
     `;
 
-    await this.db.run(updateQuery, [
+    const db4 = getDatabase();
+    db4.prepare(updateQuery).run(
       new Date().toISOString(),
       exitPrice,
       pnl,
       pnlPercent,
       exitReason,
       tradeId
-    ]);
+    );
 
     // Update portfolio state
     await this.updatePortfolioStateAfterExit(row.agent_id, row.ticker, exitPrice, pnl);
 
     // Log activity
-    await this.tradingAgentService.logActivity(
+    await tradingAgentService.logActivity(
       row.agent_id,
       'POSITION_CLOSED',
       `Position closed: ${row.ticker} @ $${exitPrice} - P&L: $${pnl.toFixed(2)} (${pnlPercent.toFixed(2)}%)`,
@@ -576,7 +577,8 @@ export class ExecutionEngineService {
     );
 
     // Return updated trade
-    const updatedRow = await this.db.get(query, [tradeId]);
+    const updatedDb = getDatabase();
+    const updatedRow = updatedDb.prepare(`SELECT * FROM executed_trades WHERE id = ?`).get(tradeId) as any;
     return this.rowToTrade(updatedRow);
   }
 
@@ -589,7 +591,7 @@ export class ExecutionEngineService {
     exitPrice: number,
     pnl: number
   ): Promise<void> {
-    const portfolioState = await this.tradingAgentService.getPortfolioState(agentId);
+    const portfolioState = await tradingAgentService.getPortfolioState(agentId);
     if (!portfolioState) return;
 
     const position = portfolioState.positions[ticker];
@@ -629,7 +631,7 @@ export class ExecutionEngineService {
       WHERE agent_id = ?
     `;
 
-    await this.db.run(query, [
+    const db = getDatabase(); db.prepare(query, [
       portfolioState.cash,
       JSON.stringify(portfolioState.positions),
       portfolioState.totalEquity,
