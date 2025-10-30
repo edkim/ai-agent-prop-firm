@@ -179,7 +179,7 @@ Based on the strategy complexity and any explicit date mentions, what dates shou
       const client = this.getClient();
       const response = await client.messages.create({
         model: this.model,
-        max_tokens: 4000,
+        max_tokens: 16000, // Increased for long scanner scripts
         temperature: 0.0,
         system: systemPrompt,
         messages: [
@@ -1059,26 +1059,79 @@ Please generate a complete, runnable TypeScript scanner script that finds stocks
    * Extract TypeScript code from Claude response with flexible matching
    */
   private extractTypeScriptCode(responseText: string): string | null {
+    console.log('🔍 Attempting to extract TypeScript code...');
+    console.log('Response length:', responseText.length);
+    console.log('Response preview (first 800 chars):\n', responseText.substring(0, 800));
+
+    // First, look for the SCRIPT: marker if present and extract everything after it
+    let searchText = responseText;
+    const scriptMarker = /(?:SCRIPT|CODE|TYPESCRIPT):\s*\n/i;
+    const scriptMatch = responseText.match(scriptMarker);
+    if (scriptMatch) {
+      console.log(`  Found script marker at position ${scriptMatch.index}`);
+      searchText = responseText.substring(scriptMatch.index! + scriptMatch[0].length);
+    }
+
     // Try multiple patterns in order of specificity
-    const patterns = [
-      /```typescript\n([\s\S]*?)\n```/,           // Standard: ```typescript\n...\n```
-      /```typescript\s+([\s\S]*?)```/,            // With whitespace: ```typescript ...```
-      /```ts\n([\s\S]*?)\n```/,                   // Short form: ```ts\n...\n```
-      /```ts\s+([\s\S]*?)```/,                    // Short form with whitespace
-      /```\n([\s\S]*?)\n```/,                     // Generic code block: ```\n...\n```
-      /```([\s\S]*?)```/,                         // Any code block
+    // First try with closing backticks (complete response)
+    const patternsWithClose = [
+      { regex: /```typescript\s*([\s\S]*?)```/, name: 'typescript with closing' },
+      { regex: /```ts\s*([\s\S]*?)```/, name: 'ts with closing' },
+      { regex: /```\s*([\s\S]*?)```/, name: 'generic with closing' },
     ];
 
-    for (const pattern of patterns) {
-      const match = responseText.match(pattern);
+    for (const { regex, name } of patternsWithClose) {
+      console.log(`  Trying pattern: ${name}`);
+      const match = searchText.match(regex);
       if (match && match[1]) {
         const code = match[1].trim();
+        console.log(`  ✓ Pattern matched! Code length: ${code.length}`);
+        console.log(`  Code preview (first 200 chars): ${code.substring(0, 200)}`);
+
         // Verify it looks like TypeScript (has import/const/function/etc)
-        if (code.match(/\b(import|const|let|var|function|class|interface|type|export)\b/)) {
+        const tsKeywordMatch = code.match(/\b(import|const|let|var|function|class|interface|type|export)\b/);
+        if (tsKeywordMatch) {
+          console.log(`  ✓ TypeScript validation passed (found keyword: ${tsKeywordMatch[0]})`);
           return code;
         }
       }
     }
+
+    // If no closing backticks found, try patterns without closing (truncated response)
+    console.log('  No closing backticks found, trying truncated patterns...');
+    const patternsWithoutClose = [
+      { regex: /```typescript\s*([\s\S]+)$/, name: 'typescript without closing' },
+      { regex: /```ts\s*([\s\S]+)$/, name: 'ts without closing' },
+      { regex: /```\s*([\s\S]+)$/, name: 'generic without closing' },
+    ];
+
+    for (const { regex, name } of patternsWithoutClose) {
+      console.log(`  Trying pattern: ${name}`);
+      const match = searchText.match(regex);
+      if (match && match[1]) {
+        const code = match[1].trim();
+        console.log(`  ✓ Pattern matched (truncated)! Code length: ${code.length}`);
+        console.log(`  Code preview (first 200 chars): ${code.substring(0, 200)}`);
+
+        // Verify it looks like TypeScript
+        const tsKeywordMatch = code.match(/\b(import|const|let|var|function|class|interface|type|export)\b/);
+        if (tsKeywordMatch) {
+          console.log(`  ✓ TypeScript validation passed (found keyword: ${tsKeywordMatch[0]})`);
+          console.log(`  ⚠️  WARNING: Response appears truncated (no closing backticks)`);
+          return code;
+        }
+      }
+    }
+
+    console.log('❌ All patterns failed to extract valid TypeScript code');
+
+    // Save full response to file for debugging
+    const fs = require('fs');
+    const debugPath = '/tmp/claude-response-debug.txt';
+    fs.writeFileSync(debugPath, responseText);
+    console.log(`Full response saved to: ${debugPath}`);
+    console.log('First 1000 chars of response:\n', responseText.substring(0, 1000));
+    console.log('\nSearchText first 1000 chars:\n', searchText.substring(0, 1000));
 
     return null;
   }
