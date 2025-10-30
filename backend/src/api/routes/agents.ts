@@ -6,6 +6,12 @@
 import express, { Request, Response } from 'express';
 import { AgentManagementService } from '../../services/agent-management.service';
 import { AgentLearningService } from '../../services/agent-learning.service';
+import { SchedulerService } from '../../services/scheduler.service';
+import { RefinementApprovalService } from '../../services/refinement-approval.service';
+import { ContinuousLearningService } from '../../services/continuous-learning.service';
+import { PerformanceMonitorService } from '../../services/performance-monitor.service';
+import { GraduationService } from '../../services/graduation.service';
+import { AgentActivityLogService } from '../../services/agent-activity-log.service';
 import { getDatabase } from '../../database/db';
 import {
   CreateAgentRequest,
@@ -16,6 +22,12 @@ import {
 const router = express.Router();
 const agentMgmt = new AgentManagementService();
 const agentLearning = new AgentLearningService();
+const scheduler = SchedulerService.getInstance();
+const refinementApproval = new RefinementApprovalService();
+const continuousLearning = ContinuousLearningService.getInstance();
+const performanceMonitor = new PerformanceMonitorService();
+const graduation = new GraduationService();
+const activityLog = new AgentActivityLogService();
 
 // ========================================
 // Agent CRUD Routes
@@ -381,6 +393,482 @@ router.get('/:id/knowledge', async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error getting knowledge:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// ========================================
+// PHASE 2: AUTONOMY FEATURES API ENDPOINTS
+// ========================================
+
+// ------------------
+// Scheduled Learning
+// ------------------
+
+/**
+ * POST /api/agents/:id/auto-learn/enable
+ * Enable scheduled learning for an agent
+ */
+router.post('/:id/auto-learn/enable', async (req: Request, res: Response) => {
+  try {
+    const { schedule } = req.body;
+
+    if (!schedule) {
+      return res.status(400).json({
+        success: false,
+        error: 'Schedule (cron expression) is required',
+      });
+    }
+
+    const db = getDatabase();
+    db.prepare(`
+      UPDATE trading_agents
+      SET auto_learn_enabled = 1, learning_schedule = ?
+      WHERE id = ?
+    `).run(schedule, req.params.id);
+
+    // Schedule the agent
+    await scheduler.scheduleAgent(req.params.id, schedule);
+
+    res.json({
+      success: true,
+      message: 'Scheduled learning enabled',
+      schedule,
+    });
+  } catch (error: any) {
+    console.error('Error enabling scheduled learning:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/agents/:id/auto-learn/disable
+ * Disable scheduled learning for an agent
+ */
+router.post('/:id/auto-learn/disable', async (req: Request, res: Response) => {
+  try {
+    const db = getDatabase();
+    db.prepare(`
+      UPDATE trading_agents
+      SET auto_learn_enabled = 0
+      WHERE id = ?
+    `).run(req.params.id);
+
+    scheduler.unscheduleAgent(req.params.id);
+
+    res.json({
+      success: true,
+      message: 'Scheduled learning disabled',
+    });
+  } catch (error: any) {
+    console.error('Error disabling scheduled learning:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * PUT /api/agents/:id/schedule
+ * Update learning schedule for an agent
+ */
+router.put('/:id/schedule', async (req: Request, res: Response) => {
+  try {
+    const { schedule } = req.body;
+
+    if (!schedule) {
+      return res.status(400).json({
+        success: false,
+        error: 'Schedule (cron expression) is required',
+      });
+    }
+
+    const db = getDatabase();
+    db.prepare(`
+      UPDATE trading_agents
+      SET learning_schedule = ?
+      WHERE id = ?
+    `).run(schedule, req.params.id);
+
+    // Reschedule
+    await scheduler.scheduleAgent(req.params.id, schedule);
+
+    res.json({
+      success: true,
+      message: 'Learning schedule updated',
+      schedule,
+    });
+  } catch (error: any) {
+    console.error('Error updating schedule:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// ------------------
+// Auto-Approval
+// ------------------
+
+/**
+ * POST /api/agents/:id/auto-approve/enable
+ * Enable auto-approval of refinements
+ */
+router.post('/:id/auto-approve/enable', async (req: Request, res: Response) => {
+  try {
+    const db = getDatabase();
+    db.prepare(`
+      UPDATE trading_agents
+      SET auto_approve_enabled = 1
+      WHERE id = ?
+    `).run(req.params.id);
+
+    res.json({
+      success: true,
+      message: 'Auto-approval enabled',
+    });
+  } catch (error: any) {
+    console.error('Error enabling auto-approval:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/agents/:id/auto-approve/disable
+ * Disable auto-approval of refinements
+ */
+router.post('/:id/auto-approve/disable', async (req: Request, res: Response) => {
+  try {
+    const db = getDatabase();
+    db.prepare(`
+      UPDATE trading_agents
+      SET auto_approve_enabled = 0
+      WHERE id = ?
+    `).run(req.params.id);
+
+    res.json({
+      success: true,
+      message: 'Auto-approval disabled',
+    });
+  } catch (error: any) {
+    console.error('Error disabling auto-approval:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * PUT /api/agents/:id/approval-thresholds
+ * Update auto-approval thresholds
+ */
+router.put('/:id/approval-thresholds', async (req: Request, res: Response) => {
+  try {
+    const thresholds = req.body;
+
+    await refinementApproval.updateThresholds(req.params.id, thresholds);
+
+    res.json({
+      success: true,
+      message: 'Approval thresholds updated',
+      thresholds,
+    });
+  } catch (error: any) {
+    console.error('Error updating thresholds:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// ------------------
+// Continuous Learning
+// ------------------
+
+/**
+ * POST /api/agents/:id/continuous-learning/start
+ * Start continuous learning loop
+ */
+router.post('/:id/continuous-learning/start', async (req: Request, res: Response) => {
+  try {
+    await continuousLearning.startContinuousLearning(req.params.id);
+
+    res.json({
+      success: true,
+      message: 'Continuous learning started',
+    });
+  } catch (error: any) {
+    console.error('Error starting continuous learning:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/agents/:id/continuous-learning/stop
+ * Stop continuous learning loop
+ */
+router.post('/:id/continuous-learning/stop', async (req: Request, res: Response) => {
+  try {
+    continuousLearning.stopContinuousLearning(req.params.id);
+
+    res.json({
+      success: true,
+      message: 'Continuous learning stopped',
+    });
+  } catch (error: any) {
+    console.error('Error stopping continuous learning:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/agents/:id/continuous-learning/status
+ * Get continuous learning status
+ */
+router.get('/:id/continuous-learning/status', async (req: Request, res: Response) => {
+  try {
+    const status = continuousLearning.getContinuousLearningStatus(req.params.id);
+
+    res.json({
+      success: true,
+      status,
+    });
+  } catch (error: any) {
+    console.error('Error getting continuous learning status:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// ------------------
+// Alerts
+// ------------------
+
+/**
+ * GET /api/agents/:id/alerts
+ * Get all alerts for an agent
+ */
+router.get('/:id/alerts', async (req: Request, res: Response) => {
+  try {
+    const includeAcknowledged = req.query.includeAcknowledged === 'true';
+    const alerts = performanceMonitor.getAgentAlerts(req.params.id, includeAcknowledged);
+
+    res.json({
+      success: true,
+      alerts,
+    });
+  } catch (error: any) {
+    console.error('Error getting alerts:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/agents/alerts
+ * Get all unacknowledged alerts across all agents
+ */
+router.get('/alerts/unacknowledged', async (req: Request, res: Response) => {
+  try {
+    const alerts = performanceMonitor.getAllUnacknowledgedAlerts();
+
+    res.json({
+      success: true,
+      alerts,
+    });
+  } catch (error: any) {
+    console.error('Error getting alerts:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/agents/:id/alerts/:alertId/acknowledge
+ * Acknowledge an alert
+ */
+router.post('/:id/alerts/:alertId/acknowledge', async (req: Request, res: Response) => {
+  try {
+    performanceMonitor.acknowledgeAlert(req.params.alertId);
+
+    res.json({
+      success: true,
+      message: 'Alert acknowledged',
+    });
+  } catch (error: any) {
+    console.error('Error acknowledging alert:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * DELETE /api/agents/:id/alerts/:alertId
+ * Delete an alert
+ */
+router.delete('/:id/alerts/:alertId', async (req: Request, res: Response) => {
+  try {
+    performanceMonitor.deleteAlert(req.params.alertId);
+
+    res.json({
+      success: true,
+      message: 'Alert deleted',
+    });
+  } catch (error: any) {
+    console.error('Error deleting alert:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// ------------------
+// Graduation
+// ------------------
+
+/**
+ * GET /api/agents/:id/graduation/eligibility
+ * Check if agent is eligible for graduation
+ */
+router.get('/:id/graduation/eligibility', async (req: Request, res: Response) => {
+  try {
+    const eligibility = await graduation.checkEligibility(req.params.id);
+
+    res.json({
+      success: true,
+      eligibility,
+    });
+  } catch (error: any) {
+    console.error('Error checking graduation eligibility:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/agents/:id/graduate
+ * Graduate agent to next status level
+ */
+router.post('/:id/graduate', async (req: Request, res: Response) => {
+  try {
+    const { force } = req.body;
+    const newStatus = await graduation.graduate(req.params.id, force || false);
+
+    res.json({
+      success: true,
+      message: `Agent graduated to ${newStatus}`,
+      newStatus,
+    });
+  } catch (error: any) {
+    console.error('Error graduating agent:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/agents/:id/demote
+ * Demote agent back to learning status
+ */
+router.post('/:id/demote', async (req: Request, res: Response) => {
+  try {
+    const { reason } = req.body;
+
+    if (!reason) {
+      return res.status(400).json({
+        success: false,
+        error: 'Reason for demotion is required',
+      });
+    }
+
+    await graduation.demote(req.params.id, reason);
+
+    res.json({
+      success: true,
+      message: 'Agent demoted to learning status',
+    });
+  } catch (error: any) {
+    console.error('Error demoting agent:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// ------------------
+// Activity Log
+// ------------------
+
+/**
+ * GET /api/agents/:id/activity
+ * Get activity log for an agent
+ */
+router.get('/:id/activity', async (req: Request, res: Response) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 100;
+    const activity = activityLog.getAgentLogs(req.params.id, limit);
+
+    res.json({
+      success: true,
+      activity,
+    });
+  } catch (error: any) {
+    console.error('Error getting activity log:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/agents/activity/recent
+ * Get recent activity across all agents
+ */
+router.get('/activity/recent', async (req: Request, res: Response) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 50;
+    const activity = activityLog.getRecentActivity(limit);
+
+    res.json({
+      success: true,
+      activity,
+    });
+  } catch (error: any) {
+    console.error('Error getting recent activity:', error);
     res.status(500).json({
       success: false,
       error: error.message,
