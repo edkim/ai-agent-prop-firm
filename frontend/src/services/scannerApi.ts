@@ -27,6 +27,7 @@ export type ScanResult = {
 export type ScanMatch = {
   ticker: string;
   date: string;
+  time?: string; // Optional time field for intraday signals (e.g., "13:15")
   metrics: DailyMetrics;
   score?: number;
 }
