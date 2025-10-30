@@ -31,6 +31,26 @@ export default function Scanner() {
   const [addingToSet, setAddingToSet] = useState<Record<string, boolean>>({});
   const [samplesRefreshKey, setSamplesRefreshKey] = useState(0); // For triggering refreshes
 
+  // Available universes from backend
+  const [availableUniverses, setAvailableUniverses] = useState<Array<{id: number, name: string, description: string, total_stocks: number}>>([]);
+
+  // Fetch available universes on mount
+  useEffect(() => {
+    const loadUniverses = async () => {
+      try {
+        const result = await scannerApi.getUniverses();
+        if (result.success) {
+          setAvailableUniverses(result.universes);
+        }
+      } catch (error) {
+        console.error('Failed to load universes:', error);
+        // Fallback to default if API fails
+        setAvailableUniverses([{ id: 1, name: 'russell2000', description: 'Russell 2000', total_stocks: 0 }]);
+      }
+    };
+    loadUniverses();
+  }, []);
+
   const handleScan = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
@@ -245,7 +265,16 @@ export default function Scanner() {
               onChange={(e) => setUniverse(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="russell2000">Russell 2000</option>
+              {availableUniverses.length > 0 ? (
+                availableUniverses.map((u) => (
+                  <option key={u.id} value={u.name}>
+                    {u.name.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                    {u.total_stocks > 0 ? ` (${u.total_stocks} stocks)` : ''}
+                  </option>
+                ))
+              ) : (
+                <option value="russell2000">Russell 2000</option>
+              )}
             </select>
           </div>
 
