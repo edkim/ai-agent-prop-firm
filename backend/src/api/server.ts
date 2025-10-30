@@ -85,6 +85,19 @@ app.listen(PORT, async () => {
   console.log(`Database: ${dbPath}`);
   console.log('');
 
+  // Auto-start learning agent scheduler
+  try {
+    console.log('📅 Starting Learning Agent Scheduler...');
+    const { SchedulerService } = await import('../services/scheduler.service');
+    const scheduler = SchedulerService.getInstance();
+    await scheduler.start();
+    console.log('✅ Learning Agent Scheduler started');
+    console.log('');
+  } catch (error: any) {
+    console.error('❌ Failed to start Learning Agent Scheduler:', error.message);
+    console.error('   Scheduled learning will not be active.');
+  }
+
   // Auto-start trading services if enabled
   if (process.env.AUTO_EXECUTION_ENABLED === 'true') {
     try {
@@ -109,6 +122,12 @@ const gracefulShutdown = async (signal: string) => {
   console.log(`${signal} received, shutting down gracefully...`);
 
   try {
+    // Stop learning agent scheduler
+    const { SchedulerService } = await import('../services/scheduler.service');
+    const scheduler = SchedulerService.getInstance();
+    scheduler.stop();
+    console.log('✅ Learning Agent Scheduler stopped');
+
     // Stop trading services
     const tradingStartupService = (await import('../services/trading-startup.service')).default;
     await tradingStartupService.stop();
