@@ -19,18 +19,24 @@ import { AgentManagementService } from './agent-management.service';
 import { ClaudeService } from './claude.service';
 import { ScannerService } from './scanner.service';
 import { BacktestService } from './backtest.service';
+import { PerformanceMonitorService } from './performance-monitor.service';
+import { RefinementApprovalService } from './refinement-approval.service';
 
 export class AgentLearningService {
   private agentMgmt: AgentManagementService;
   private claude: ClaudeService;
   private scanner: ScannerService;
   private backtest: BacktestService;
+  private performanceMonitor: PerformanceMonitorService;
+  private refinementApproval: RefinementApprovalService;
 
   constructor() {
     this.agentMgmt = new AgentManagementService();
     this.claude = new ClaudeService();
     this.scanner = new ScannerService();
     this.backtest = new BacktestService();
+    this.performanceMonitor = new PerformanceMonitorService();
+    this.refinementApproval = new RefinementApprovalService();
   }
 
   /**
@@ -85,6 +91,20 @@ export class AgentLearningService {
     });
 
     console.log(`✅ Iteration #${iterationNumber} complete`);
+
+    // Phase 2 Autonomy Features: Post-iteration hooks
+    try {
+      // 1. Analyze performance and generate alerts
+      console.log('📊 Analyzing performance...');
+      await this.performanceMonitor.analyzeIteration(agentId, iteration.id);
+
+      // 2. Auto-approve refinements if enabled
+      console.log('🔍 Checking auto-approval...');
+      await this.refinementApproval.evaluateAndApply(agentId, iteration.id);
+    } catch (error: any) {
+      console.error('⚠ Post-iteration autonomy hooks failed:', error.message);
+      // Don't fail the iteration if autonomy features fail
+    }
 
     return {
       iteration,
