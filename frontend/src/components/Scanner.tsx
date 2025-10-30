@@ -383,7 +383,10 @@ export default function Scanner() {
                             {match.ticker}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-700">
-                            {match.date}
+                            <div>{match.date}</div>
+                            {match.time && (
+                              <div className="text-xs text-gray-500">{match.time}</div>
+                            )}
                           </td>
                           <td className={`px-4 py-3 text-sm text-right font-medium ${
                             (match.metrics.change_percent || 0) >= 0
@@ -469,7 +472,7 @@ export default function Scanner() {
       </div>
 
       {/* Backtest Sets Sidebar - Right */}
-      <div className="w-80 flex-shrink-0">
+      <div className="w-64 flex-shrink-0">
         <BacktestSets
           activeBacktestSet={activeBacktestSet}
           setActiveBacktestSet={setActiveBacktestSet}
