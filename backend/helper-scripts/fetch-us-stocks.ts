@@ -2,7 +2,7 @@
  * Fetch all US stock tickers from Polygon API and populate universe
  */
 
-import { initializeDatabase, getDatabase, closeDatabase } from './src/database/db';
+import { initializeDatabase, getDatabase, closeDatabase } from '../src/database/db';
 import axios from 'axios';
 
 const POLYGON_API_KEY = process.env.POLYGON_API_KEY || '';

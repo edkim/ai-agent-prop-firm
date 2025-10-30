@@ -4,7 +4,7 @@
  * Usage: npx ts-node backfill-tech-sector-intraday.ts
  */
 
-import { initializeDatabase, getDatabase, closeDatabase } from './src/database/db';
+import { initializeDatabase, getDatabase, closeDatabase } from '../src/database/db';
 import dotenv from 'dotenv';
 import path from 'path';
 import axios from 'axios';

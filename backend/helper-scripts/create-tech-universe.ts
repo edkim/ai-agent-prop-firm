@@ -2,7 +2,7 @@
  * Create tech_sector universe in database
  */
 
-import { initializeDatabase, getDatabase, closeDatabase } from './src/database/db';
+import { initializeDatabase, getDatabase, closeDatabase } from '../src/database/db';
 import dotenv from 'dotenv';
 import path from 'path';
 
