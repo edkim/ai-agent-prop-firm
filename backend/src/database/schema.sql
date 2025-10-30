@@ -484,15 +484,30 @@ CREATE INDEX IF NOT EXISTS idx_strategy_performance_win_rate ON batch_strategy_p
 -- Real-time trading agent tables
 -- =====================================================
 
--- Trading Agents Configuration
+-- Trading Agents Configuration (Enhanced for Learning Laboratory)
 CREATE TABLE IF NOT EXISTS trading_agents (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
-    account_id TEXT NOT NULL UNIQUE, -- TradeStation account ID
+
+    -- Original fields (for live trading)
+    account_id TEXT UNIQUE, -- TradeStation account ID (NULL until live trading)
     timeframe TEXT NOT NULL, -- 'intraday', 'swing', 'position'
-    strategies TEXT NOT NULL, -- JSON array of strategy pattern IDs
-    risk_limits TEXT NOT NULL, -- JSON object with risk parameters
+    strategies TEXT, -- JSON array of strategy pattern IDs
+    risk_limits TEXT, -- JSON object with risk parameters
+
+    -- Learning Laboratory fields
+    instructions TEXT, -- Natural language instructions defining agent's focus
+    system_prompt TEXT, -- Generated Claude system prompt
+    risk_tolerance TEXT, -- 'conservative', 'moderate', 'aggressive'
+    trading_style TEXT, -- 'scalper', 'day_trader', 'swing_trader'
+    pattern_focus TEXT, -- JSON array: ["vwap_bounce", "gap_fill"]
+    market_conditions TEXT, -- JSON array: ["trending", "ranging", "volatile"]
+    risk_config TEXT, -- JSON: position sizing, stop methods, etc.
+
+    -- Status
+    status TEXT DEFAULT 'learning', -- 'learning', 'paper_trading', 'live_trading', 'paused'
     active BOOLEAN DEFAULT 1,
+
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -730,3 +745,155 @@ CREATE TABLE IF NOT EXISTS agent_activity_log (
 
 CREATE INDEX IF NOT EXISTS idx_agent_activity_agent_time ON agent_activity_log(agent_id, timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_agent_activity_type ON agent_activity_log(activity_type, timestamp DESC);
+
+-- =====================================================
+-- MULTI-AGENT LABORATORY: Learning and Evolution System
+-- =====================================================
+
+-- Learning Agents (extends trading_agents with learning capabilities)
+-- Note: Reuses trading_agents table above, but adds learning-specific columns
+
+-- Agent Knowledge Base (each agent's independent learning)
+CREATE TABLE IF NOT EXISTS agent_knowledge (
+  id TEXT PRIMARY KEY,
+  agent_id TEXT NOT NULL,
+  knowledge_type TEXT NOT NULL, -- 'INSIGHT', 'PARAMETER_PREF', 'PATTERN_RULE'
+  pattern_type TEXT, -- e.g., 'vwap_bounce', 'gap_and_go'
+  insight TEXT NOT NULL, -- Human-readable insight
+  supporting_data TEXT, -- JSON: stats, examples, evidence
+  confidence REAL, -- 0-1 confidence score
+  learned_from_iteration INTEGER, -- Which iteration produced this
+  times_validated INTEGER DEFAULT 0, -- How many times confirmed
+  last_validated TEXT, -- Last validation date
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_agent_knowledge_agent ON agent_knowledge(agent_id);
+CREATE INDEX IF NOT EXISTS idx_agent_knowledge_type ON agent_knowledge(agent_id, knowledge_type);
+CREATE INDEX IF NOT EXISTS idx_agent_knowledge_pattern ON agent_knowledge(pattern_type);
+
+-- Agent Learning Iterations (backtest experiments)
+CREATE TABLE IF NOT EXISTS agent_iterations (
+  id TEXT PRIMARY KEY,
+  agent_id TEXT NOT NULL,
+  iteration_number INTEGER NOT NULL,
+
+  -- Strategy under test
+  scan_script TEXT NOT NULL, -- Generated scan TypeScript
+  execution_script TEXT NOT NULL, -- Generated execution TypeScript
+  version_notes TEXT, -- "Testing tighter stops", "Added volume filter"
+
+  -- Results
+  signals_found INTEGER,
+  backtest_results TEXT, -- JSON: full BacktestResult
+  win_rate REAL,
+  sharpe_ratio REAL,
+  total_return REAL,
+
+  -- Claude's analysis
+  expert_analysis TEXT, -- Full expert analysis from Claude
+  refinements_suggested TEXT, -- JSON array of suggested improvements
+
+  -- Status
+  iteration_status TEXT DEFAULT 'completed', -- 'completed', 'approved', 'rejected', 'improved_upon'
+
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_agent_iterations_agent ON agent_iterations(agent_id, iteration_number);
+CREATE INDEX IF NOT EXISTS idx_agent_iterations_status ON agent_iterations(iteration_status);
+
+-- Agent Strategy Versions (evolution tracking)
+CREATE TABLE IF NOT EXISTS agent_strategies (
+  id TEXT PRIMARY KEY,
+  agent_id TEXT NOT NULL,
+  version TEXT NOT NULL, -- "v1.0", "v1.1", "v2.0"
+
+  -- Strategy scripts
+  scan_script TEXT NOT NULL,
+  execution_script TEXT NOT NULL,
+
+  -- Performance metrics
+  backtest_sharpe REAL,
+  backtest_win_rate REAL,
+  backtest_total_return REAL,
+
+  -- Version control
+  is_current_version INTEGER DEFAULT 0, -- Boolean: 1 if active version
+  parent_version TEXT, -- Which version was this refined from
+  changes_from_parent TEXT, -- Description of what changed
+
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE,
+  UNIQUE(agent_id, version)
+);
+
+CREATE INDEX IF NOT EXISTS idx_agent_strategies_agent ON agent_strategies(agent_id);
+CREATE INDEX IF NOT EXISTS idx_agent_strategies_current ON agent_strategies(agent_id, is_current_version);
+CREATE INDEX IF NOT EXISTS idx_agent_strategies_performance ON agent_strategies(backtest_sharpe DESC);
+
+-- Support/Resistance Levels (market context for agents)
+CREATE TABLE IF NOT EXISTS support_resistance_levels (
+  id TEXT PRIMARY KEY,
+  ticker TEXT NOT NULL,
+  level_type TEXT NOT NULL, -- 'SUPPORT', 'RESISTANCE', 'PIVOT'
+  price REAL NOT NULL,
+  strength INTEGER, -- 0-100 based on touches and volume
+  first_touch_date TEXT,
+  last_touch_date TEXT,
+  touch_count INTEGER DEFAULT 1,
+  calculation_method TEXT, -- 'PIVOT', 'SWING', 'FIBONACCI', 'HORIZONTAL'
+  timeframe TEXT, -- 'daily', 'weekly', 'monthly'
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_sr_levels_ticker ON support_resistance_levels(ticker, level_type);
+CREATE INDEX IF NOT EXISTS idx_sr_levels_price ON support_resistance_levels(ticker, price);
+CREATE INDEX IF NOT EXISTS idx_sr_levels_strength ON support_resistance_levels(strength DESC);
+
+-- Pivot Points Cache (for quick lookups)
+CREATE TABLE IF NOT EXISTS pivot_points_cache (
+  ticker TEXT NOT NULL,
+  date TEXT NOT NULL,
+  timeframe TEXT NOT NULL, -- 'daily', 'weekly', 'monthly'
+  pivot REAL NOT NULL,
+  r1 REAL, r2 REAL, r3 REAL,
+  s1 REAL, s2 REAL, s3 REAL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (ticker, date, timeframe)
+);
+
+CREATE INDEX IF NOT EXISTS idx_pivot_cache_ticker_date ON pivot_points_cache(ticker, date);
+
+-- News Events (catalyst tracking)
+CREATE TABLE IF NOT EXISTS news_events (
+  id TEXT PRIMARY KEY,
+  ticker TEXT NOT NULL,
+  published_at TEXT NOT NULL,
+  headline TEXT NOT NULL,
+  summary TEXT,
+  source TEXT,
+  url TEXT,
+  sentiment TEXT, -- 'POSITIVE', 'NEGATIVE', 'NEUTRAL' (analyzed by Claude)
+  impact_score INTEGER, -- 0-100 (estimated by Claude)
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_news_ticker_date ON news_events(ticker, published_at);
+CREATE INDEX IF NOT EXISTS idx_news_sentiment ON news_events(sentiment, impact_score);
+
+-- Market Regime Tracking (VIX, SPY trend for market context)
+CREATE TABLE IF NOT EXISTS market_regime (
+  date TEXT PRIMARY KEY,
+  vix_close REAL,
+  spy_close REAL,
+  spy_change_percent REAL,
+  regime TEXT, -- 'TRENDING_UP', 'TRENDING_DOWN', 'RANGING', 'VOLATILE'
+  volatility_percentile REAL, -- 0-100
+  created_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_market_regime_date ON market_regime(date DESC);
