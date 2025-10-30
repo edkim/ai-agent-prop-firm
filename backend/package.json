@@ -8,7 +8,10 @@
     "build": "tsc && cp src/database/schema.sql dist/database/",
     "start": "node dist/api/server.js",
     "test": "jest",
-    "backfill:intraday": "ts-node src/scripts/backfill-intraday.ts"
+    "backfill:intraday": "ts-node src/scripts/backfill-intraday.ts",
+    "backup": "npx tsx helper-scripts/backup-database.ts",
+    "restore": "npx tsx helper-scripts/restore-database.ts",
+    "restore:from-backup": "npx tsx helper-scripts/restore-database.ts --from-backup"
   },
   "keywords": [
     "backtesting",
