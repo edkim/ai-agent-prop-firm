@@ -27,12 +27,23 @@ export interface ApprovalResult {
 }
 
 export class RefinementApprovalService {
-  private learningService: AgentLearningService;
+  private learningService: AgentLearningService | null = null;
   private activityLog: AgentActivityLogService;
 
   constructor() {
-    this.learningService = new AgentLearningService();
+    // Don't instantiate AgentLearningService here to avoid circular dependency
+    // It will be lazy-loaded when needed
     this.activityLog = new AgentActivityLogService();
+  }
+
+  /**
+   * Lazy-load the learning service to avoid circular dependency
+   */
+  private getLearningService(): AgentLearningService {
+    if (!this.learningService) {
+      this.learningService = new AgentLearningService();
+    }
+    return this.learningService;
   }
 
   /**
@@ -83,7 +94,7 @@ export class RefinementApprovalService {
     // If approved, automatically apply refinements
     if (result.approved) {
       try {
-        await this.learningService.applyRefinements({
+        await this.getLearningService().applyRefinements({
           agent_id: agentId,
           iteration_id: iterationId,
           selected_refinements: 'all', // Apply all suggested refinements
