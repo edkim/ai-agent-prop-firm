@@ -608,11 +608,12 @@ Please generate a complete, runnable TypeScript backtest script following the st
       dateReasoning = dateReasoningMatch[1].trim();
     }
 
-    // Extract script (between ```typescript and ```)
-    const scriptMatch = responseText.match(/```typescript\n([\s\S]*?)\n```/);
-    if (scriptMatch) {
-      script = scriptMatch[1].trim();
+    // Extract script using robust extraction
+    const extractedScript = this.extractTypeScriptCode(responseText);
+    if (extractedScript) {
+      script = extractedScript;
     } else {
+      console.error('Could not extract script. Response:', responseText.substring(0, 500));
       throw new Error('Could not extract script from Claude response');
     }
 
@@ -1055,17 +1056,46 @@ Please generate a complete, runnable TypeScript scanner script that finds stocks
   }
 
   /**
+   * Extract TypeScript code from Claude response with flexible matching
+   */
+  private extractTypeScriptCode(responseText: string): string | null {
+    // Try multiple patterns in order of specificity
+    const patterns = [
+      /```typescript\n([\s\S]*?)\n```/,           // Standard: ```typescript\n...\n```
+      /```typescript\s+([\s\S]*?)```/,            // With whitespace: ```typescript ...```
+      /```ts\n([\s\S]*?)\n```/,                   // Short form: ```ts\n...\n```
+      /```ts\s+([\s\S]*?)```/,                    // Short form with whitespace
+      /```\n([\s\S]*?)\n```/,                     // Generic code block: ```\n...\n```
+      /```([\s\S]*?)```/,                         // Any code block
+    ];
+
+    for (const pattern of patterns) {
+      const match = responseText.match(pattern);
+      if (match && match[1]) {
+        const code = match[1].trim();
+        // Verify it looks like TypeScript (has import/const/function/etc)
+        if (code.match(/\b(import|const|let|var|function|class|interface|type|export)\b/)) {
+          return code;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Parse Claude's scanner response
    */
   private parseScannerResponse(responseText: string): { script: string; explanation: string } {
     let script = '';
     let explanation = '';
 
-    // Extract script (between \`\`\`typescript and \`\`\`)
-    const scriptMatch = responseText.match(/```typescript\n([\s\S]*?)\n```/);
-    if (scriptMatch) {
-      script = scriptMatch[1].trim();
+    // Extract script using robust extraction
+    const extractedScript = this.extractTypeScriptCode(responseText);
+    if (extractedScript) {
+      script = extractedScript;
     } else {
+      console.error('Could not extract script. Response:', responseText.substring(0, 500));
       throw new Error('Could not extract script from Claude response');
     }
 
