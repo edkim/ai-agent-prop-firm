@@ -4,6 +4,8 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
+import * as fs from 'fs';
+import * as path from 'path';
 import { getDatabase } from '../database/db';
 import {
   TradingAgent,
@@ -21,6 +23,7 @@ import { ScannerService } from './scanner.service';
 import { BacktestService } from './backtest.service';
 import { PerformanceMonitorService } from './performance-monitor.service';
 import { RefinementApprovalService } from './refinement-approval.service';
+import { ScriptExecutionService } from './script-execution.service';
 
 export class AgentLearningService {
   private agentMgmt: AgentManagementService;
@@ -29,6 +32,7 @@ export class AgentLearningService {
   private backtest: BacktestService;
   private performanceMonitor: PerformanceMonitorService;
   private refinementApproval: RefinementApprovalService;
+  private scriptExecution: ScriptExecutionService;
 
   constructor() {
     this.agentMgmt = new AgentManagementService();
@@ -37,6 +41,7 @@ export class AgentLearningService {
     this.backtest = new BacktestService();
     this.performanceMonitor = new PerformanceMonitorService();
     this.refinementApproval = new RefinementApprovalService();
+    this.scriptExecution = new ScriptExecutionService();
   }
 
   /**
@@ -133,43 +138,44 @@ export class AgentLearningService {
     const knowledge = await this.getAgentKnowledge(agent.id);
     const knowledgeSummary = this.formatKnowledgeSummary(knowledge);
 
-    // Build prompt with agent's system prompt
-    let systemPrompt = agent.system_prompt || '';
-    systemPrompt = systemPrompt.replace('{AGENT_KNOWLEDGE}', knowledgeSummary);
+    console.log(`   Agent personality: ${agent.trading_style}, ${agent.risk_tolerance}`);
+    console.log(`   Pattern focus: ${agent.pattern_focus.join(', ')}`);
 
-    const userPrompt = iterationNumber === 1
-      ? `This is your first learning iteration. Based on your instructions and personality, generate:
+    // Step 1: Generate scanner script
+    const scannerQuery = iterationNumber === 1
+      ? `Find ${agent.pattern_focus.join(' or ')} patterns in ${agent.market_conditions.join(' or ')} market conditions. Trading style: ${agent.trading_style}, risk tolerance: ${agent.risk_tolerance}.`
+      : `Find ${agent.pattern_focus.join(' or ')} patterns incorporating these learnings: ${knowledgeSummary}`;
 
-1. A scan script to find opportunities matching your focus (${agent.pattern_focus.join(', ')})
-2. An execution strategy script with entry and exit rules matching your trading style (${agent.trading_style}, ${agent.risk_tolerance})
+    console.log(`   Generating scanner with Claude...`);
+    const scannerResult = await this.claude.generateScannerScript({
+      query: scannerQuery,
+      universe: 'technology', // Default to tech sector
+      dateRange: {
+        start: this.getDateDaysAgo(20),
+        end: this.getDateDaysAgo(1)
+      }
+    });
 
-Consider:
-- Your trading style: ${agent.trading_style}
-- Your risk tolerance: ${agent.risk_tolerance}
-- Pattern focus: ${agent.pattern_focus.join(', ')}
-- Market conditions you trade: ${agent.market_conditions.join(', ')}
+    // Step 2: Generate execution script
+    const executionPrompt = iterationNumber === 1
+      ? `${agent.trading_style} ${agent.risk_tolerance} risk trader looking for ${agent.pattern_focus.join(' or ')} patterns. Generate entry and exit rules matching this personality in ${agent.market_conditions.join(' or ')} conditions.`
+      : `${agent.trading_style} trader with these learnings: ${knowledgeSummary}. Improve the strategy based on previous iterations.`;
 
-Generate both scan and execution scripts that work together.
-Return your response as JSON:
-{
-  "scanScript": "...",
-  "executionScript": "...",
-  "rationale": "Brief explanation of your approach"
-}`
-      : `This is iteration #${iterationNumber}. Based on your previous learnings and personality, generate improved strategy scripts.
+    console.log(`   Generating execution script with Claude...`);
+    const executionResult = await this.claude.generateScript(executionPrompt, {
+      ticker: 'TEMPLATE_TICKER',
+      timeframe: '5min',
+      dates: [this.getDateDaysAgo(5)] // Will be replaced during execution
+    });
 
-Your accumulated knowledge:
-${knowledgeSummary}
+    const rationale = iterationNumber === 1
+      ? `Initial strategy: ${scannerResult.explanation}. ${executionResult.explanation || 'Basic execution rules.'}`
+      : `Iteration ${iterationNumber}: Applied learnings to refine scanner and execution logic.`;
 
-Generate scan and execution scripts, incorporating your learnings.
-Return JSON: { "scanScript": "...", "executionScript": "...", "rationale": "..." }`;
-
-    // For now, return placeholder - full implementation needs scanner/backtest script generation
-    // This would call Claude to generate actual TypeScript scanner and backtest scripts
     return {
-      scanScript: '// Scanner script placeholder',
-      executionScript: '// Execution script placeholder',
-      rationale: 'Initial strategy based on agent personality',
+      scanScript: scannerResult.script,
+      executionScript: executionResult.scriptCode,
+      rationale
     };
   }
 
@@ -177,24 +183,144 @@ Return JSON: { "scanScript": "...", "executionScript": "...", "rationale": "..."
    * Execute scan script and return matches
    */
   private async executeScan(scanScript: string): Promise<any[]> {
-    // This would execute the generated scan script
-    // For now, return placeholder
-    return [];
+    const scriptId = uuidv4();
+    const scriptPath = path.join('/tmp', `agent-scan-${scriptId}.ts`);
+
+    try {
+      // Save script to temp file
+      fs.writeFileSync(scriptPath, scanScript);
+      console.log(`   Saved scan script to ${scriptPath}`);
+
+      // Execute script with 60 second timeout
+      console.log(`   Executing scan script...`);
+      const result = await this.scriptExecution.executeScript(scriptPath, 60000);
+
+      if (!result.success) {
+        console.error(`   Scan script execution failed: ${result.error}`);
+        return [];
+      }
+
+      // Parse results
+      const scanResults = result.data?.matches || [];
+      console.log(`   Scan found ${scanResults.length} matches`);
+
+      return scanResults;
+    } catch (error: any) {
+      console.error(`   Error executing scan: ${error.message}`);
+      return [];
+    } finally {
+      // Clean up temp file
+      try {
+        if (fs.existsSync(scriptPath)) {
+          fs.unlinkSync(scriptPath);
+          console.log(`   Cleaned up temp file: ${scriptPath}`);
+        }
+      } catch (cleanupError: any) {
+        console.warn(`   Failed to clean up temp file: ${cleanupError.message}`);
+      }
+    }
   }
 
   /**
    * Run backtests on scan results using execution script
    */
   private async runBacktests(executionScript: string, scanResults: any[]): Promise<any> {
-    // This would run the execution script on each scan result
-    // For now, return placeholder
+    if (scanResults.length === 0) {
+      return {
+        totalTrades: 0,
+        winRate: 0,
+        sharpeRatio: 0,
+        totalReturn: 0,
+        trades: [],
+      };
+    }
+
+    console.log(`   Running backtests on ${scanResults.length} scan results...`);
+    const allTrades: any[] = [];
+    let successfulBacktests = 0;
+
+    // Execute backtest for each scan result
+    for (const scanResult of scanResults) {
+      const { ticker, date } = scanResult;
+      const scriptId = uuidv4();
+      const scriptPath = path.join('/tmp', `agent-backtest-${scriptId}.ts`);
+
+      try {
+        // Customize execution script with ticker and date
+        const customizedScript = executionScript
+          .replace(/TEMPLATE_TICKER/g, ticker)
+          .replace(/\[.*?\]/g, `['${date}']`); // Replace date array
+
+        // Save to temp file
+        fs.writeFileSync(scriptPath, customizedScript);
+
+        // Execute with 120 second timeout
+        const result = await this.scriptExecution.executeScript(scriptPath, 120000);
+
+        if (result.success && result.data) {
+          const trades = result.data.trades || [];
+          allTrades.push(...trades);
+          successfulBacktests++;
+        }
+
+        // Clean up
+        if (fs.existsSync(scriptPath)) {
+          fs.unlinkSync(scriptPath);
+        }
+      } catch (error: any) {
+        console.error(`   Error backtesting ${ticker} on ${date}: ${error.message}`);
+        // Clean up on error
+        try {
+          if (fs.existsSync(scriptPath)) {
+            fs.unlinkSync(scriptPath);
+          }
+        } catch {}
+      }
+    }
+
+    console.log(`   Completed ${successfulBacktests}/${scanResults.length} backtests`);
+    console.log(`   Total trades: ${allTrades.length}`);
+
+    // Aggregate results
+    const aggregated = this.aggregateBacktestResults(allTrades);
+
     return {
-      totalTrades: 0,
-      winRate: 0,
-      sharpeRatio: 0,
-      totalReturn: 0,
-      trades: [],
+      totalTrades: allTrades.length,
+      winRate: aggregated.winRate,
+      sharpeRatio: aggregated.sharpeRatio,
+      totalReturn: aggregated.totalReturn,
+      trades: allTrades,
     };
+  }
+
+  /**
+   * Aggregate backtest results from multiple trades
+   */
+  private aggregateBacktestResults(trades: any[]): {
+    winRate: number;
+    sharpeRatio: number;
+    totalReturn: number;
+  } {
+    if (trades.length === 0) {
+      return { winRate: 0, sharpeRatio: 0, totalReturn: 0 };
+    }
+
+    // Calculate win rate
+    const wins = trades.filter(t => t.profit > 0).length;
+    const winRate = wins / trades.length;
+
+    // Calculate total return
+    const totalReturn = trades.reduce((sum, t) => sum + (t.profit || 0), 0);
+
+    // Calculate Sharpe ratio (simplified)
+    const returns = trades.map(t => t.profit || 0);
+    const avgReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+    const stdDev = Math.sqrt(
+      returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length
+    );
+    const sharpeRatio = stdDev > 0 ? (avgReturn / stdDev) * Math.sqrt(252) : 0;
+
+    return { winRate, sharpeRatio, totalReturn };
   }
 
   /**
@@ -205,42 +331,19 @@ Return JSON: { "scanScript": "...", "executionScript": "...", "rationale": "..."
     backtestResults: any,
     scanResults: any[]
   ): Promise<ExpertAnalysis> {
-    const systemPrompt = agent.system_prompt || '';
+    const agentPersonality = `${agent.trading_style} ${agent.risk_tolerance} risk trader focusing on ${agent.pattern_focus.join(', ')} patterns in ${agent.market_conditions.join(', ')} conditions. ${agent.system_prompt || ''}`;
 
-    const analysisPrompt = `Analyze these backtest results as an expert trader with your personality:
+    console.log(`   Analyzing results with agent personality...`);
 
-Backtest Results:
-${JSON.stringify(backtestResults, null, 2)}
+    const analysis = await this.claude.analyzeBacktestResults({
+      agentPersonality,
+      backtestResults,
+      scanResultsCount: scanResults.length
+    });
 
-Scan Results Count: ${scanResults.length}
+    console.log(`   Analysis complete: ${analysis.summary}`);
 
-Provide expert analysis:
-1. What worked well?
-2. What failed and why?
-3. What context or data is missing?
-4. What parameter changes would improve performance?
-
-Return JSON matching ExpertAnalysis type with:
-- summary (string)
-- working_elements (array)
-- failure_points (array)
-- missing_context (array)
-- parameter_recommendations (array)
-- projected_performance (object)`;
-
-    // Placeholder - would call Claude for analysis
-    return {
-      summary: 'Analysis placeholder',
-      working_elements: [],
-      failure_points: [],
-      missing_context: [],
-      parameter_recommendations: [],
-      projected_performance: {
-        current: { winRate: 0, sharpe: 0 },
-        withRefinements: { winRate: 0, sharpe: 0 },
-        confidence: 0,
-      },
-    };
+    return analysis;
   }
 
   /**
@@ -250,9 +353,52 @@ Return JSON matching ExpertAnalysis type with:
     agent: TradingAgent,
     analysis: ExpertAnalysis
   ): Promise<Refinement[]> {
-    // Convert analysis into actionable refinements
-    // Placeholder for now
-    return [];
+    const refinements: Refinement[] = [];
+
+    console.log(`   Converting analysis into ${analysis.parameter_recommendations.length} refinements...`);
+
+    // Convert parameter recommendations into refinements
+    for (const param of analysis.parameter_recommendations) {
+      refinements.push({
+        type: 'parameter_adjustment',
+        description: `Adjust ${param.parameter} from ${param.current_value} to ${param.suggested_value}`,
+        reasoning: param.rationale,
+        projected_improvement: `Expected improvement based on analysis`,
+        specific_changes: {
+          parameter: param.parameter,
+          old_value: param.current_value,
+          new_value: param.suggested_value
+        }
+      });
+    }
+
+    // Convert missing context into data collection refinements
+    for (const missing of analysis.missing_context) {
+      refinements.push({
+        type: 'missing_data',
+        description: `Add data: ${missing}`,
+        reasoning: 'Required for better strategy decisions',
+        specific_changes: {
+          data_needed: missing
+        }
+      });
+    }
+
+    // Add refinements based on failure points
+    for (const failure of analysis.failure_points) {
+      refinements.push({
+        type: 'exit_rule',
+        description: `Address failure: ${failure}`,
+        reasoning: 'Identified during backtest analysis',
+        specific_changes: {
+          issue: failure
+        }
+      });
+    }
+
+    console.log(`   Proposed ${refinements.length} refinements`);
+
+    return refinements;
   }
 
   /**
@@ -457,5 +603,11 @@ Return JSON matching ExpertAnalysis type with:
     const minor = parseInt(match[2]);
 
     return `v${major}.${minor + 1}`;
+  }
+
+  private getDateDaysAgo(days: number): string {
+    const date = new Date();
+    date.setDate(date.getDate() - days);
+    return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD
   }
 }
