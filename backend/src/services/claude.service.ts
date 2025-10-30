@@ -1202,6 +1202,94 @@ Output ONLY the TypeScript code, no markdown formatting.`;
       throw new Error(`Claude API error: ${error.message}`);
     }
   }
+
+  /**
+   * Analyze backtest results as an expert trader
+   */
+  async analyzeBacktestResults(params: {
+    agentPersonality: string;
+    backtestResults: any;
+    scanResultsCount: number;
+  }): Promise<any> {
+    console.log('📊 Analyzing backtest results with Claude...');
+
+    const systemPrompt = `You are an expert trader analyzing backtest results. ${params.agentPersonality}
+
+Analyze the provided backtest results and provide structured feedback in JSON format.`;
+
+    const userPrompt = `Analyze these backtest results:
+
+**Backtest Summary:**
+${JSON.stringify(params.backtestResults, null, 2)}
+
+**Scan Results Count:** ${params.scanResultsCount}
+
+Provide expert analysis in this exact JSON structure:
+{
+  "summary": "Brief overview of performance",
+  "working_elements": ["List of things that worked well"],
+  "failure_points": ["List of things that failed and why"],
+  "missing_context": ["List of additional data or context needed"],
+  "parameter_recommendations": [
+    {
+      "parameter": "name of parameter to adjust",
+      "current_value": "current value",
+      "suggested_value": "suggested new value",
+      "rationale": "why this change would help"
+    }
+  ],
+  "projected_performance": {
+    "current": { "winRate": ${params.backtestResults.winRate || 0}, "sharpe": ${params.backtestResults.sharpeRatio || 0} },
+    "withRefinements": { "winRate": 0.XX, "sharpe": X.XX },
+    "confidence": 0.XX
+  }
+}
+
+Return ONLY the JSON object, no additional text.`;
+
+    try {
+      const client = this.getClient();
+      const response = await client.messages.create({
+        model: this.model,
+        max_tokens: this.maxTokens,
+        temperature: this.temperature,
+        system: systemPrompt,
+        messages: [
+          {
+            role: 'user',
+            content: userPrompt
+          }
+        ]
+      });
+
+      const content = response.content[0];
+      if (content.type === 'text') {
+        // Extract JSON from response
+        const jsonMatch = content.text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          return JSON.parse(jsonMatch[0]);
+        }
+        throw new Error('No JSON found in Claude response');
+      }
+
+      throw new Error('Unexpected response format from Claude');
+    } catch (error: any) {
+      console.error('Error analyzing backtest results:', error);
+      // Return default analysis on error
+      return {
+        summary: 'Analysis unavailable due to error',
+        working_elements: [],
+        failure_points: ['Unable to complete analysis'],
+        missing_context: [],
+        parameter_recommendations: [],
+        projected_performance: {
+          current: { winRate: params.backtestResults.winRate || 0, sharpe: params.backtestResults.sharpeRatio || 0 },
+          withRefinements: { winRate: 0, sharpe: 0 },
+          confidence: 0
+        }
+      };
+    }
+  }
 }
 
 // Export singleton instance
