@@ -2,7 +2,7 @@
  * Fix time_of_day field for existing 5-minute data
  */
 
-import { initializeDatabase, getDatabase, closeDatabase } from './src/database/db';
+import { initializeDatabase, getDatabase, closeDatabase } from '../src/database/db';
 import dotenv from 'dotenv';
 import path from 'path';
 

@@ -2,7 +2,7 @@
  * Migration script: Add learning laboratory columns to trading_agents table
  */
 
-import { initializeDatabase, getDatabase, closeDatabase } from './src/database/db';
+import { initializeDatabase, getDatabase, closeDatabase } from '../src/database/db';
 import dotenv from 'dotenv';
 import path from 'path';
 

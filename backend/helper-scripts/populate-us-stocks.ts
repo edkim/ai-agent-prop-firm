@@ -3,7 +3,7 @@
  */
 
 import { readFileSync } from 'fs';
-import { initializeDatabase, getDatabase, closeDatabase } from './src/database/db';
+import { initializeDatabase, getDatabase, closeDatabase } from '../src/database/db';
 
 async function populateUSStocks() {
   console.log('🚀 Starting US stocks population...\n');

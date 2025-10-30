@@ -3,7 +3,7 @@
  */
 
 import { readFileSync } from 'fs';
-import { initializeDatabase, getDatabase, closeDatabase } from './src/database/db';
+import { initializeDatabase, getDatabase, closeDatabase } from '../src/database/db';
 
 async function populateRussell2000() {
   console.log('🚀 Starting Russell 2000 population...\n');

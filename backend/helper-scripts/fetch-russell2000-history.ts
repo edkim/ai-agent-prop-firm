@@ -1,14 +1,14 @@
 /**
- * Fetch 5 years of historical data for all US stocks
+ * Fetch 5 years of historical data for all Russell 2000 tickers
  * and compute daily metrics
  */
 
-import { initializeDatabase, getDatabase, closeDatabase } from './src/database/db';
+import { initializeDatabase, getDatabase, closeDatabase } from '../src/database/db';
 import axios from 'axios';
 
 const POLYGON_API_KEY = process.env.POLYGON_API_KEY || '';
-const BATCH_SIZE = 200; // Process 200 tickers at a time
-const DELAY_BETWEEN_BATCHES = 0; // No delay between batches
+const BATCH_SIZE = 50; // Process 50 tickers at a time
+const DELAY_BETWEEN_BATCHES = 12000; // 12 seconds between batches (5 requests/min limit)
 
 interface PolygonBar {
   t: number; // timestamp
@@ -187,7 +187,7 @@ function sleep(ms: number) {
 }
 
 async function main() {
-  console.log('🚀 Starting US stocks historical data fetch...\n');
+  console.log('🚀 Starting Russell 2000 historical data fetch...\n');
 
   if (!POLYGON_API_KEY) {
     console.error('❌ POLYGON_API_KEY environment variable not set');
@@ -197,19 +197,14 @@ async function main() {
   initializeDatabase();
   const db = getDatabase();
 
-  // Get all US stock tickers
+  // Get all Russell 2000 tickers
   const tickers = db
     .prepare(
-      `SELECT ticker FROM universe_stocks WHERE universe_id = (SELECT id FROM universe WHERE name = 'us-stocks')`
+      `SELECT ticker FROM universe_stocks WHERE universe_id = (SELECT id FROM universe WHERE name = 'russell2000')`
     )
     .all() as { ticker: string }[];
 
   console.log(`📊 Found ${tickers.length} tickers to process\n`);
-
-  if (tickers.length === 0) {
-    console.error('❌ No tickers found. Run fetch-us-stocks.ts first to populate the universe.');
-    process.exit(1);
-  }
 
   // Date range: 5 years ago to today
   const toDate = new Date().toISOString().split('T')[0];
@@ -239,13 +234,11 @@ async function main() {
 
   let processed = 0;
   let totalBars = 0;
-  let skipped = 0;
 
   // Process in batches
   for (let i = 0; i < tickers.length; i += BATCH_SIZE) {
     const batch = tickers.slice(i, i + BATCH_SIZE);
     console.log(`\n📦 Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(tickers.length / BATCH_SIZE)}`);
-    console.log(`   Progress: ${processed + skipped}/${tickers.length} (${((processed + skipped) / tickers.length * 100).toFixed(1)}%)`);
 
     for (const { ticker } of batch) {
       try {
@@ -254,7 +247,6 @@ async function main() {
 
         if (bars.length === 0) {
           console.log(`  ⚠️  No data for ${ticker}`);
-          skipped++;
           continue;
         }
 
@@ -277,7 +269,6 @@ async function main() {
         await sleep(100);
       } catch (error: any) {
         console.error(`  ❌ Error processing ${ticker}:`, error.message);
-        skipped++;
       }
     }
 
@@ -290,7 +281,6 @@ async function main() {
 
   console.log(`\n✅ Processing complete!`);
   console.log(`📊 Processed ${processed}/${tickers.length} tickers`);
-  console.log(`⚠️  Skipped ${skipped} tickers (no data or errors)`);
   console.log(`📈 Total bars inserted: ${totalBars}`);
 
   // Verify final count
