@@ -6,6 +6,7 @@
 import express, { Request, Response } from 'express';
 import { AgentManagementService } from '../../services/agent-management.service';
 import { AgentLearningService } from '../../services/agent-learning.service';
+import { getDatabase } from '../../database/db';
 import {
   CreateAgentRequest,
   StartIterationRequest,
@@ -172,10 +173,25 @@ router.post('/:id/iterations/start', async (req: Request, res: Response) => {
  */
 router.get('/:id/iterations', async (req: Request, res: Response) => {
   try {
-    // TODO: Implement getIterations method
+    const db = getDatabase();
+    const agentId = req.params.id;
+
+    const rows = db.prepare(`
+      SELECT * FROM agent_iterations
+      WHERE agent_id = ?
+      ORDER BY iteration_number DESC
+    `).all(agentId);
+
+    // Parse JSON fields
+    const iterations = rows.map((row: any) => ({
+      ...row,
+      backtest_results: row.backtest_results ? JSON.parse(row.backtest_results) : null,
+      refinements_suggested: row.refinements_suggested ? JSON.parse(row.refinements_suggested) : [],
+    }));
+
     res.json({
       success: true,
-      iterations: [],
+      iterations,
     });
   } catch (error: any) {
     console.error('Error getting iterations:', error);
@@ -192,10 +208,32 @@ router.get('/:id/iterations', async (req: Request, res: Response) => {
  */
 router.get('/:id/iterations/:iteration_id', async (req: Request, res: Response) => {
   try {
-    // TODO: Implement getIteration method
+    const db = getDatabase();
+    const agentId = req.params.id;
+    const iterationId = req.params.iteration_id;
+
+    const row: any = db.prepare(`
+      SELECT * FROM agent_iterations
+      WHERE agent_id = ? AND id = ?
+    `).get(agentId, iterationId);
+
+    if (!row) {
+      return res.status(404).json({
+        success: false,
+        error: 'Iteration not found',
+      });
+    }
+
+    // Parse JSON fields
+    const iteration = {
+      ...row,
+      backtest_results: row.backtest_results ? JSON.parse(row.backtest_results) : null,
+      refinements_suggested: row.refinements_suggested ? JSON.parse(row.refinements_suggested) : [],
+    };
+
     res.json({
       success: true,
-      iteration: {},
+      iteration,
     });
   } catch (error: any) {
     console.error('Error getting iteration:', error);
@@ -240,10 +278,18 @@ router.post('/:id/iterations/:iteration_id/apply-refinements', async (req: Reque
  */
 router.get('/:id/strategies', async (req: Request, res: Response) => {
   try {
-    // TODO: Implement getStrategies method
+    const db = getDatabase();
+    const agentId = req.params.id;
+
+    const strategies = db.prepare(`
+      SELECT * FROM agent_strategies
+      WHERE agent_id = ?
+      ORDER BY created_at DESC
+    `).all(agentId);
+
     res.json({
       success: true,
-      strategies: [],
+      strategies,
     });
   } catch (error: any) {
     console.error('Error getting strategies:', error);
@@ -260,10 +306,25 @@ router.get('/:id/strategies', async (req: Request, res: Response) => {
  */
 router.get('/:id/strategies/:version', async (req: Request, res: Response) => {
   try {
-    // TODO: Implement getStrategy method
+    const db = getDatabase();
+    const agentId = req.params.id;
+    const version = req.params.version;
+
+    const strategy = db.prepare(`
+      SELECT * FROM agent_strategies
+      WHERE agent_id = ? AND version = ?
+    `).get(agentId, version);
+
+    if (!strategy) {
+      return res.status(404).json({
+        success: false,
+        error: 'Strategy version not found',
+      });
+    }
+
     res.json({
       success: true,
-      strategy: {},
+      strategy,
     });
   } catch (error: any) {
     console.error('Error getting strategy:', error);
@@ -284,10 +345,39 @@ router.get('/:id/strategies/:version', async (req: Request, res: Response) => {
  */
 router.get('/:id/knowledge', async (req: Request, res: Response) => {
   try {
-    // TODO: Implement getKnowledge method
+    const db = getDatabase();
+    const agentId = req.params.id;
+
+    // Optional filters from query params
+    const knowledgeType = req.query.type as string | undefined;
+    const patternType = req.query.pattern as string | undefined;
+
+    let query = `SELECT * FROM agent_knowledge WHERE agent_id = ?`;
+    const params: any[] = [agentId];
+
+    if (knowledgeType) {
+      query += ` AND knowledge_type = ?`;
+      params.push(knowledgeType);
+    }
+
+    if (patternType) {
+      query += ` AND pattern_type = ?`;
+      params.push(patternType);
+    }
+
+    query += ` ORDER BY confidence DESC, created_at DESC`;
+
+    const rows = db.prepare(query).all(...params);
+
+    // Parse JSON fields
+    const knowledge = rows.map((row: any) => ({
+      ...row,
+      supporting_data: row.supporting_data ? JSON.parse(row.supporting_data) : null,
+    }));
+
     res.json({
       success: true,
-      knowledge: [],
+      knowledge,
     });
   } catch (error: any) {
     console.error('Error getting knowledge:', error);
