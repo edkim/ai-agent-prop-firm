@@ -6,8 +6,9 @@ import dotenv from 'dotenv';
 import path from 'path';
 
 // Load environment variables FIRST before any other imports
-// Resolve to project root (one level up from backend/)
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+// Resolve to project root (one level up from backend/ where npm run dev executes)
+// Use override: true to replace any existing environment variables
+dotenv.config({ path: path.resolve(process.cwd(), '../.env'), override: true });
 
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';

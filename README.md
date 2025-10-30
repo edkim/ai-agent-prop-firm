@@ -425,6 +425,51 @@ npm run dev
 
 ---
 
+## 💾 Database Backup & Restore
+
+**Important**: The 43MB database contains irreplaceable data (agent learning history, trading records, pattern collections). Automated backups protect against data loss.
+
+### Quick Commands
+
+```bash
+# Backup database manually
+cd backend && npm run backup
+
+# Restore from most recent backup
+cd backend && npm run restore:from-backup
+
+# Restore from scratch (rebuilds with market data)
+cd backend && npm run restore
+```
+
+### Automated Backups
+
+Daily backups run automatically at 2:00 AM:
+- **Location**: `~/Backups/ai-backtest/`
+- **Retention**: Last 30 backups
+- **Includes**: Database + generated scripts
+
+**Setup** (one-time):
+```bash
+bash backend/helper-scripts/install-scheduled-backup.sh
+```
+
+**Verify**:
+```bash
+launchctl list | grep com.aibacktest.backup
+ls -lth ~/Backups/ai-backtest/*.db | head -5
+```
+
+### Complete Documentation
+
+See **[docs/DATABASE.md](docs/DATABASE.md)** for:
+- Detailed backup/restore procedures
+- Backfill scripts reference
+- Troubleshooting guide
+- Database schema overview
+
+---
+
 ## 📖 Usage Examples
 
 ### Example 1: Find Intraday VWAP Bounces
