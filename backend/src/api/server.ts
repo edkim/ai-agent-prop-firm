@@ -75,7 +75,8 @@ app.use((_req: Request, res: Response) => {
 });
 
 // Initialize database
-const dbPath = process.env.DATABASE_PATH || './backtesting.db';
+// Use absolute path to project root database (one level up from backend/)
+const dbPath = process.env.DATABASE_PATH || path.resolve(__dirname, '../../../backtesting.db');
 initializeDatabase(dbPath);
 
 // Start server
