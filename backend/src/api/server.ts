@@ -23,6 +23,7 @@ import chartsRoutes from './routes/charts';
 import claudeAnalysisRoutes from './routes/claude-analysis';
 import batchBacktestRoutes from './routes/batch-backtest';
 import tradingAgentRoutes from './routes/trading-agent';
+import learningAgentRoutes from './routes/agents'; // Learning laboratory agents
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
@@ -54,7 +55,8 @@ app.use('/api/backtest-sets', backtestSetsRoutes);
 app.use('/api/charts', chartsRoutes);
 app.use('/api/analysis', claudeAnalysisRoutes);
 app.use('/api/batch-backtest', batchBacktestRoutes);
-app.use('/api/agents', tradingAgentRoutes);
+app.use('/api/agents', tradingAgentRoutes); // Live trading agents
+app.use('/api/learning-agents', learningAgentRoutes); // Learning laboratory agents
 
 // Error handling middleware
 app.use((err: Error, _req: Request, res: Response, _next: any) => {
