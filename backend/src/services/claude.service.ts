@@ -852,6 +852,88 @@ Your generated code MUST compile with TypeScript strict mode. Follow these requi
    const todayBar = barsByDate.get('2025-10-13');  // Returns Bar | undefined
 
 
+7. **Array Initialization - NEVER Use null in Typed Arrays:**
+
+   // ❌ WRONG - Cannot assign null to string[]
+   const tradingDays: string[] = [null];
+
+   // ✅ CORRECT - Use empty array or proper values
+   const tradingDays: string[] = [];
+   const tradingDays: string[] = ["2025-10-30", "2025-10-29"];
+
+   // ✅ IF YOU NEED NULLABLE VALUES - Use union type
+   const tradingDays: (string | null)[] = [null];
+
+
+8. **Scanner Metrics - NEVER Assume Property Names:**
+
+   // ❌ WRONG - Accessing properties that may not exist in metrics
+   const volumeSpike = metrics.volume_spike || false;
+   const bearishRejection = metrics.bearish_rejection || false;
+
+   // ✅ CORRECT - Only access properties that the scanner actually outputs
+   // Look at the scanner's output metrics to see what properties are available
+   // For VWAP scanner, available metrics are:
+   //   - vwap, price, distance_from_vwap_percent
+   //   - volume_spike_multiplier (NOT volume_spike)
+   //   - rejection_confirmation_bars
+   //   - session_trend
+   //   - mean_reversion_quality
+
+   // Derive pattern type from actual metrics:
+   const hasVolumeSpike = metrics.volume_spike_multiplier >= 1.5;
+   const distanceFromVWAP = metrics.distance_from_vwap_percent;
+   const isBearishSetup = distanceFromVWAP > 0; // Price above VWAP
+   const isBullishSetup = distanceFromVWAP < 0; // Price below VWAP
+
+
+9. **TradeResult Objects - ALWAYS Include Required Fields:**
+
+   // ❌ WRONG - Missing required 'ticker' field
+   results.push({
+     date: signal_date,
+     side: 'LONG',
+     entryPrice: entry
+   });
+
+   // ✅ CORRECT - Include all required fields (date AND ticker)
+   results.push({
+     date: signal_date,
+     ticker: ticker,  // REQUIRED!
+     side: 'LONG',
+     entryPrice: entry,
+     entryTime: entryTime,
+     exitPrice: exit,
+     exitTime: exitTime,
+     pnl: pnl,
+     pnlPercent: pnlPercent,
+     exitReason: 'Stop loss'
+   });
+
+   // ✅ For no-trade results
+   results.push({
+     date: signal_date,
+     ticker: ticker,  // REQUIRED!
+     noTrade: true,
+     noTradeReason: 'No favorable setup'
+   });
+
+
+10. **Complete Code Generation - NEVER Truncate:**
+
+    CRITICAL: Your response MUST be complete. If you start generating code:
+    - You MUST finish all open code blocks
+    - You MUST close all open braces, brackets, and parentheses
+    - You MUST complete the runBacktest() function
+    - You MUST include the final .catch(console.error) line
+
+    If your response is getting long, SIMPLIFY your logic instead of truncating:
+    - Use fewer helper functions
+    - Inline simple calculations
+    - Remove verbose comments
+    - But NEVER leave incomplete code!
+
+
 **Critical Rules for Signal-Based Execution:**
 1. ALWAYS check if \`SCANNER_SIGNALS\` exists before using it
 2. Use \`signal_date\` and \`signal_time\` fields to identify when the pattern occurred

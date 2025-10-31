@@ -485,10 +485,10 @@ const SCANNER_SIGNALS = ${signalsJSON};
   ): Promise<Refinement[]> {
     const refinements: Refinement[] = [];
 
-    console.log(`   Converting analysis into ${analysis.parameter_recommendations.length} refinements...`);
+    console.log(`   Converting analysis into ${(analysis.parameter_recommendations || []).length} refinements...`);
 
     // Convert parameter recommendations into refinements
-    for (const param of analysis.parameter_recommendations) {
+    for (const param of analysis.parameter_recommendations || []) {
       refinements.push({
         type: 'parameter_adjustment',
         description: `Adjust ${param.parameter} from ${param.currentValue} to ${param.recommendedValue}`,
@@ -503,7 +503,7 @@ const SCANNER_SIGNALS = ${signalsJSON};
     }
 
     // Convert missing context into data collection refinements
-    for (const missing of analysis.missing_context) {
+    for (const missing of analysis.missing_context || []) {
       refinements.push({
         type: 'missing_data',
         description: `Add data: ${missing}`,
@@ -515,7 +515,7 @@ const SCANNER_SIGNALS = ${signalsJSON};
     }
 
     // Add refinements based on failure points
-    for (const failure of analysis.failure_points) {
+    for (const failure of analysis.failure_points || []) {
       refinements.push({
         type: 'exit_rule',
         description: `Address failure: ${failure}`,
