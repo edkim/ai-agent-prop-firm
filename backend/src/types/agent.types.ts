@@ -38,6 +38,7 @@ export interface TradingAgent {
   pattern_focus: string[];
   market_conditions: MarketCondition[];
   risk_config?: RiskConfig;
+  universe?: string; // Universe name (e.g., 'Tech Sector', 'Russell 2000')
 
   // Status
   status: AgentStatus;
@@ -65,6 +66,7 @@ export interface TradingAgentRow {
   pattern_focus: string | null; // JSON string
   market_conditions: string | null; // JSON string
   risk_config: string | null; // JSON string
+  universe: string | null;
   status: string | null;
   active: number; // SQLite boolean
   account_id: string | null;

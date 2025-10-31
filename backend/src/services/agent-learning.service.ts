@@ -24,10 +24,12 @@ import { BacktestService } from './backtest.service';
 import { PerformanceMonitorService } from './performance-monitor.service';
 import { RefinementApprovalService } from './refinement-approval.service';
 import { ScriptExecutionService } from './script-execution.service';
+import { AgentKnowledgeExtractionService } from './agent-knowledge-extraction.service';
 
 export class AgentLearningService {
   private agentMgmt: AgentManagementService;
   private claude: ClaudeService;
+  private knowledgeExtraction: AgentKnowledgeExtractionService;
   private scanner: ScannerService;
   private backtest: BacktestService;
   private performanceMonitor: PerformanceMonitorService;
@@ -42,6 +44,7 @@ export class AgentLearningService {
     this.performanceMonitor = new PerformanceMonitorService();
     this.refinementApproval = new RefinementApprovalService();
     this.scriptExecution = new ScriptExecutionService();
+    this.knowledgeExtraction = new AgentKnowledgeExtractionService();
   }
 
   /**
@@ -81,6 +84,11 @@ export class AgentLearningService {
     // Step 4: Agent analyzes results
     console.log('4️⃣ Analyzing results...');
     const analysis = await this.analyzeResults(agent, backtestResults, scanResults);
+
+    // Step 4.5: Extract and store knowledge from analysis
+    console.log('📚 Extracting knowledge...');
+    const knowledge = await this.knowledgeExtraction.extractKnowledge(agentId, analysis, iterationNumber);
+    await this.knowledgeExtraction.storeKnowledge(agentId, knowledge);
 
     // Step 5: Agent proposes refinements
     console.log('5️⃣ Proposing refinements...');
@@ -136,7 +144,7 @@ export class AgentLearningService {
   }> {
     // Get agent's accumulated knowledge
     const knowledge = await this.getAgentKnowledge(agent.id);
-    const knowledgeSummary = this.formatKnowledgeSummary(knowledge);
+    const knowledgeSummary = this.formatKnowledgeSummary(knowledge, agent);
 
     console.log(`   Agent personality: ${agent.trading_style}, ${agent.risk_tolerance}`);
     console.log(`   Pattern focus: ${agent.pattern_focus.join(', ')}`);
@@ -149,7 +157,7 @@ export class AgentLearningService {
     console.log(`   Generating scanner with Claude...`);
     const scannerResult = await this.claude.generateScannerScript({
       query: scannerQuery,
-      universe: 'technology', // Default to tech sector
+      universe: agent.universe || 'Tech Sector', // Use agent's universe or default to Tech Sector
       dateRange: {
         start: this.getDateDaysAgo(20),
         end: this.getDateDaysAgo(1)
@@ -163,9 +171,11 @@ export class AgentLearningService {
 
     console.log(`   Generating execution script with Claude...`);
     const executionResult = await this.claude.generateScript(executionPrompt, {
+      strategyType: 'custom',
       ticker: 'TEMPLATE_TICKER',
       timeframe: '5min',
-      dates: [this.getDateDaysAgo(5)] // Will be replaced during execution
+      specificDates: [this.getDateDaysAgo(5)], // Will be replaced during execution
+      config: {}
     });
 
     const rationale = iterationNumber === 1
@@ -174,7 +184,7 @@ export class AgentLearningService {
 
     return {
       scanScript: scannerResult.script,
-      executionScript: executionResult.scriptCode,
+      executionScript: executionResult.script,  // Fixed: script not scriptCode
       rationale
     };
   }
@@ -200,8 +210,8 @@ export class AgentLearningService {
         return [];
       }
 
-      // Parse results
-      const scanResults = result.data?.matches || [];
+      // Parse results (scan scripts return {matches: []} instead of BacktestScriptOutput)
+      const scanResults = (result.data as any)?.matches || [];
       console.log(`   Scan found ${scanResults.length} matches`);
 
       return scanResults;
@@ -361,13 +371,13 @@ export class AgentLearningService {
     for (const param of analysis.parameter_recommendations) {
       refinements.push({
         type: 'parameter_adjustment',
-        description: `Adjust ${param.parameter} from ${param.current_value} to ${param.suggested_value}`,
-        reasoning: param.rationale,
+        description: `Adjust ${param.parameter} from ${param.currentValue} to ${param.recommendedValue}`,
+        reasoning: param.expectedImprovement,
         projected_improvement: `Expected improvement based on analysis`,
         specific_changes: {
           parameter: param.parameter,
-          old_value: param.current_value,
-          new_value: param.suggested_value
+          old_value: param.currentValue,
+          new_value: param.recommendedValue
         }
       });
     }
@@ -473,14 +483,11 @@ export class AgentLearningService {
     `).all(agentId);
   }
 
-  private formatKnowledgeSummary(knowledge: any[]): string {
-    if (knowledge.length === 0) {
-      return 'No accumulated knowledge yet. This is your first iteration.';
-    }
-
-    return knowledge
-      .map(k => `- ${k.insight} (confidence: ${Math.round(k.confidence * 100)}%)`)
-      .join('\n');
+  private formatKnowledgeSummary(knowledge: any[], agent: TradingAgent): string {
+    return this.knowledgeExtraction.formatKnowledgeForStrategyGeneration(
+      knowledge,
+      agent.pattern_focus
+    );
   }
 
   private async saveIteration(data: any): Promise<AgentIteration> {
