@@ -297,6 +297,7 @@ Provide actionable insights based on YOUR experience and personality.`;
       pattern_focus: row.pattern_focus ? JSON.parse(row.pattern_focus) : [],
       market_conditions: row.market_conditions ? JSON.parse(row.market_conditions) : [],
       risk_config: row.risk_config ? JSON.parse(row.risk_config) : undefined,
+      universe: row.universe || undefined,
       status: (row.status as any) || 'learning',
       active: row.active === 1,
       account_id: row.account_id || undefined,
