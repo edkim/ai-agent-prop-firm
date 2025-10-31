@@ -16,6 +16,7 @@ import {
   IterationResult,
   ApplyRefinementsRequest,
   ApplyRefinementsResponse,
+  AgentBacktestConfig,
 } from '../types/agent.types';
 import { AgentManagementService } from './agent-management.service';
 import { ClaudeService } from './claude.service';
@@ -25,6 +26,15 @@ import { PerformanceMonitorService } from './performance-monitor.service';
 import { RefinementApprovalService } from './refinement-approval.service';
 import { ScriptExecutionService } from './script-execution.service';
 import { AgentKnowledgeExtractionService } from './agent-knowledge-extraction.service';
+
+// Default backtest configuration
+const DEFAULT_BACKTEST_CONFIG: AgentBacktestConfig = {
+  max_signals_per_iteration: 10,      // Conservative limit for testing
+  max_signals_per_ticker_date: 2,     // Max 2 signals per ticker per day
+  max_signals_per_date: 10,            // Max 10 signals per unique date
+  min_pattern_strength: 0,             // Minimum quality score (0 = accept all)
+  backtest_timeout_ms: 120000,         // 2 minute timeout per backtest
+};
 
 export class AgentLearningService {
   private agentMgmt: AgentManagementService;
@@ -132,6 +142,25 @@ export class AgentLearningService {
   }
 
   /**
+   * Build backtest configuration based on agent personality
+   */
+  private buildBacktestConfig(agent: TradingAgent): any {
+    const maxTrades = agent.risk_tolerance === 'aggressive' ? 3 :
+                      agent.risk_tolerance === 'moderate' ? 2 : 1;
+
+    return {
+      allowLong: true,
+      allowShort: agent.risk_tolerance !== 'conservative',
+      exitTime: '15:55', // Exit before market close
+      maxTradesPerDay: maxTrades,
+      stopLossPct: agent.risk_tolerance === 'aggressive' ? 2 :
+                   agent.risk_tolerance === 'moderate' ? 1.5 : 1,
+      takeProfitPct: agent.risk_tolerance === 'aggressive' ? 3 :
+                     agent.risk_tolerance === 'moderate' ? 2 : 1.5,
+    };
+  }
+
+  /**
    * Generate strategy scripts for this agent using Claude
    */
   private async generateStrategy(
@@ -165,17 +194,26 @@ export class AgentLearningService {
     });
 
     // Step 2: Generate execution script
+    const config = this.buildBacktestConfig(agent);
     const executionPrompt = iterationNumber === 1
-      ? `${agent.trading_style} ${agent.risk_tolerance} risk trader looking for ${agent.pattern_focus.join(' or ')} patterns. Generate entry and exit rules matching this personality in ${agent.market_conditions.join(' or ')} conditions.`
-      : `${agent.trading_style} trader with these learnings: ${knowledgeSummary}. Improve the strategy based on previous iterations.`;
+      ? `${agent.trading_style} trader with ${agent.risk_tolerance} risk tolerance.
+Focus on ${agent.pattern_focus.join(' or ')} patterns in ${agent.market_conditions.join(' or ')} market conditions.
+Generate a complete backtest script with:
+- Clear entry rules for the specified patterns
+- Exit at market close or on profit/loss targets
+- Maximum ${config.maxTradesPerDay} trade(s) per day
+- Proper TypeScript type annotations for all functions`
+      : `${agent.trading_style} trader with accumulated knowledge: ${knowledgeSummary}.
+Improve the strategy based on previous iterations while maintaining proper TypeScript typing.
+Ensure all callback functions have explicit type annotations.`;
 
     console.log(`   Generating execution script with Claude...`);
     const executionResult = await this.claude.generateScript(executionPrompt, {
       strategyType: 'custom',
       ticker: 'TEMPLATE_TICKER',
-      timeframe: '5min',
+      timeframe: agent.timeframe || '5min',
       specificDates: [this.getDateDaysAgo(5)], // Will be replaced during execution
-      config: {}
+      config: config
     });
 
     const rationale = iterationNumber === 1
@@ -210,8 +248,13 @@ export class AgentLearningService {
         return [];
       }
 
-      // Parse results (scan scripts return {matches: []} instead of BacktestScriptOutput)
-      const scanResults = (result.data as any)?.matches || [];
+      // Parse results (scan scripts can return array directly, {matches: []}, or {trades: []})
+      let scanResults: any[] = [];
+      if (Array.isArray(result.data)) {
+        scanResults = result.data;
+      } else {
+        scanResults = (result.data as any)?.matches || (result.data as any)?.trades || [];
+      }
       console.log(`   Scan found ${scanResults.length} matches`);
 
       return scanResults;
@@ -245,12 +288,17 @@ export class AgentLearningService {
       };
     }
 
-    console.log(`   Running backtests on ${scanResults.length} scan results...`);
+    console.log(`   Raw scan results: ${scanResults.length}`);
+
+    // Apply signal filtering to reduce to manageable set
+    const filteredResults = this.applySignalFiltering(scanResults, DEFAULT_BACKTEST_CONFIG);
+
+    console.log(`   Running backtests on ${filteredResults.length} filtered signals...`);
     const allTrades: any[] = [];
     let successfulBacktests = 0;
 
-    // Execute backtest for each scan result
-    for (const scanResult of scanResults) {
+    // Execute backtest for each filtered result
+    for (const scanResult of filteredResults) {
       const { ticker, date } = scanResult;
       const scriptId = uuidv4();
       const scriptPath = path.join(__dirname, '../../', `agent-backtest-${scriptId}.ts`);
@@ -259,7 +307,7 @@ export class AgentLearningService {
         // Customize execution script with ticker and date
         const customizedScript = executionScript
           .replace(/TEMPLATE_TICKER/g, ticker)
-          .replace(/\[.*?\]/g, `['${date}']`); // Replace date array
+          .replace(/const tradingDays: string\[\] = \[[^\]]+\];/s, `const tradingDays: string[] = ['${date}'];`);
 
         // Save to temp file
         fs.writeFileSync(scriptPath, customizedScript);
@@ -616,5 +664,86 @@ export class AgentLearningService {
     const date = new Date();
     date.setDate(date.getDate() - days);
     return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD
+  }
+
+  /**
+   * Apply signal filtering to reduce scan results to manageable set
+   */
+  private applySignalFiltering(signals: any[], config: AgentBacktestConfig): any[] {
+    console.log(`\n📊 Signal Filtering:`);
+    console.log(`   Raw scan results: ${signals.length}`);
+
+    // Step 1: Filter by minimum quality
+    const qualityFiltered = signals.filter(signal =>
+      (signal.pattern_strength || 0) >= config.min_pattern_strength
+    );
+    console.log(`   After quality filter (>=${config.min_pattern_strength}): ${qualityFiltered.length}`);
+
+    // Step 2: Apply diversification (limit per ticker/date, limit per date)
+    const diversified = this.applyDiversification(
+      qualityFiltered,
+      config.max_signals_per_ticker_date,
+      config.max_signals_per_date
+    );
+    console.log(`   After diversification: ${diversified.length}`);
+
+    // Step 3: Sort by quality and take top N
+    const final = diversified
+      .sort((a, b) => (b.pattern_strength || 0) - (a.pattern_strength || 0))
+      .slice(0, config.max_signals_per_iteration);
+
+    console.log(`   Final set to backtest: ${final.length}`);
+
+    const estimatedMinutes = (final.length * config.backtest_timeout_ms / 1000 / 60).toFixed(1);
+    console.log(`   Estimated time: ~${estimatedMinutes} minutes\n`);
+
+    return final;
+  }
+
+  /**
+   * Apply diversification limits to prevent ticker/date concentration
+   */
+  private applyDiversification(
+    signals: any[],
+    maxPerTickerDate: number,
+    maxPerDate: number
+  ): any[] {
+    // Group by ticker+date combination
+    const byTickerDate = new Map<string, any[]>();
+
+    for (const signal of signals) {
+      const key = `${signal.ticker}:${signal.date}`;
+      if (!byTickerDate.has(key)) {
+        byTickerDate.set(key, []);
+      }
+      byTickerDate.get(key)!.push(signal);
+    }
+
+    // Take top N per ticker+date, respecting per-date limits
+    const diversified: any[] = [];
+    const dateCount = new Map<string, number>();
+
+    for (const [key, groupSignals] of byTickerDate) {
+      const date = key.split(':')[1];
+      const currentDateCount = dateCount.get(date) || 0;
+
+      // Skip if we've hit the per-date limit
+      if (currentDateCount >= maxPerDate) continue;
+
+      // Sort by pattern_strength and take top N for this ticker+date
+      const topSignals = groupSignals
+        .sort((a, b) => (b.pattern_strength || 0) - (a.pattern_strength || 0))
+        .slice(0, maxPerTickerDate);
+
+      // Add signals while respecting per-date limit
+      for (const signal of topSignals) {
+        if ((dateCount.get(date) || 0) < maxPerDate) {
+          diversified.push(signal);
+          dateCount.set(date, (dateCount.get(date) || 0) + 1);
+        }
+      }
+    }
+
+    return diversified;
   }
 }
