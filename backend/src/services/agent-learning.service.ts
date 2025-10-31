@@ -179,11 +179,29 @@ export class AgentLearningService {
     console.log(`   Pattern focus: ${agent.pattern_focus.join(', ')}`);
 
     // Step 1: Generate scanner script
-    const scannerQuery = iterationNumber === 1
-      ? `Find ${agent.pattern_focus.join(' or ')} patterns in ${agent.market_conditions.join(' or ')} market conditions. Trading style: ${agent.trading_style}, risk tolerance: ${agent.risk_tolerance}.`
-      : `Find ${agent.pattern_focus.join(' or ')} patterns incorporating these learnings: ${knowledgeSummary}`;
+    // ALWAYS prioritize custom instructions if they exist (for specialized strategies)
+    // Otherwise use generic pattern focus (with learnings on iteration 2+)
+    let scannerQuery: string;
+
+    if (agent.instructions && agent.instructions.trim() !== '') {
+      // Specialized strategy with custom instructions - always use them
+      scannerQuery = agent.instructions;
+
+      // On iteration 2+, append learnings to refine the custom strategy
+      if (iterationNumber > 1 && knowledgeSummary && knowledgeSummary.trim() !== '') {
+        scannerQuery += `\n\nINCORPORATE THESE LEARNINGS: ${knowledgeSummary}`;
+      }
+    } else {
+      // Generic agent - use pattern focus
+      if (iterationNumber === 1) {
+        scannerQuery = `Find ${agent.pattern_focus.join(' or ')} patterns in ${agent.market_conditions.join(' or ')} market conditions. Trading style: ${agent.trading_style}, risk tolerance: ${agent.risk_tolerance}.`;
+      } else {
+        scannerQuery = `Find ${agent.pattern_focus.join(' or ')} patterns incorporating these learnings: ${knowledgeSummary}`;
+      }
+    }
 
     console.log(`   Generating scanner with Claude...`);
+    console.log(`   Scanner query: ${scannerQuery.substring(0, 100)}...`);
     const scannerResult = await this.claude.generateScannerScript({
       query: scannerQuery,
       universe: agent.universe || 'Tech Sector', // Use agent's universe or default to Tech Sector
@@ -198,18 +216,26 @@ export class AgentLearningService {
     const executionPrompt = iterationNumber === 1
       ? `${agent.trading_style} trader with ${agent.risk_tolerance} risk tolerance.
 Focus on ${agent.pattern_focus.join(' or ')} patterns in ${agent.market_conditions.join(' or ')} market conditions.
-Generate a complete backtest script with:
-- Clear entry rules for the specified patterns
-- Exit at market close or on profit/loss targets
-- Maximum ${config.maxTradesPerDay} trade(s) per day
-- Proper TypeScript type annotations for all functions`
-      : `${agent.trading_style} trader with accumulated knowledge: ${knowledgeSummary}.
-Improve the strategy based on previous iterations while maintaining proper TypeScript typing.
-Ensure all callback functions have explicit type annotations.`;
 
-    console.log(`   Generating execution script with Claude...`);
+IMPORTANT: This script will receive SCANNER_SIGNALS from the pattern detection scanner.
+Generate a SIGNAL-BASED execution script that:
+- Checks if SCANNER_SIGNALS exists and uses it (required for learning)
+- Enters trades at signal times (next bar after signal)
+- Applies exit rules: stop loss ${config.stopLossPct}%, take profit ${config.takeProfitPct}%, market close at 15:55
+- Maximum ${config.maxTradesPerDay} trade(s) per day
+- Proper TypeScript type annotations for all functions
+- Falls back to autonomous detection only if SCANNER_SIGNALS is undefined`
+      : `${agent.trading_style} trader with accumulated knowledge: ${knowledgeSummary}.
+
+IMPORTANT: This script will receive SCANNER_SIGNALS from the pattern detection scanner.
+Improve the strategy based on previous iterations:
+- MUST use signal-based execution when SCANNER_SIGNALS is provided
+- Apply refined exit rules and risk management
+- Maintain proper TypeScript typing with explicit type annotations`;
+
+    console.log(`   Generating signal-based execution script with Claude...`);
     const executionResult = await this.claude.generateScript(executionPrompt, {
-      strategyType: 'custom',
+      strategyType: 'signal_based',
       ticker: 'TEMPLATE_TICKER',
       timeframe: agent.timeframe || '5min',
       specificDates: [this.getDateDaysAgo(5)], // Will be replaced during execution
@@ -297,17 +323,35 @@ Ensure all callback functions have explicit type annotations.`;
     const allTrades: any[] = [];
     let successfulBacktests = 0;
 
-    // Execute backtest for each filtered result
-    for (const scanResult of filteredResults) {
-      const { ticker, date } = scanResult;
+    // Group signals by ticker to batch them
+    const signalsByTicker: { [ticker: string]: any[] } = {};
+    for (const signal of filteredResults) {
+      if (!signalsByTicker[signal.ticker]) {
+        signalsByTicker[signal.ticker] = [];
+      }
+      signalsByTicker[signal.ticker].push(signal);
+    }
+
+    console.log(`   Grouped into ${Object.keys(signalsByTicker).length} ticker(s)`);
+
+    // Execute backtest for each ticker with its signals
+    for (const [ticker, signals] of Object.entries(signalsByTicker)) {
       const scriptId = uuidv4();
       const scriptPath = path.join(__dirname, '../../', `agent-backtest-${scriptId}.ts`);
 
       try {
-        // Customize execution script with ticker and date
+        // Inject signals into the script
+        const signalsJSON = JSON.stringify(signals, null, 2);
+        const signalInjection = `
+// SIGNALS FROM SCANNER (injected by learning system)
+const SCANNER_SIGNALS = ${signalsJSON};
+`;
+
+        // Customize execution script with ticker and signals
         const customizedScript = executionScript
           .replace(/TEMPLATE_TICKER/g, ticker)
-          .replace(/const tradingDays: string\[\] = \[[^\]]+\];/s, `const tradingDays: string[] = ['${date}'];`);
+          .replace(/const tradingDays: string\[\] = \[[^\]]+\];/s,
+            `const tradingDays: string[] = ${JSON.stringify([...new Set(signals.map((s: any) => s.date))])};\n${signalInjection}`);
 
         // Save to temp file
         fs.writeFileSync(scriptPath, customizedScript);
@@ -326,7 +370,7 @@ Ensure all callback functions have explicit type annotations.`;
           fs.unlinkSync(scriptPath);
         }
       } catch (error: any) {
-        console.error(`   Error backtesting ${ticker} on ${date}: ${error.message}`);
+        console.error(`   Error backtesting ${ticker}: ${error.message}`);
         // Clean up on error
         try {
           if (fs.existsSync(scriptPath)) {
@@ -336,7 +380,7 @@ Ensure all callback functions have explicit type annotations.`;
       }
     }
 
-    console.log(`   Completed ${successfulBacktests}/${scanResults.length} backtests`);
+    console.log(`   Completed ${successfulBacktests}/${Object.keys(signalsByTicker).length} backtests`);
     console.log(`   Total trades: ${allTrades.length}`);
 
     // Aggregate results

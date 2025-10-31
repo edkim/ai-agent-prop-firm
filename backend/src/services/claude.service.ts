@@ -510,6 +510,170 @@ for (let i = 0; i < bars.length; i++) {
 6. If user says "max 1 trade", this means TOTAL trades per day (long + short combined)
 7. If user says "max 1 long and 1 short", you need separate counters: \`longTradesCountToday\` and \`shortTradesCountToday\`
 
+## Signal-Based Execution (CRITICAL FOR AGENT LEARNING)
+
+**IMPORTANT:** When generating execution scripts for learning agents, the script will receive pre-detected signals from a scanner.
+The \`SCANNER_SIGNALS\` constant will be injected into your script with this structure:
+
+\`\`\`typescript
+// This constant is injected by the learning system
+const SCANNER_SIGNALS = [
+  {
+    ticker: 'AAPL',
+    signal_date: '2025-10-13',  // Trading date (YYYY-MM-DD)
+    signal_time: '10:30',       // Signal time (HH:MM)
+    pattern_strength: 75,
+    metrics: {
+      // Scanner-specific metrics (varies by pattern)
+      vwap: 180.50,
+      price: 180.75,
+      volume_ratio: 2.3,
+      // ... other pattern-specific metrics
+    }
+  },
+  // ... more signals
+];
+\`\`\`
+
+**When SCANNER_SIGNALS is present, you MUST use signal-based execution:**
+
+\`\`\`typescript
+// Check if scanner signals are available
+const useSignalBasedExecution = typeof SCANNER_SIGNALS !== 'undefined' && SCANNER_SIGNALS.length > 0;
+
+if (useSignalBasedExecution) {
+  console.log(\`Using signal-based execution with \${SCANNER_SIGNALS.length} signals\`);
+
+  // Process each signal
+  for (const signal of SCANNER_SIGNALS) {
+    const { ticker, signal_date, signal_time } = signal;
+
+    // Fetch bars for this signal's date
+    const dateStart = new Date(\`\${signal_date}T00:00:00Z\`).getTime();
+    const nextDate = new Date(signal_date);
+    nextDate.setDate(nextDate.getDate() + 1);
+    const dateEnd = nextDate.getTime();
+
+    const bars = db.prepare(\`
+      SELECT timestamp, open, high, low, close, volume, time_of_day as timeOfDay
+      FROM ohlcv_data
+      WHERE ticker = ? AND timeframe = ?
+        AND timestamp >= ? AND timestamp < ?
+      ORDER BY timestamp ASC
+    \`).all(ticker, timeframe, dateStart, dateEnd) as Bar[];
+
+    if (bars.length === 0) {
+      results.push({ date, ticker, noTrade: true, noTradeReason: 'No data' });
+      continue;
+    }
+
+    // Find the bar at or after signal time
+    const signalBarIndex = bars.findIndex((b: Bar) => b.timeOfDay >= signalTime);
+    if (signalBarIndex === -1 || signalBarIndex === bars.length - 1) {
+      results.push({ date, ticker, noTrade: true, noTradeReason: 'Signal too late in day' });
+      continue;
+    }
+
+    // Enter on NEXT bar after signal (realistic execution)
+    const entryBar = bars[signalBarIndex + 1];
+
+    // Determine trade direction based on your strategy logic
+    // Example: For momentum exhaustion/fade strategies, enter SHORT
+    // For bounce/reversal strategies, enter LONG
+    const side = 'SHORT'; // or 'LONG' based on your strategy
+
+    let position = {
+      side,
+      entry: entryBar.open,
+      entryTime: entryBar.timeOfDay,
+      highestPrice: entryBar.high,
+      lowestPrice: entryBar.low
+    };
+
+    // Monitor position until exit
+    for (let i = signalBarIndex + 2; i < bars.length; i++) {
+      const bar = bars[i];
+      position.highestPrice = Math.max(position.highestPrice, bar.high);
+      position.lowestPrice = Math.min(position.lowestPrice, bar.low);
+
+      // Apply your exit logic here (stop loss, take profit, time-based, etc.)
+      let exitTriggered = false;
+      let exitPrice = bar.close;
+      let exitReason = '';
+
+      if (side === 'LONG') {
+        const stopLoss = position.entry * (1 - stopLossPct / 100);
+        const takeProfit = position.entry * (1 + takeProfitPct / 100);
+
+        if (bar.low <= stopLoss) {
+          exitTriggered = true;
+          exitPrice = stopLoss;
+          exitReason = 'Stop loss';
+        } else if (bar.high >= takeProfit) {
+          exitTriggered = true;
+          exitPrice = takeProfit;
+          exitReason = 'Take profit';
+        } else if (bar.timeOfDay >= '15:55:00') {
+          exitTriggered = true;
+          exitPrice = bar.close;
+          exitReason = 'Market close';
+        }
+      } else { // SHORT
+        const stopLoss = position.entry * (1 + stopLossPct / 100);
+        const takeProfit = position.entry * (1 - takeProfitPct / 100);
+
+        if (bar.high >= stopLoss) {
+          exitTriggered = true;
+          exitPrice = stopLoss;
+          exitReason = 'Stop loss';
+        } else if (bar.low <= takeProfit) {
+          exitTriggered = true;
+          exitPrice = takeProfit;
+          exitReason = 'Take profit';
+        } else if (bar.timeOfDay >= '15:55:00') {
+          exitTriggered = true;
+          exitPrice = bar.close;
+          exitReason = 'Market close';
+        }
+      }
+
+      if (exitTriggered) {
+        const pnl = side === 'LONG' ? exitPrice - position.entry : position.entry - exitPrice;
+        const pnlPercent = (pnl / position.entry) * 100;
+
+        results.push({
+          date,
+          ticker,
+          side,
+          entryTime: position.entryTime,
+          entryPrice: position.entry,
+          exitTime: bar.timeOfDay,
+          exitPrice,
+          pnl,
+          pnlPercent,
+          exitReason,
+          highestPrice: position.highestPrice,
+          lowestPrice: position.lowestPrice
+        });
+        break;
+      }
+    }
+  }
+} else {
+  // Fall back to autonomous pattern detection if no signals provided
+  // (Use the standard pattern detection logic here)
+}
+\`\`\`
+
+**Critical Rules for Signal-Based Execution:**
+1. ALWAYS check if \`SCANNER_SIGNALS\` exists before using it
+2. Use \`signal_date\` and \`signal_time\` fields to identify when the pattern occurred
+3. Enter trades at the bar AFTER the signal time (next-bar execution)
+4. Process each signal independently
+5. Do NOT re-detect patterns - trust the scanner's signals
+6. Apply your exit rules (stop loss, take profit, time exit) after entry
+7. Trade direction should be based on the strategy logic (e.g., momentum exhaustion = SHORT, bounce = LONG)
+
 ## Date Selection
 
 You must determine appropriate testing dates based on the user's strategy description.
@@ -819,8 +983,8 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 interface ScanMatch {
   ticker: string;
-  date: string;  // Trading date
-  time: string;  // Time of detection (HH:MM)
+  signal_date: string;  // Trading date (YYYY-MM-DD)
+  signal_time: string;  // Time of detection (HH:MM)
   pattern_strength: number; // 0-100
   metrics: any;
 }
@@ -902,8 +1066,8 @@ async function runScan(): Promise<ScanMatch[]> {
         if (touchedVWAP && bouncing && volumeExpansion) {
           results.push({
             ticker,
-            date,
-            time: current.time_of_day,
+            signal_date: date,
+            signal_time: current.time_of_day,
             pattern_strength: 75, // Calculate based on criteria
             metrics: {
               vwap: current.vwap,
@@ -916,11 +1080,23 @@ async function runScan(): Promise<ScanMatch[]> {
     }
   }
 
-  return results.sort((a, b) => b.pattern_strength - a.pattern_strength);
+  return results;
 }
 
 runScan().then(results => {
-  console.log(JSON.stringify(results, null, 2));
+  // Sort by pattern strength (best signals first)
+  const sortedResults = results.sort((a, b) => b.pattern_strength - a.pattern_strength);
+
+  // CRITICAL: Limit to top 500 patterns to prevent buffer overflow
+  const topResults = sortedResults.slice(0, 500);
+
+  // IMPORTANT: Output ONLY the JSON to stdout (no other messages)
+  // Progress messages can go to stderr: console.error()
+  console.error(\`✅ Scan complete! Found \${results.length} pattern matches\`);
+  console.error(\`📊 Outputting top \${topResults.length} patterns\`);
+
+  // Output ONLY JSON to stdout for parsing
+  console.log(JSON.stringify(topResults, null, 2));
 }).catch(console.error);
 \`\`\`
 
@@ -971,11 +1147,23 @@ async function runScan(): Promise<ScanMatch[]> {
     // (High-Tight Flag, Cup and Handle, etc.)
   }
 
-  return results.sort((a, b) => b.pattern_strength - a.pattern_strength);
+  return results;
 }
 
 runScan().then(results => {
-  console.log(JSON.stringify(results, null, 2));
+  // Sort by pattern strength (best signals first)
+  const sortedResults = results.sort((a, b) => b.pattern_strength - a.pattern_strength);
+
+  // CRITICAL: Limit to top 500 patterns to prevent buffer overflow
+  const topResults = sortedResults.slice(0, 500);
+
+  // IMPORTANT: Output ONLY the JSON to stdout (no other messages)
+  // Progress messages can go to stderr: console.error()
+  console.error(\`✅ Scan complete! Found \${results.length} pattern matches\`);
+  console.error(\`📊 Outputting top \${topResults.length} patterns\`);
+
+  // Output ONLY JSON to stdout for parsing
+  console.log(JSON.stringify(topResults, null, 2));
 }).catch(console.error);
 \`\`\`
 
@@ -1006,6 +1194,47 @@ SCRIPT:
 \`\`\`
 
 EXPLANATION: [Brief description of the pattern matching logic AND which table you used (ohlcv_data or daily_metrics) and WHY]
+
+## ⚠️ CRITICAL: Output Size Limits and JSON Format
+
+**YOU MUST limit your scanner output to prevent buffer overflow errors!**
+
+Your scanner may find thousands or even hundreds of thousands of pattern matches. **Outputting all of them will crash the system.**
+
+**REQUIRED OUTPUT LIMITING:**
+
+1. **Sort patterns by strength** (highest quality first)
+2. **Take only the TOP 500-1000 patterns**
+3. **Output ONLY JSON to stdout** - No other console.log messages
+4. **Progress messages go to stderr** - Use console.error() for debug/progress output
+
+**Example (REQUIRED pattern for all scanners):**
+
+\`\`\`typescript
+runScan().then(results => {
+  // Sort by pattern strength (best signals first)
+  const sortedResults = results.sort((a, b) => b.pattern_strength - a.pattern_strength);
+
+  // CRITICAL: Limit to top 500 patterns to prevent buffer overflow
+  const topResults = sortedResults.slice(0, 500);
+
+  // IMPORTANT: Output ONLY the JSON to stdout (no other messages)
+  // Progress messages can go to stderr: console.error()
+  console.error(\`✅ Scan complete! Found \${results.length} pattern matches\`);
+  console.error(\`📊 Outputting top \${topResults.length} patterns\`);
+
+  // Output ONLY JSON to stdout for parsing
+  console.log(JSON.stringify(topResults, null, 2));
+}).catch(console.error);
+\`\`\`
+
+**Why this is critical:**
+- Scanner may find 100,000+ matches
+- Outputting all matches exceeds stdout buffer (100MB limit)
+- System will fail with "maxBuffer length exceeded" error
+- Learning iteration will fail completely
+
+**DO NOT output unlimited patterns. Always use .slice(0, 500) or similar limiting.**
 
 ## Guidelines
 

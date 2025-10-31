@@ -26,7 +26,8 @@ export function initializeDatabase(dbPath: string = './backtesting.db'): Databas
   // Execute schema statements
   db.exec(schema);
 
-  console.log(`Database initialized at ${dbPath}`);
+  // Use console.error to send to stderr (scanner scripts need clean stdout for JSON)
+  console.error(`Database initialized at ${dbPath}`);
 
   return db;
 }
