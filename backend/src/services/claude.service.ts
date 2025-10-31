@@ -850,6 +850,30 @@ Your generated code MUST compile with TypeScript strict mode. Follow these requi
    const signal: ScannerSignal = SCANNER_SIGNALS[0];
    ```
 
+6. **Date-Keyed Dictionaries - MUST Use Record<string, T> or Map<string, T>:**
+   ```typescript
+   // ❌ WRONG - Missing type annotation causes "Property '2025-10-13' does not exist" errors
+   const barsByDate = bars.reduce((acc, bar) => {
+     acc[bar.signal_date] = bar;  // TypeScript error: Property doesn't exist on type '{}'
+     return acc;
+   }, {});
+
+   // ✅ CORRECT - Use Record<string, T> type
+   const barsByDate = bars.reduce((acc: Record<string, Bar>, bar: Bar) => {
+     acc[bar.signal_date] = bar;
+     return acc;
+   }, {} as Record<string, Bar>);
+
+   // ✅ ALSO CORRECT - Use Map for better type safety
+   const barsByDate = new Map<string, Bar>();
+   bars.forEach((bar: Bar) => {
+     barsByDate.set(bar.signal_date, bar);
+   });
+
+   // Access with type safety
+   const todayBar = barsByDate.get('2025-10-13');  // Returns Bar | undefined
+   ```
+
 **Critical Rules for Signal-Based Execution:**
 1. ALWAYS check if \`SCANNER_SIGNALS\` exists before using it
 2. Use \`signal_date\` and \`signal_time\` fields to identify when the pattern occurred
