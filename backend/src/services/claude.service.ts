@@ -16,7 +16,7 @@ export class ClaudeService {
 
   constructor() {
     this.model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929';
-    this.maxTokens = parseInt(process.env.ANTHROPIC_MAX_TOKENS || '16000'); // Increased to match scanner scripts
+    this.maxTokens = parseInt(process.env.ANTHROPIC_MAX_TOKENS || '20000'); // Balanced to prevent truncation while avoiding SDK timeout limits
     this.temperature = parseFloat(process.env.ANTHROPIC_TEMPERATURE || '0.0');
   }
 
@@ -29,7 +29,9 @@ export class ClaudeService {
       if (!apiKey) {
         throw new Error('ANTHROPIC_API_KEY environment variable is required for Claude-generated scripts. Please set it in your .env file.');
       }
-      this.client = new Anthropic({ apiKey });
+      this.client = new Anthropic({
+        apiKey,
+      });
     }
     return this.client;
   }
@@ -61,6 +63,12 @@ export class ClaudeService {
           },
         ],
       });
+
+      // Check for truncation
+      if (response.stop_reason === 'max_tokens') {
+        console.warn('⚠️  Script generation truncated due to token limit!');
+        console.warn('   Consider simplifying the prompt or increasing max_tokens further.');
+      }
 
       // Extract text from response
       const textContent = response.content.find(c => c.type === 'text');
@@ -179,7 +187,7 @@ Based on the strategy complexity and any explicit date mentions, what dates shou
       const client = this.getClient();
       const response = await client.messages.create({
         model: this.model,
-        max_tokens: 16000, // Increased for long scanner scripts
+        max_tokens: 20000, // Balanced to prevent truncation while avoiding SDK timeout limits
         temperature: 0.0,
         system: systemPrompt,
         messages: [
@@ -189,6 +197,12 @@ Based on the strategy complexity and any explicit date mentions, what dates shou
           },
         ],
       });
+
+      // Check for truncation
+      if (response.stop_reason === 'max_tokens') {
+        console.warn('⚠️  Scanner script truncated due to token limit!');
+        console.warn('   Consider simplifying the prompt or increasing max_tokens further.');
+      }
 
       // Extract text from response
       const textContent = response.content.find(c => c.type === 'text');
