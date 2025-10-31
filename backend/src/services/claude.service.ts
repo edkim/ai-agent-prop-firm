@@ -16,7 +16,7 @@ export class ClaudeService {
 
   constructor() {
     this.model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5-20250929';
-    this.maxTokens = parseInt(process.env.ANTHROPIC_MAX_TOKENS || '4000');
+    this.maxTokens = parseInt(process.env.ANTHROPIC_MAX_TOKENS || '16000'); // Increased to match scanner scripts
     this.temperature = parseFloat(process.env.ANTHROPIC_TEMPERATURE || '0.0');
   }
 
@@ -662,6 +662,84 @@ if (useSignalBasedExecution) {
 } else {
   // Fall back to autonomous pattern detection if no signals provided
   // (Use the standard pattern detection logic here)
+}
+\`\`\`
+
+**Helper Functions (Copy if needed):**
+
+If your strategy requires technical indicators, use these pre-built functions:
+
+\`\`\`typescript
+// Calculate VWAP (Volume-Weighted Average Price) for intraday bars
+function calculateVWAP(bars: IntradayBar[]): number {
+  let totalPriceVolume = 0;
+  let totalVolume = 0;
+
+  for (const bar of bars) {
+    const typicalPrice = (bar.high + bar.low + bar.close) / 3;
+    totalPriceVolume += typicalPrice * bar.volume;
+    totalVolume += bar.volume;
+  }
+
+  return totalVolume > 0 ? totalPriceVolume / totalVolume : 0;
+}
+
+// Calculate RSI (Relative Strength Index)
+function calculateRSI(prices: number[], period: number = 14): number {
+  if (prices.length < period + 1) return 50; // Default neutral RSI
+
+  let gains = 0;
+  let losses = 0;
+
+  // Calculate initial average gain/loss
+  for (let i = prices.length - period; i < prices.length; i++) {
+    const change = prices[i] - prices[i - 1];
+    if (change > 0) gains += change;
+    else losses += Math.abs(change);
+  }
+
+  const avgGain = gains / period;
+  const avgLoss = losses / period;
+
+  if (avgLoss === 0) return 100;
+  const rs = avgGain / avgLoss;
+  return 100 - (100 / (1 + rs));
+}
+
+// Calculate momentum (rate of change)
+function calculateMomentum(prices: number[], period: number = 10): number {
+  if (prices.length < period + 1) return 0;
+  const current = prices[prices.length - 1];
+  const past = prices[prices.length - 1 - period];
+  return past !== 0 ? ((current - past) / past) * 100 : 0;
+}
+
+// Calculate simple moving average
+function calculateSMA(prices: number[], period: number): number {
+  if (prices.length < period) return 0;
+  const relevantPrices = prices.slice(-period);
+  return relevantPrices.reduce((sum, p) => sum + p, 0) / period;
+}
+
+// Calculate Average True Range (volatility)
+function calculateATR(bars: IntradayBar[], period: number = 14): number {
+  if (bars.length < period + 1) return 0;
+
+  const trueRanges: number[] = [];
+  for (let i = 1; i < bars.length; i++) {
+    const high = bars[i].high;
+    const low = bars[i].low;
+    const prevClose = bars[i - 1].close;
+    const tr = Math.max(
+      high - low,
+      Math.abs(high - prevClose),
+      Math.abs(low - prevClose)
+    );
+    trueRanges.push(tr);
+  }
+
+  const recentTR = trueRanges.slice(-period);
+  return recentTR.reduce((sum, tr) => sum + tr, 0) / period;
 }
 \`\`\`
 

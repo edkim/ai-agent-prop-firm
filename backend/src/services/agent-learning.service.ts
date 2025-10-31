@@ -29,7 +29,7 @@ import { AgentKnowledgeExtractionService } from './agent-knowledge-extraction.se
 
 // Default backtest configuration
 const DEFAULT_BACKTEST_CONFIG: AgentBacktestConfig = {
-  max_signals_per_iteration: 10,      // Conservative limit for testing
+  max_signals_per_iteration: 5,       // Cap at 5 for faster iterations
   max_signals_per_ticker_date: 2,     // Max 2 signals per ticker per day
   max_signals_per_date: 10,            // Max 10 signals per unique date
   min_pattern_strength: 0,             // Minimum quality score (0 = accept all)
@@ -91,9 +91,24 @@ export class AgentLearningService {
     console.log('3️⃣ Running backtests...');
     const backtestResults = await this.runBacktests(strategy.executionScript, scanResults);
 
-    // Step 4: Agent analyzes results
+    // Step 4: Agent analyzes results (skip if no successful backtests)
     console.log('4️⃣ Analyzing results...');
-    const analysis = await this.analyzeResults(agent, backtestResults, scanResults);
+    let analysis: ExpertAnalysis;
+
+    if (backtestResults.totalTrades === 0) {
+      console.log('   ⚠️  No trades generated - skipping detailed analysis');
+      // Generate minimal analysis for failed execution
+      analysis = {
+        summary: 'No trades were generated. All backtest scripts either failed to compile or failed to execute. Check generated scripts for TypeScript errors.',
+        parameter_recommendations: [],
+        strategic_insights: [],
+        trade_quality_assessment: 'No trades to assess',
+        risk_assessment: 'Unable to assess - no execution data',
+        market_condition_notes: 'Scripts did not execute successfully'
+      };
+    } else {
+      analysis = await this.analyzeResults(agent, backtestResults, scanResults);
+    }
 
     // Step 4.5: Extract and store knowledge from analysis
     console.log('📚 Extracting knowledge...');
@@ -334,8 +349,8 @@ Improve the strategy based on previous iterations:
 
     console.log(`   Grouped into ${Object.keys(signalsByTicker).length} ticker(s)`);
 
-    // Execute backtest for each ticker with its signals
-    for (const [ticker, signals] of Object.entries(signalsByTicker)) {
+    // Execute backtests in parallel (up to 5 concurrent)
+    const backtestPromises = Object.entries(signalsByTicker).map(async ([ticker, signals]) => {
       const scriptId = uuidv4();
       const scriptPath = path.join(__dirname, '../../', `agent-backtest-${scriptId}.ts`);
 
@@ -359,15 +374,16 @@ const SCANNER_SIGNALS = ${signalsJSON};
         // Execute with 120 second timeout
         const result = await this.scriptExecution.executeScript(scriptPath, 120000);
 
-        if (result.success && result.data) {
-          const trades = result.data.trades || [];
-          allTrades.push(...trades);
-          successfulBacktests++;
-        }
-
         // Clean up
         if (fs.existsSync(scriptPath)) {
           fs.unlinkSync(scriptPath);
+        }
+
+        if (result.success && result.data) {
+          return { ticker, trades: result.data.trades || [], success: true };
+        } else {
+          console.log(`   ⚠️  Backtest failed for ${ticker}: ${result.error || 'Unknown error'}`);
+          return { ticker, trades: [], success: false, error: result.error };
         }
       } catch (error: any) {
         console.error(`   Error backtesting ${ticker}: ${error.message}`);
@@ -377,6 +393,18 @@ const SCANNER_SIGNALS = ${signalsJSON};
             fs.unlinkSync(scriptPath);
           }
         } catch {}
+        return { ticker, trades: [], success: false, error: error.message };
+      }
+    });
+
+    // Wait for all backtests to complete
+    const results = await Promise.all(backtestPromises);
+
+    // Aggregate successful results
+    for (const result of results) {
+      if (result.success && result.trades.length > 0) {
+        allTrades.push(...result.trades);
+        successfulBacktests++;
       }
     }
 
