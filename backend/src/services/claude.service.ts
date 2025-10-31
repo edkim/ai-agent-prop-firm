@@ -216,7 +216,6 @@ Your task is to generate complete, runnable backtest scripts based on user strat
 
 Every script must follow this exact structure:
 
-\`\`\`typescript
 import { initializeDatabase, getDatabase } from './src/database/db';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -309,7 +308,6 @@ async function runBacktest() {
 }
 
 runBacktest().catch(console.error);
-\`\`\`
 
 ## Available Data
 
@@ -323,19 +321,16 @@ Each bar has:
 
 IMPORTANT: Use \`.startsWith()\` for time comparisons since times are in HH:MM:SS format:
 
-\`\`\`typescript
 // ✅ Correct
 if (bar.timeOfDay.startsWith('09:30')) { ... }
 if (bar.timeOfDay >= '09:30:00' && bar.timeOfDay < '16:00:00') { ... }
 
 // ❌ Wrong
 if (bar.timeOfDay === '09:30') { ... }
-\`\`\`
 
 ## Common Indicators
 
 ### VWAP (Volume-Weighted Average Price)
-\`\`\`typescript
 function calculateVWAP(bars: Bar[]): number {
   let totalPV = 0;
   let totalVolume = 0;
@@ -346,19 +341,15 @@ function calculateVWAP(bars: Bar[]): number {
   }
   return totalVolume > 0 ? totalPV / totalVolume : 0;
 }
-\`\`\`
 
 ### SMA (Simple Moving Average)
-\`\`\`typescript
 function calculateSMA(bars: Bar[], period: number, field: 'close' | 'open' | 'high' | 'low' = 'close'): number {
   if (bars.length < period) return 0;
   const sum = bars.slice(-period).reduce((acc, bar) => acc + bar[field], 0);
   return sum / period;
 }
-\`\`\`
 
 ### EMA (Exponential Moving Average)
-\`\`\`typescript
 function calculateEMA(bars: Bar[], period: number, field: 'close' | 'open' | 'high' | 'low' = 'close'): number {
   if (bars.length === 0) return 0;
   const multiplier = 2 / (period + 1);
@@ -368,13 +359,11 @@ function calculateEMA(bars: Bar[], period: number, field: 'close' | 'open' | 'hi
   }
   return ema;
 }
-\`\`\`
 
 ## Trade Execution Pattern
 
 Use signal tracking for realistic next-bar execution:
 
-\`\`\`typescript
 let longSignalDetected = false;
 let longPosition: { entry: number; entryTime: string; highestPrice: number } | null = null;
 
@@ -440,13 +429,11 @@ if (results.filter(r => r.date === date).length === 0) {
     noTradeReason: 'No entry signal'
   });
 }
-\`\`\`
 
 ## Trade Limiting (Max Trades Per Day)
 
 If the user specifies trade limits like "take at most 1 trade per day" or "max 2 trades per day", you MUST implement a trade counter:
 
-\`\`\`typescript
 // Add this at the top of the daily loop (inside for (const date of tradingDays))
 let tradesCountToday = 0;
 const maxTradesPerDay = 1; // Extract this from user's constraint
@@ -502,7 +489,6 @@ for (let i = 0; i < bars.length; i++) {
 }
 
 // At the end of the day, tradesCountToday is reset by the next iteration of the date loop
-\`\`\`
 
 **Key points for trade limiting:**
 1. Add \`tradesCountToday\` counter at the TOP of each daily loop (after fetching bars)
@@ -522,7 +508,6 @@ for (let i = 0; i < bars.length; i++) {
 
 **YOU MUST use this EXACT interface definition - DO NOT create your own:**
 
-\`\`\`typescript
 // CRITICAL: This is the EXACT interface for scanner signals
 // DO NOT define your own ScannerSignal interface with different field names!
 interface ScannerSignal {
@@ -535,11 +520,9 @@ interface ScannerSignal {
   };
 }
 // DO NOT expect a 'pattern_type' field - it doesn't exist!
-\`\`\`
 
 The \`SCANNER_SIGNALS\` constant will be injected into your script with this structure:
 
-\`\`\`typescript
 // This constant is injected by the learning system
 const SCANNER_SIGNALS: ScannerSignal[] = [
   {
@@ -557,11 +540,9 @@ const SCANNER_SIGNALS: ScannerSignal[] = [
   },
   // ... more signals
 ];
-\`\`\`
 
 **When SCANNER_SIGNALS is present, you MUST use signal-based execution:**
 
-\`\`\`typescript
 // Check if scanner signals are available
 const useSignalBasedExecution = typeof SCANNER_SIGNALS !== 'undefined' && SCANNER_SIGNALS.length > 0;
 
@@ -687,13 +668,11 @@ if (useSignalBasedExecution) {
   // Fall back to autonomous pattern detection if no signals provided
   // (Use the standard pattern detection logic here)
 }
-\`\`\`
 
 **Helper Functions (Copy if needed):**
 
 If your strategy requires technical indicators, use these pre-built functions:
 
-\`\`\`typescript
 // Calculate VWAP (Volume-Weighted Average Price) for intraday bars
 function calculateVWAP(bars: IntradayBar[]): number {
   let totalPriceVolume = 0;
@@ -765,14 +744,13 @@ function calculateATR(bars: IntradayBar[], period: number = 14): number {
   const recentTR = trueRanges.slice(-period);
   return recentTR.reduce((sum, tr) => sum + tr, 0) / period;
 }
-\`\`\`
 
 **TypeScript Strict Mode Requirements:**
 
 Your generated code MUST compile with TypeScript strict mode. Follow these requirements carefully:
 
 1. **Explicit Type Annotations for ALL Callback Parameters:**
-   ```typescript
+   
    // ❌ WRONG - Implicit 'any' type error
    bars.reduce((acc, bar) => acc + bar.volume, 0);
 
@@ -788,10 +766,10 @@ Your generated code MUST compile with TypeScript strict mode. Follow these requi
    signals.forEach((signal: ScannerSignal) => {
      // ...
    });
-   ```
+
 
 2. **Null Handling - Use Optional Fields or Union Types:**
-   ```typescript
+   
    // ❌ WRONG - Cannot assign null to string
    let exitReason: string = null;
 
@@ -800,10 +778,10 @@ Your generated code MUST compile with TypeScript strict mode. Follow these requi
 
    // ✅ ALSO CORRECT - Use empty string
    let exitReason: string = '';
-   ```
+
 
 3. **Object Shorthand - Use Existing Variables Only:**
-   ```typescript
+   
    // ❌ WRONG - 'highest' variable doesn't exist
    results.push({
      highest,  // Error: Cannot find name 'highest'
@@ -822,10 +800,10 @@ Your generated code MUST compile with TypeScript strict mode. Follow these requi
      highestPrice,  // OK because variable exists
      lowestPrice: position.lowestPrice
    });
-   ```
+
 
 4. **Interface Field Names - Use EXACT Field Names from ScannerSignal:**
-   ```typescript
+   
    // ❌ WRONG - ScannerSignal doesn't have 'date' or 'time'
    const date = signal.date;
    const time = signal.time;
@@ -839,19 +817,19 @@ Your generated code MUST compile with TypeScript strict mode. Follow these requi
 
    // ✅ CORRECT - Access metrics instead
    const vwap = signal.metrics.vwap;
-   ```
+
 
 5. **Type Conversions - Ensure Type Compatibility:**
-   ```typescript
+   
    // ❌ WRONG - Type mismatch between interfaces
    const customSignal: MyCustomSignal = SCANNER_SIGNALS[0];
 
    // ✅ CORRECT - Use the ScannerSignal interface directly
    const signal: ScannerSignal = SCANNER_SIGNALS[0];
-   ```
+
 
 6. **Date-Keyed Dictionaries - MUST Use Record<string, T> or Map<string, T>:**
-   ```typescript
+   
    // ❌ WRONG - Missing type annotation causes "Property '2025-10-13' does not exist" errors
    const barsByDate = bars.reduce((acc, bar) => {
      acc[bar.signal_date] = bar;  // TypeScript error: Property doesn't exist on type '{}'
@@ -872,7 +850,7 @@ Your generated code MUST compile with TypeScript strict mode. Follow these requi
 
    // Access with type safety
    const todayBar = barsByDate.get('2025-10-13');  // Returns Bar | undefined
-   ```
+
 
 **Critical Rules for Signal-Based Execution:**
 1. ALWAYS check if \`SCANNER_SIGNALS\` exists before using it
@@ -907,9 +885,7 @@ DATES: ["2025-10-22", "2025-10-21", ...]
 DATE_REASONING: Brief explanation of why these dates were chosen
 
 SCRIPT:
-\`\`\`typescript
 [your complete script here]
-\`\`\`
 
 ASSUMPTIONS:
 - List each assumption you made (one per line)
@@ -1083,7 +1059,6 @@ WHERE ticker = 'AAPL'
   AND timeframe = '5min'
   AND date(timestamp/1000, 'unixepoch') = '2025-10-29'
 ORDER BY timestamp ASC
-\`\`\`
 
 **Important:**
 - Market hours: 09:30 - 16:00 ET
@@ -1108,13 +1083,10 @@ ORDER BY timestamp ASC
 When user mentions "VWAP", "VWAP bounce", "VWAP support", or similar:
 
 **Formula:**
-\`\`\`
 Typical Price = (high + low + close) / 3
 VWAP = Σ(Typical Price × Volume) / Σ(Volume)
-\`\`\`
 
 **Implementation Pattern:**
-\`\`\`typescript
 // Calculate VWAP for each trading day
 function calculateVWAP(bars: any[]): number {
   let cumVolume = 0;
@@ -1151,10 +1123,8 @@ for (const bar of bars) {
     vwap: cumVol === 0 ? 0 : cumVolPrice / cumVol
   });
 }
-\`\`\`
 
 **VWAP Bounce Detection Pattern:**
-\`\`\`typescript
 // Detect VWAP bounce: price touches VWAP then bounces up
 for (let i = 10; i < barsWithVWAP.length; i++) {
   const current = barsWithVWAP[i];
@@ -1177,13 +1147,11 @@ for (let i = 10; i < barsWithVWAP.length; i++) {
     // Pattern detected!
   }
 }
-\`\`\`
 
 ## Scanner Script Structure Examples
 
 ### Example 1: INTRADAY Scanner (for VWAP, intraday patterns)
 
-\`\`\`typescript
 import { initializeDatabase, getDatabase } from './src/database/db';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -1307,11 +1275,9 @@ runScan().then(results => {
   // Output ONLY JSON to stdout for parsing
   console.log(JSON.stringify(topResults, null, 2));
 }).catch(console.error);
-\`\`\`
 
 ### Example 2: DAILY Scanner (for multi-day patterns)
 
-\`\`\`typescript
 import { initializeDatabase, getDatabase } from './src/database/db';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -1374,7 +1340,6 @@ runScan().then(results => {
   // Output ONLY JSON to stdout for parsing
   console.log(JSON.stringify(topResults, null, 2));
 }).catch(console.error);
-\`\`\`
 
 ## VALIDATION CHECKLIST - Read this BEFORE writing your script!
 
@@ -1398,9 +1363,7 @@ Before generating the scanner script, answer these questions:
 Return your response in this exact format:
 
 SCRIPT:
-\`\`\`typescript
 [your complete scanner script here]
-\`\`\`
 
 EXPLANATION: [Brief description of the pattern matching logic AND which table you used (ohlcv_data or daily_metrics) and WHY]
 
@@ -1419,7 +1382,6 @@ Your scanner may find thousands or even hundreds of thousands of pattern matches
 
 **Example (REQUIRED pattern for all scanners):**
 
-\`\`\`typescript
 runScan().then(results => {
   // Sort by pattern strength (best signals first)
   const sortedResults = results.sort((a, b) => b.pattern_strength - a.pattern_strength);
@@ -1435,7 +1397,6 @@ runScan().then(results => {
   // Output ONLY JSON to stdout for parsing
   console.log(JSON.stringify(topResults, null, 2));
 }).catch(console.error);
-\`\`\`
 
 **Why this is critical:**
 - Scanner may find 100,000+ matches
@@ -1619,10 +1580,8 @@ Generate a backtest script that works with DAILY price data from the daily_metri
 
 ## Database Setup
 Use better-sqlite3 for database access:
-\`\`\`typescript
 import Database from 'better-sqlite3';
 const db = new Database('./backtesting.db', { readonly: true });
-\`\`\`
 
 ## Database Schema
 The daily_metrics table has these columns:
@@ -1641,7 +1600,6 @@ The daily_metrics table has these columns:
 5. Output ONLY the script - no markdown, no explanations
 
 ## Example Template Structure
-\`\`\`typescript
 import Database from 'better-sqlite3';
 
 interface DailyMetric {
@@ -1673,7 +1631,6 @@ const results: any[] = [];
 
 // Output results as JSON
 console.log(JSON.stringify(results));
-\`\`\`
 
 IMPORTANT: Always cast database query results with 'as DailyMetric[]' to avoid TypeScript type errors.
 Output ONLY executable TypeScript code, no markdown formatting.`;
