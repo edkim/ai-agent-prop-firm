@@ -266,8 +266,8 @@ export class ScriptExecutionService {
 
       return failedResult;
     } finally {
-      // Clean up temp file (starts with 'backtest-' or 'agent-backtest-' in backend directory)
-      if ((scriptPath.includes('backtest-') || scriptPath.includes('agent-backtest-')) &&
+      // Clean up temp file (starts with 'backtest-', 'agent-backtest-', or 'agent-scan-' in backend directory)
+      if ((scriptPath.includes('backtest-') || scriptPath.includes('agent-backtest-') || scriptPath.includes('agent-scan-')) &&
           (scriptPath.endsWith('.ts') || scriptPath.endsWith('.js'))) {
         await fs.unlink(scriptPath).catch(() => {
           // Ignore cleanup errors
