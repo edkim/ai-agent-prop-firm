@@ -233,21 +233,27 @@ interface Bar {
   timeOfDay: string;
 }
 
+// CRITICAL: This is the EXACT interface for trade results
+// Follow these rules when populating this interface:
+// 1. All fields marked with ? are OPTIONAL
+// 2. Use exact property names: highestPrice (NOT 'highest'), lowestPrice (NOT 'lowest')
+// 3. For no-trade results, set noTrade=true and provide noTradeReason
+// 4. For executed trades, provide all trade fields (side, entry/exit prices, pnl, etc.)
 interface TradeResult {
-  date: string;
-  ticker: string;
-  side?: 'LONG' | 'SHORT';
-  entryTime?: string;
-  entryPrice?: number;
-  exitTime?: string;
-  exitPrice?: number;
-  pnl?: number;
-  pnlPercent?: number;
-  exitReason?: string;
-  highestPrice?: number;
-  lowestPrice?: number;
-  noTrade?: boolean;
-  noTradeReason?: string;
+  date: string;              // Required: Trading date (YYYY-MM-DD)
+  ticker: string;            // Required: Stock ticker
+  side?: 'LONG' | 'SHORT';   // Optional: Trade direction
+  entryTime?: string;        // Optional: Entry time (HH:MM:SS)
+  entryPrice?: number;       // Optional: Entry price
+  exitTime?: string;         // Optional: Exit time (HH:MM:SS)
+  exitPrice?: number;        // Optional: Exit price
+  pnl?: number;              // Optional: Profit/loss in dollars
+  pnlPercent?: number;       // Optional: Profit/loss as percentage
+  exitReason?: string;       // Optional: Why trade exited (e.g., 'Stop loss', 'Take profit')
+  highestPrice?: number;     // Optional: Highest price reached (use 'highestPrice', NOT 'highest')
+  lowestPrice?: number;      // Optional: Lowest price reached (use 'lowestPrice', NOT 'lowest')
+  noTrade?: boolean;         // Optional: Set to true if no trade executed
+  noTradeReason?: string;    // Optional: Why no trade (e.g., 'No data', 'Signal too late')
 }
 
 async function runBacktest() {
@@ -513,11 +519,29 @@ for (let i = 0; i < bars.length; i++) {
 ## Signal-Based Execution (CRITICAL FOR AGENT LEARNING)
 
 **IMPORTANT:** When generating execution scripts for learning agents, the script will receive pre-detected signals from a scanner.
+
+**YOU MUST use this EXACT interface definition - DO NOT create your own:**
+
+\`\`\`typescript
+// CRITICAL: This is the EXACT interface for scanner signals
+// DO NOT define your own ScannerSignal interface with different field names!
+interface ScannerSignal {
+  ticker: string;
+  signal_date: string;     // NOT 'date' - use signal_date!
+  signal_time: string;     // NOT 'time' - use signal_time!
+  pattern_strength: number;
+  metrics: {
+    [key: string]: any;    // Scanner-specific metrics (varies by pattern)
+  };
+}
+// DO NOT expect a 'pattern_type' field - it doesn't exist!
+\`\`\`
+
 The \`SCANNER_SIGNALS\` constant will be injected into your script with this structure:
 
 \`\`\`typescript
 // This constant is injected by the learning system
-const SCANNER_SIGNALS = [
+const SCANNER_SIGNALS: ScannerSignal[] = [
   {
     ticker: 'AAPL',
     signal_date: '2025-10-13',  // Trading date (YYYY-MM-DD)
@@ -742,6 +766,89 @@ function calculateATR(bars: IntradayBar[], period: number = 14): number {
   return recentTR.reduce((sum, tr) => sum + tr, 0) / period;
 }
 \`\`\`
+
+**TypeScript Strict Mode Requirements:**
+
+Your generated code MUST compile with TypeScript strict mode. Follow these requirements carefully:
+
+1. **Explicit Type Annotations for ALL Callback Parameters:**
+   ```typescript
+   // ❌ WRONG - Implicit 'any' type error
+   bars.reduce((acc, bar) => acc + bar.volume, 0);
+
+   // ✅ CORRECT - Explicit type annotation
+   bars.reduce((acc: number, bar: Bar) => acc + bar.volume, 0);
+
+   // ❌ WRONG - Missing type in forEach
+   signals.forEach(signal => {
+     // ...
+   });
+
+   // ✅ CORRECT - Explicit type
+   signals.forEach((signal: ScannerSignal) => {
+     // ...
+   });
+   ```
+
+2. **Null Handling - Use Optional Fields or Union Types:**
+   ```typescript
+   // ❌ WRONG - Cannot assign null to string
+   let exitReason: string = null;
+
+   // ✅ CORRECT - Use union type
+   let exitReason: string | null = null;
+
+   // ✅ ALSO CORRECT - Use empty string
+   let exitReason: string = '';
+   ```
+
+3. **Object Shorthand - Use Existing Variables Only:**
+   ```typescript
+   // ❌ WRONG - 'highest' variable doesn't exist
+   results.push({
+     highest,  // Error: Cannot find name 'highest'
+     lowest
+   });
+
+   // ✅ CORRECT - Use actual property names
+   results.push({
+     highestPrice: position.highestPrice,
+     lowestPrice: position.lowestPrice
+   });
+
+   // ✅ ALSO CORRECT - If variable matches property name
+   const highestPrice = position.highestPrice;
+   results.push({
+     highestPrice,  // OK because variable exists
+     lowestPrice: position.lowestPrice
+   });
+   ```
+
+4. **Interface Field Names - Use EXACT Field Names from ScannerSignal:**
+   ```typescript
+   // ❌ WRONG - ScannerSignal doesn't have 'date' or 'time'
+   const date = signal.date;
+   const time = signal.time;
+
+   // ✅ CORRECT - Use signal_date and signal_time
+   const date = signal.signal_date;
+   const time = signal.signal_time;
+
+   // ❌ WRONG - No pattern_type field exists
+   const pattern = signal.pattern_type;
+
+   // ✅ CORRECT - Access metrics instead
+   const vwap = signal.metrics.vwap;
+   ```
+
+5. **Type Conversions - Ensure Type Compatibility:**
+   ```typescript
+   // ❌ WRONG - Type mismatch between interfaces
+   const customSignal: MyCustomSignal = SCANNER_SIGNALS[0];
+
+   // ✅ CORRECT - Use the ScannerSignal interface directly
+   const signal: ScannerSignal = SCANNER_SIGNALS[0];
+   ```
 
 **Critical Rules for Signal-Based Execution:**
 1. ALWAYS check if \`SCANNER_SIGNALS\` exists before using it
