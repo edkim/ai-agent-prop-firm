@@ -26,6 +26,14 @@ export interface RiskConfig {
   position_sizing_method: 'fixed' | 'risk_based' | 'kelly';
 }
 
+export interface AgentBacktestConfig {
+  max_signals_per_iteration: number;     // Max signals to backtest per iteration
+  max_signals_per_ticker_date: number;   // Max signals per (ticker, date) combination
+  max_signals_per_date: number;          // Max signals per unique date
+  min_pattern_strength: number;          // Minimum pattern quality score (0-100)
+  backtest_timeout_ms: number;           // Timeout per backtest in milliseconds
+}
+
 export interface TradingAgent {
   id: string;
   name: string;
