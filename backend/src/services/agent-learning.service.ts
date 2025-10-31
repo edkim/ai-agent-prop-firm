@@ -194,7 +194,7 @@ export class AgentLearningService {
    */
   private async executeScan(scanScript: string): Promise<any[]> {
     const scriptId = uuidv4();
-    const scriptPath = path.join('/tmp', `agent-scan-${scriptId}.ts`);
+    const scriptPath = path.join(__dirname, '../../', `agent-scan-${scriptId}.ts`);
 
     try {
       // Save script to temp file
@@ -253,7 +253,7 @@ export class AgentLearningService {
     for (const scanResult of scanResults) {
       const { ticker, date } = scanResult;
       const scriptId = uuidv4();
-      const scriptPath = path.join('/tmp', `agent-backtest-${scriptId}.ts`);
+      const scriptPath = path.join(__dirname, '../../', `agent-backtest-${scriptId}.ts`);
 
       try {
         // Customize execution script with ticker and date

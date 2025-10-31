@@ -83,6 +83,12 @@ export class AgentKnowledgeExtractionService {
     let updated = 0;
 
     for (const item of knowledgeItems) {
+      // Skip items with no insight (invalid knowledge)
+      if (!item.insight || item.insight.trim() === '' || item.insight === 'Unknown pattern element') {
+        console.log(`   Skipping invalid knowledge item (no insight)`);
+        continue;
+      }
+
       // Check for similar existing knowledge
       const existing = this.findSimilarKnowledge(agentId, item);
 
@@ -279,13 +285,13 @@ export class AgentKnowledgeExtractionService {
     return {
       knowledge_type: 'PATTERN_RULE',
       pattern_type: this.extractPatternType(element.element, agent.pattern_focus),
-      insight: element.element,
+      insight: element.element || 'Unknown pattern element',
       supporting_data: {
-        evidence: element.evidence,
+        evidence: element.evidence || 'No evidence provided',
         pattern_contexts: agent.market_conditions,
         applicable_patterns: agent.pattern_focus
       },
-      confidence: Math.min(0.95, element.confidence)
+      confidence: Math.min(0.95, element.confidence || 0.5)
     };
   }
 
@@ -371,6 +377,9 @@ export class AgentKnowledgeExtractionService {
    * Extract pattern type from element text
    */
   private extractPatternType(text: string, patternFocus: string[]): string | undefined {
+    if (!text) {
+      return patternFocus[0]; // Return default pattern if text is undefined/null
+    }
     const lowerText = text.toLowerCase();
 
     // Check if any of the agent's patterns are mentioned
