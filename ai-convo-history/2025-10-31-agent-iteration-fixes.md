@@ -146,10 +146,14 @@ Scripts still occasionally truncate at Line 390 with `'}' expected`.
 
 ## Next Steps
 
-### High Priority
-1. **Strengthen Rule 7 Guidance** - Add more emphatic language about never using `null` in typed arrays
-2. **Add Truncation Detection** - Backend should detect incomplete scripts and retry or use fallback
-3. **Consider JavaScript Fallback** - If TypeScript strict mode continues to be problematic
+### ✅ Completed - High Priority
+1. **Strengthen Rule 7 Guidance** - Added emphatic ALL CAPS warnings and explicit guidance that tradingDays is not needed for signal-based execution
+2. **Strengthen Rule 10 Guidance** - Added 6 concrete simplification strategies, visual warnings, and before/after examples
+
+### High Priority (Pending)
+1. **Test Strengthened Guidance** - Run iteration to verify if enhanced rules reduce the 2 remaining errors
+2. **Add Truncation Detection** - Backend should detect incomplete scripts and retry or use fallback if guidance alone doesn't solve it
+3. **Consider JavaScript Fallback** - If TypeScript strict mode continues to be problematic after stronger guidance
 
 ### Medium Priority
 4. Analyze why specific tickers succeed vs fail (BIOA succeeded in latest iteration)

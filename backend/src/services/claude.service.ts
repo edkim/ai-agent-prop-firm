@@ -852,17 +852,24 @@ Your generated code MUST compile with TypeScript strict mode. Follow these requi
    const todayBar = barsByDate.get('2025-10-13');  // Returns Bar | undefined
 
 
-7. **Array Initialization - NEVER Use null in Typed Arrays:**
+7. **Array Initialization - ⚠️ CRITICAL: NEVER EVER Use null in Typed Arrays:**
 
-   // ❌ WRONG - Cannot assign null to string[]
-   const tradingDays: string[] = [null];
+   ❌❌❌ THIS IS WRONG - TYPESCRIPT WILL REJECT IT ❌❌❌
+   const tradingDays: string[] = [null];  // ← COMPILATION ERROR!
 
-   // ✅ CORRECT - Use empty array or proper values
+   ✅ CORRECT OPTIONS:
+
+   Option A: Use empty array (PREFERRED for signal-based execution)
    const tradingDays: string[] = [];
+
+   Option B: Extract dates from SCANNER_SIGNALS
    const tradingDays: string[] = ["2025-10-30", "2025-10-29"];
 
-   // ✅ IF YOU NEED NULLABLE VALUES - Use union type
+   Option C: If you truly need nullable values (rare), use union type
    const tradingDays: (string | null)[] = [null];
+
+   ⚠️ FOR SIGNAL-BASED EXECUTION: You do NOT need tradingDays array at all!
+   Just process SCANNER_SIGNALS directly - each signal already has signal_date.
 
 
 8. **Scanner Metrics - NEVER Assume Property Names:**
@@ -919,19 +926,40 @@ Your generated code MUST compile with TypeScript strict mode. Follow these requi
    });
 
 
-10. **Complete Code Generation - NEVER Truncate:**
+10. **Complete Code Generation - ⚠️ ABSOLUTELY CRITICAL: NEVER TRUNCATE CODE:**
 
-    CRITICAL: Your response MUST be complete. If you start generating code:
-    - You MUST finish all open code blocks
-    - You MUST close all open braces, brackets, and parentheses
-    - You MUST complete the runBacktest() function
-    - You MUST include the final .catch(console.error) line
+    🚨 YOUR ENTIRE RESPONSE MUST BE COMPLETE AND RUNNABLE 🚨
 
-    If your response is getting long, SIMPLIFY your logic instead of truncating:
-    - Use fewer helper functions
-    - Inline simple calculations
-    - Remove verbose comments
-    - But NEVER leave incomplete code!
+    If you start generating code, you MUST:
+    ✅ Finish ALL open code blocks
+    ✅ Close ALL braces, brackets, and parentheses
+    ✅ Complete the entire runBacktest() function with return statement
+    ✅ Include the final closing brace and .catch(console.error) line
+    ✅ Ensure the last line of your response is: runBacktest().catch(console.error);
+
+    ⚠️ TRUNCATED CODE = COMPILATION FAILURE ⚠️
+
+    SIMPLIFICATION STRATEGIES (if approaching token limits):
+    1. Remove ALL comments except critical ones
+    2. Use simpler variable names (e.g., 'bars' instead of 'marketHoursBars')
+    3. Inline simple calculations instead of separate variables
+    4. Remove console.log statements
+    5. Reduce the number of conditions in decision logic
+    6. Combine multiple if-statements into single expressions
+
+    Example of simplification:
+    ❌ TOO VERBOSE:
+    // Calculate the upper wick size
+    const upperWick = bar.high - Math.max(bar.open, bar.close);
+    // Calculate the body size
+    const bodySize = Math.abs(bar.close - bar.open);
+    // Check if rejection pattern exists
+    const hasRejection = upperWick > bodySize * 1.5;
+
+    ✅ SIMPLIFIED:
+    const hasRejection = (bar.high - Math.max(bar.open, bar.close)) > Math.abs(bar.close - bar.open) * 1.5;
+
+    🚨 REMEMBER: Complete simple code > Incomplete complex code 🚨
 
 
 **Critical Rules for Signal-Based Execution:**
