@@ -20,7 +20,7 @@ const execAsync = promisify(exec);
 
 export class ScriptExecutionService {
   private readonly defaultTimeout = 30000; // 30 seconds
-  private readonly maxBuffer = 10 * 1024 * 1024; // 10MB
+  private readonly maxBuffer = 100 * 1024 * 1024; // 100MB (increased for large scan results)
 
   /**
    * Execute a TypeScript script and return parsed results
@@ -142,6 +142,13 @@ export class ScriptExecutionService {
     if (arrayMatch) {
       try {
         const parsed = JSON.parse(arrayMatch[0]);
+
+        // If it's a scanner result array (has signal_date), return it directly
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].signal_date) {
+          console.log('[DEBUG] Found JSON array with', parsed.length, 'scanner signals');
+          // Scanner results are returned as-is (not wrapped in BacktestScriptOutput)
+          return parsed as any;
+        }
 
         // If it's an array of trades, convert to expected format
         if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].date) {
