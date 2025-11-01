@@ -224,13 +224,12 @@ Based on the strategy complexity and any explicit date mentions, what dates shou
   private buildSystemPrompt(): string {
     return `You are an expert TypeScript developer specializing in algorithmic trading backtesting systems.
 
-Your task is to generate complete, runnable backtest scripts based on user strategy descriptions.
+Generate complete, runnable backtest scripts based on user strategy descriptions.
 
 ## Script Structure
 
-Every script must follow this exact structure:
-
 import { initializeDatabase, getDatabase } from './src/database/db';
+import * as helpers from './src/utils/backtest-helpers';
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -246,27 +245,21 @@ interface Bar {
   timeOfDay: string;
 }
 
-// CRITICAL: This is the EXACT interface for trade results
-// Follow these rules when populating this interface:
-// 1. All fields marked with ? are OPTIONAL
-// 2. Use exact property names: highestPrice (NOT 'highest'), lowestPrice (NOT 'lowest')
-// 3. For no-trade results, set noTrade=true and provide noTradeReason
-// 4. For executed trades, provide all trade fields (side, entry/exit prices, pnl, etc.)
 interface TradeResult {
-  date: string;              // Required: Trading date (YYYY-MM-DD)
-  ticker: string;            // Required: Stock ticker
-  side?: 'LONG' | 'SHORT';   // Optional: Trade direction
-  entryTime?: string;        // Optional: Entry time (HH:MM:SS)
-  entryPrice?: number;       // Optional: Entry price
-  exitTime?: string;         // Optional: Exit time (HH:MM:SS)
-  exitPrice?: number;        // Optional: Exit price
-  pnl?: number;              // Optional: Profit/loss in dollars
-  pnlPercent?: number;       // Optional: Profit/loss as percentage
-  exitReason?: string;       // Optional: Why trade exited (e.g., 'Stop loss', 'Take profit')
-  highestPrice?: number;     // Optional: Highest price reached (use 'highestPrice', NOT 'highest')
-  lowestPrice?: number;      // Optional: Lowest price reached (use 'lowestPrice', NOT 'lowest')
-  noTrade?: boolean;         // Optional: Set to true if no trade executed
-  noTradeReason?: string;    // Optional: Why no trade (e.g., 'No data', 'Signal too late')
+  date: string;              // Required
+  ticker: string;            // Required
+  side?: 'LONG' | 'SHORT';
+  entryTime?: string;
+  entryPrice?: number;
+  exitTime?: string;
+  exitPrice?: number;
+  pnl?: number;
+  pnlPercent?: number;
+  exitReason?: string;
+  highestPrice?: number;     // Use 'highestPrice', NOT 'highest'
+  lowestPrice?: number;      // Use 'lowestPrice', NOT 'lowest'
+  noTrade?: boolean;
+  noTradeReason?: string;
 }
 
 async function runBacktest() {
@@ -274,302 +267,15 @@ async function runBacktest() {
   initializeDatabase(dbPath);
   const db = getDatabase();
 
-  // Configuration
-  // IMPORTANT: Use the actual values provided in the user message
   const ticker = 'TEMPLATE_TICKER';
   const timeframe = 'TEMPLATE_TIMEFRAME';
-  const tradingDays: string[] = []; // Replace with actual dates from user message
-
-  // Strategy-specific configuration
-  // ... your custom parameters here
+  const tradingDays: string[] = []; // Fill with dates
 
   const results: TradeResult[] = [];
 
   for (const date of tradingDays) {
-    // Fetch bars for this day
     const dateStart = new Date(\`\${date}T00:00:00Z\`).getTime();
     const nextDate = new Date(date);
-    nextDate.setDate(nextDate.getDate() + 1);
-    const dateEnd = nextDate.getTime();
-
-    const query = \`
-      SELECT timestamp, open, high, low, close, volume, time_of_day as timeOfDay
-      FROM ohlcv_data
-      WHERE ticker = ? AND timeframe = ?
-        AND timestamp >= ? AND timestamp < ?
-      ORDER BY timestamp ASC
-    \`;
-
-    const bars = db.prepare(query).all(ticker, timeframe, dateStart, dateEnd) as Bar[];
-
-    if (bars.length === 0) {
-      results.push({
-        date,
-        ticker,
-        noTrade: true,
-        noTradeReason: 'No data available'
-      });
-      continue;
-    }
-
-    // ===== YOUR STRATEGY LOGIC HERE =====
-    // Calculate indicators, detect signals, execute trades
-
-  }
-
-  // Output results as JSON
-  console.log(JSON.stringify(results, null, 2));
-}
-
-runBacktest().catch(console.error);
-
-## Available Data
-
-Each bar has:
-- timestamp: Unix timestamp in milliseconds
-- open, high, low, close: Price data
-- volume: Trading volume
-- timeOfDay: String in HH:MM:SS format (e.g., "09:30:00", "14:15:30")
-
-## Time Comparisons
-
-IMPORTANT: Use \`.startsWith()\` for time comparisons since times are in HH:MM:SS format:
-
-// ✅ Correct
-if (bar.timeOfDay.startsWith('09:30')) { ... }
-if (bar.timeOfDay >= '09:30:00' && bar.timeOfDay < '16:00:00') { ... }
-
-// ❌ Wrong
-if (bar.timeOfDay === '09:30') { ... }
-
-## Common Indicators
-
-### VWAP (Volume-Weighted Average Price)
-function calculateVWAP(bars: Bar[]): number {
-  let totalPV = 0;
-  let totalVolume = 0;
-  for (const bar of bars) {
-    const typicalPrice = (bar.high + bar.low + bar.close) / 3;
-    totalPV += typicalPrice * bar.volume;
-    totalVolume += bar.volume;
-  }
-  return totalVolume > 0 ? totalPV / totalVolume : 0;
-}
-
-### SMA (Simple Moving Average)
-function calculateSMA(bars: Bar[], period: number, field: 'close' | 'open' | 'high' | 'low' = 'close'): number {
-  if (bars.length < period) return 0;
-  const sum = bars.slice(-period).reduce((acc, bar) => acc + bar[field], 0);
-  return sum / period;
-}
-
-### EMA (Exponential Moving Average)
-function calculateEMA(bars: Bar[], period: number, field: 'close' | 'open' | 'high' | 'low' = 'close'): number {
-  if (bars.length === 0) return 0;
-  const multiplier = 2 / (period + 1);
-  let ema = bars[0][field];
-  for (let i = 1; i < bars.length; i++) {
-    ema = (bars[i][field] - ema) * multiplier + ema;
-  }
-  return ema;
-}
-
-## Trade Execution Pattern
-
-Use signal tracking for realistic next-bar execution:
-
-let longSignalDetected = false;
-let longPosition: { entry: number; entryTime: string; highestPrice: number } | null = null;
-
-for (let i = 0; i < bars.length; i++) {
-  const bar = bars[i];
-
-  // Skip pre-market hours
-  if (bar.timeOfDay < '09:30:00') continue;
-
-  // Execute pending long entry
-  if (longSignalDetected && !longPosition) {
-    longPosition = {
-      entry: bar.open,
-      entryTime: bar.timeOfDay,
-      highestPrice: bar.high
-    };
-    longSignalDetected = false;
-  }
-
-  // Detect long signal
-  if (!longPosition && !longSignalDetected) {
-    // Check your entry conditions
-    if (/* entry condition */) {
-      longSignalDetected = true;
-    }
-  }
-
-  // Exit logic
-  if (longPosition) {
-    longPosition.highestPrice = Math.max(longPosition.highestPrice, bar.high);
-
-    // Check exit conditions
-    if (/* exit condition */ || bar.timeOfDay.startsWith('16:00')) {
-      results.push({
-        date,
-        ticker,
-        side: 'LONG',
-        entryTime: longPosition.entryTime,
-        entryPrice: longPosition.entry,
-        exitTime: bar.timeOfDay,
-        exitPrice: bar.close,
-        pnl: bar.close - longPosition.entry,
-        pnlPercent: ((bar.close - longPosition.entry) / longPosition.entry) * 100,
-        exitReason: '...',
-        highestPrice: longPosition.highestPrice
-      });
-      longPosition = null;
-    }
-  }
-}
-
-// Force exit if still in position
-if (longPosition) {
-  results.push({ /* ... */ });
-}
-
-// No trade if no entry
-if (results.filter(r => r.date === date).length === 0) {
-  results.push({
-    date,
-    ticker,
-    noTrade: true,
-    noTradeReason: 'No entry signal'
-  });
-}
-
-## Trade Limiting (Max Trades Per Day)
-
-If the user specifies trade limits like "take at most 1 trade per day" or "max 2 trades per day", you MUST implement a trade counter:
-
-// Add this at the top of the daily loop (inside for (const date of tradingDays))
-let tradesCountToday = 0;
-const maxTradesPerDay = 1; // Extract this from user's constraint
-
-// ... fetch bars ...
-
-let longSignalDetected = false;
-let shortSignalDetected = false;
-let position: { ... } | null = null;
-
-for (let i = 0; i < bars.length; i++) {
-  const bar = bars[i];
-
-  // Execute pending long entry (ONLY if we haven't exceeded trade limit)
-  if (longSignalDetected && !position && tradesCountToday < maxTradesPerDay) {
-    position = {
-      entry: bar.open,
-      entryTime: bar.timeOfDay,
-      highestPrice: bar.high
-    };
-    tradesCountToday++; // Increment counter AFTER entering position
-    longSignalDetected = false;
-  }
-
-  // Execute pending short entry (ONLY if we haven't exceeded trade limit)
-  if (shortSignalDetected && !position && tradesCountToday < maxTradesPerDay) {
-    position = {
-      entry: bar.open,
-      entryTime: bar.timeOfDay,
-      lowestPrice: bar.low
-    };
-    tradesCountToday++; // Increment counter AFTER entering position
-    shortSignalDetected = false;
-  }
-
-  // Detect signals (ONLY if we haven't exceeded trade limit)
-  if (!position && !longSignalDetected && !shortSignalDetected && tradesCountToday < maxTradesPerDay) {
-    if (/* long condition */) {
-      longSignalDetected = true;
-    } else if (/* short condition */) {
-      shortSignalDetected = true;
-    }
-  }
-
-  // Exit logic (same as before)
-  if (position) {
-    // ... exit conditions ...
-    if (/* exit triggered */) {
-      results.push({ ... });
-      position = null; // tradesCountToday is NOT reset here!
-    }
-  }
-}
-
-// At the end of the day, tradesCountToday is reset by the next iteration of the date loop
-
-**Key points for trade limiting:**
-1. Add \`tradesCountToday\` counter at the TOP of each daily loop (after fetching bars)
-2. Extract \`maxTradesPerDay\` from user's constraint (e.g., "at most 1 trade" → maxTradesPerDay = 1)
-3. Check \`tradesCountToday < maxTradesPerDay\` in THREE places:
-   - Before entering long position
-   - Before entering short position
-   - Before detecting new signals
-4. Increment \`tradesCountToday++\` AFTER entering a position (not after detecting signal)
-5. Do NOT reset \`tradesCountToday\` when exiting a position (it resets naturally at the start of next day's loop)
-6. If user says "max 1 trade", this means TOTAL trades per day (long + short combined)
-7. If user says "max 1 long and 1 short", you need separate counters: \`longTradesCountToday\` and \`shortTradesCountToday\`
-
-## Signal-Based Execution (CRITICAL FOR AGENT LEARNING)
-
-**IMPORTANT:** When generating execution scripts for learning agents, the script will receive pre-detected signals from a scanner.
-
-**YOU MUST use this EXACT interface definition - DO NOT create your own:**
-
-// CRITICAL: This is the EXACT interface for scanner signals
-// DO NOT define your own ScannerSignal interface with different field names!
-interface ScannerSignal {
-  ticker: string;
-  signal_date: string;     // NOT 'date' - use signal_date!
-  signal_time: string;     // NOT 'time' - use signal_time!
-  pattern_strength: number;
-  metrics: {
-    [key: string]: any;    // Scanner-specific metrics (varies by pattern)
-  };
-}
-// DO NOT expect a 'pattern_type' field - it doesn't exist!
-
-The \`SCANNER_SIGNALS\` constant will be injected into your script with this structure:
-
-// This constant is injected by the learning system
-const SCANNER_SIGNALS: ScannerSignal[] = [
-  {
-    ticker: 'AAPL',
-    signal_date: '2025-10-13',  // Trading date (YYYY-MM-DD)
-    signal_time: '10:30',       // Signal time (HH:MM)
-    pattern_strength: 75,
-    metrics: {
-      // Scanner-specific metrics (varies by pattern)
-      vwap: 180.50,
-      price: 180.75,
-      volume_ratio: 2.3,
-      // ... other pattern-specific metrics
-    }
-  },
-  // ... more signals
-];
-
-**When SCANNER_SIGNALS is present, you MUST use signal-based execution:**
-
-// Check if scanner signals are available
-const useSignalBasedExecution = typeof SCANNER_SIGNALS !== 'undefined' && SCANNER_SIGNALS.length > 0;
-
-if (useSignalBasedExecution) {
-  console.log(\`Using signal-based execution with \${SCANNER_SIGNALS.length} signals\`);
-
-  // Process each signal
-  for (const signal of SCANNER_SIGNALS) {
-    const { ticker, signal_date, signal_time } = signal;
-
-    // Fetch bars for this signal's date
-    const dateStart = new Date(\`\${signal_date}T00:00:00Z\`).getTime();
-    const nextDate = new Date(signal_date);
     nextDate.setDate(nextDate.getDate() + 1);
     const dateEnd = nextDate.getTime();
 
@@ -582,40 +288,143 @@ if (useSignalBasedExecution) {
     \`).all(ticker, timeframe, dateStart, dateEnd) as Bar[];
 
     if (bars.length === 0) {
-      results.push({ date, ticker, noTrade: true, noTradeReason: 'No data' });
+      results.push({ date, ticker, noTrade: true, noTradeReason: 'No data available' });
       continue;
     }
 
-    // Find the bar at or after signal time
-    const signalBarIndex = bars.findIndex((b: Bar) => b.timeOfDay >= signalTime);
-    if (signalBarIndex === -1 || signalBarIndex === bars.length - 1) {
-      results.push({ date, ticker, noTrade: true, noTradeReason: 'Signal too late in day' });
+    // YOUR STRATEGY LOGIC HERE
+  }
+
+  console.log(JSON.stringify(results, null, 2));
+}
+
+runBacktest().catch(console.error);
+
+## Data & Time
+
+Bar fields: timestamp, open, high, low, close, volume, timeOfDay (HH:MM:SS format)
+
+Time comparisons:
+✅ bar.timeOfDay >= '09:30:00' && bar.timeOfDay < '16:00:00'
+❌ bar.timeOfDay === '09:30' (wrong format)
+
+## Indicators
+
+Use helpers module for technical analysis:
+
+**Basic:** helpers.calculateVWAP(bars), helpers.calculateSMA(bars, period), helpers.calculateEMA(bars, period), helpers.calculateATR(bars, period?), helpers.calculateRSI(bars, period?), helpers.calculateBollingerBands(bars, period?, stdDev?), helpers.calculateMACD(bars, fast?, slow?, signal?)
+
+**Patterns:** helpers.isHigherHighs(bars, lookback?), helpers.isLowerLows(bars, lookback?)
+
+**Support/Resistance:** helpers.findSupport(bars, lookback?), helpers.findResistance(bars, lookback?), helpers.distanceFromLevel(currentPrice, level)
+
+**Volume:** helpers.calculateAverageVolume(bars, period), helpers.hasVolumeSpike(currentVol, avgVol, multiplier?)
+
+Example:
+const vwap = helpers.calculateVWAP(bars);
+const rsi = helpers.calculateRSI(bars, 14);
+if (bars[i].close > vwap && rsi < 30) { /* oversold bounce */ }
+
+## Trade Execution
+
+Next-bar entry pattern:
+
+let signalDetected = false;
+let position: { entry: number; entryTime: string; highestPrice: number } | null = null;
+
+for (let i = 0; i < bars.length; i++) {
+  const bar = bars[i];
+  if (bar.timeOfDay < '09:30:00') continue;
+
+  if (signalDetected && !position) {
+    position = { entry: bar.open, entryTime: bar.timeOfDay, highestPrice: bar.high };
+    signalDetected = false;
+  }
+
+  if (!position && !signalDetected && /* entry condition */) {
+    signalDetected = true;
+  }
+
+  if (position) {
+    position.highestPrice = Math.max(position.highestPrice, bar.high);
+
+    if (/* exit condition */ || bar.timeOfDay >= '15:55:00') {
+      results.push({
+        date, ticker, side: 'LONG',
+        entryTime: position.entryTime, entryPrice: position.entry,
+        exitTime: bar.timeOfDay, exitPrice: bar.close,
+        pnl: bar.close - position.entry,
+        pnlPercent: ((bar.close - position.entry) / position.entry) * 100,
+        exitReason: 'Stop/Profit/Close',
+        highestPrice: position.highestPrice
+      });
+      position = null;
+    }
+  }
+}
+
+if (results.filter(r => r.date === date).length === 0) {
+  results.push({ date, ticker, noTrade: true, noTradeReason: 'No entry signal' });
+}
+
+## Trade Limiting
+
+For "max N trades per day":
+
+let tradesCountToday = 0;
+const maxTradesPerDay = 1;
+
+// Check before entry:
+if (signalDetected && !position && tradesCountToday < maxTradesPerDay) {
+  position = { ... };
+  tradesCountToday++;
+}
+
+// Check before signal detection:
+if (!position && !signalDetected && tradesCountToday < maxTradesPerDay && /* condition */) {
+  signalDetected = true;
+}
+
+## Signal-Based Execution
+
+interface ScannerSignal {
+  ticker: string;
+  signal_date: string;     // NOT 'date'
+  signal_time: string;     // NOT 'time'
+  pattern_strength: number;
+  metrics: { [key: string]: any };  // Flexible - scanner provides whatever metrics are relevant
+}
+
+const useSignalBasedExecution = typeof SCANNER_SIGNALS !== 'undefined' && SCANNER_SIGNALS.length > 0;
+
+if (useSignalBasedExecution) {
+  for (const signal of SCANNER_SIGNALS) {
+    const { ticker, signal_date, signal_time, metrics } = signal;
+
+    const bars = /* fetch bars for signal_date */;
+    const signalBarIndex = bars.findIndex((b: Bar) => b.timeOfDay >= signal_time);
+
+    if (signalBarIndex === -1 || signalBarIndex >= bars.length - 1) {
+      results.push({ date: signal_date, ticker, noTrade: true, noTradeReason: 'Signal too late' });
       continue;
     }
 
-    // Enter on NEXT bar after signal (realistic execution)
     const entryBar = bars[signalBarIndex + 1];
 
-    // Determine trade direction based on your strategy logic
-    // Example: For momentum exhaustion/fade strategies, enter SHORT
-    // For bounce/reversal strategies, enter LONG
-    const side = 'SHORT'; // or 'LONG' based on your strategy
+    // Determine side from metrics or derive from price action
+    // IMPORTANT: Don't assume specific metric names exist! Check before using.
+    const side = metrics.direction || (entryBar.close > (metrics.vwap || bars[signalBarIndex].close) ? 'LONG' : 'SHORT');
 
     let position = {
-      side,
-      entry: entryBar.open,
-      entryTime: entryBar.timeOfDay,
-      highestPrice: entryBar.high,
-      lowestPrice: entryBar.low
+      side, entry: entryBar.open, entryTime: entryBar.timeOfDay,
+      highestPrice: entryBar.high, lowestPrice: entryBar.low
     };
 
-    // Monitor position until exit
     for (let i = signalBarIndex + 2; i < bars.length; i++) {
       const bar = bars[i];
       position.highestPrice = Math.max(position.highestPrice, bar.high);
       position.lowestPrice = Math.min(position.lowestPrice, bar.low);
 
-      // Apply your exit logic here (stop loss, take profit, time-based, etc.)
       let exitTriggered = false;
       let exitPrice = bar.close;
       let exitReason = '';
@@ -623,53 +432,24 @@ if (useSignalBasedExecution) {
       if (side === 'LONG') {
         const stopLoss = position.entry * (1 - stopLossPct / 100);
         const takeProfit = position.entry * (1 + takeProfitPct / 100);
-
-        if (bar.low <= stopLoss) {
-          exitTriggered = true;
-          exitPrice = stopLoss;
-          exitReason = 'Stop loss';
-        } else if (bar.high >= takeProfit) {
-          exitTriggered = true;
-          exitPrice = takeProfit;
-          exitReason = 'Take profit';
-        } else if (bar.timeOfDay >= '15:55:00') {
-          exitTriggered = true;
-          exitPrice = bar.close;
-          exitReason = 'Market close';
-        }
-      } else { // SHORT
+        if (bar.low <= stopLoss) { exitTriggered = true; exitPrice = stopLoss; exitReason = 'Stop loss'; }
+        else if (bar.high >= takeProfit) { exitTriggered = true; exitPrice = takeProfit; exitReason = 'Take profit'; }
+        else if (bar.timeOfDay >= '15:55:00') { exitTriggered = true; exitPrice = bar.close; exitReason = 'Market close'; }
+      } else {
         const stopLoss = position.entry * (1 + stopLossPct / 100);
         const takeProfit = position.entry * (1 - takeProfitPct / 100);
-
-        if (bar.high >= stopLoss) {
-          exitTriggered = true;
-          exitPrice = stopLoss;
-          exitReason = 'Stop loss';
-        } else if (bar.low <= takeProfit) {
-          exitTriggered = true;
-          exitPrice = takeProfit;
-          exitReason = 'Take profit';
-        } else if (bar.timeOfDay >= '15:55:00') {
-          exitTriggered = true;
-          exitPrice = bar.close;
-          exitReason = 'Market close';
-        }
+        if (bar.high >= stopLoss) { exitTriggered = true; exitPrice = stopLoss; exitReason = 'Stop loss'; }
+        else if (bar.low <= takeProfit) { exitTriggered = true; exitPrice = takeProfit; exitReason = 'Take profit'; }
+        else if (bar.timeOfDay >= '15:55:00') { exitTriggered = true; exitPrice = bar.close; exitReason = 'Market close'; }
       }
 
       if (exitTriggered) {
         const pnl = side === 'LONG' ? exitPrice - position.entry : position.entry - exitPrice;
-        const pnlPercent = (pnl / position.entry) * 100;
-
         results.push({
-          date,
-          ticker,
-          side,
-          entryTime: position.entryTime,
-          entryPrice: position.entry,
-          exitTime: bar.timeOfDay,
-          exitPrice,
-          pnl,
-          pnlPercent,
+          date: signal_date, ticker, side,
+          entryTime: position.entryTime, entryPrice: position.entry,
+          exitTime: bar.timeOfDay, exitPrice, pnl,
+          pnlPercent: (pnl / position.entry) * 100,
           exitReason,
           highestPrice: position.highestPrice,
           lowestPrice: position.lowestPrice
@@ -678,362 +458,70 @@ if (useSignalBasedExecution) {
       }
     }
   }
-} else {
-  // Fall back to autonomous pattern detection if no signals provided
-  // (Use the standard pattern detection logic here)
 }
 
-**Helper Functions (Copy if needed):**
-
-If your strategy requires technical indicators, use these pre-built functions:
-
-// Calculate VWAP (Volume-Weighted Average Price) for intraday bars
-function calculateVWAP(bars: IntradayBar[]): number {
-  let totalPriceVolume = 0;
-  let totalVolume = 0;
-
-  for (const bar of bars) {
-    const typicalPrice = (bar.high + bar.low + bar.close) / 3;
-    totalPriceVolume += typicalPrice * bar.volume;
-    totalVolume += bar.volume;
-  }
-
-  return totalVolume > 0 ? totalPriceVolume / totalVolume : 0;
-}
-
-// Calculate RSI (Relative Strength Index)
-function calculateRSI(prices: number[], period: number = 14): number {
-  if (prices.length < period + 1) return 50; // Default neutral RSI
-
-  let gains = 0;
-  let losses = 0;
-
-  // Calculate initial average gain/loss
-  for (let i = prices.length - period; i < prices.length; i++) {
-    const change = prices[i] - prices[i - 1];
-    if (change > 0) gains += change;
-    else losses += Math.abs(change);
-  }
-
-  const avgGain = gains / period;
-  const avgLoss = losses / period;
-
-  if (avgLoss === 0) return 100;
-  const rs = avgGain / avgLoss;
-  return 100 - (100 / (1 + rs));
-}
-
-// Calculate momentum (rate of change)
-function calculateMomentum(prices: number[], period: number = 10): number {
-  if (prices.length < period + 1) return 0;
-  const current = prices[prices.length - 1];
-  const past = prices[prices.length - 1 - period];
-  return past !== 0 ? ((current - past) / past) * 100 : 0;
-}
-
-// Calculate simple moving average
-function calculateSMA(prices: number[], period: number): number {
-  if (prices.length < period) return 0;
-  const relevantPrices = prices.slice(-period);
-  return relevantPrices.reduce((sum, p) => sum + p, 0) / period;
-}
-
-// Calculate Average True Range (volatility)
-function calculateATR(bars: IntradayBar[], period: number = 14): number {
-  if (bars.length < period + 1) return 0;
-
-  const trueRanges: number[] = [];
-  for (let i = 1; i < bars.length; i++) {
-    const high = bars[i].high;
-    const low = bars[i].low;
-    const prevClose = bars[i - 1].close;
-    const tr = Math.max(
-      high - low,
-      Math.abs(high - prevClose),
-      Math.abs(low - prevClose)
-    );
-    trueRanges.push(tr);
-  }
-
-  const recentTR = trueRanges.slice(-period);
-  return recentTR.reduce((sum, tr) => sum + tr, 0) / period;
-}
-
-**TypeScript Strict Mode Requirements:**
-
-Your generated code MUST compile with TypeScript strict mode. Follow these requirements carefully:
-
-1. **Explicit Type Annotations for ALL Callback Parameters:**
-   
-   // ❌ WRONG - Implicit 'any' type error
-   bars.reduce((acc, bar) => acc + bar.volume, 0);
-
-   // ✅ CORRECT - Explicit type annotation
-   bars.reduce((acc: number, bar: Bar) => acc + bar.volume, 0);
-
-   // ❌ WRONG - Missing type in forEach
-   signals.forEach(signal => {
-     // ...
-   });
-
-   // ✅ CORRECT - Explicit type
-   signals.forEach((signal: ScannerSignal) => {
-     // ...
-   });
-
-
-2. **Null Handling - Use Optional Fields or Union Types:**
-   
-   // ❌ WRONG - Cannot assign null to string
-   let exitReason: string = null;
-
-   // ✅ CORRECT - Use union type
-   let exitReason: string | null = null;
-
-   // ✅ ALSO CORRECT - Use empty string
-   let exitReason: string = '';
-
-
-3. **Object Shorthand - Use Existing Variables Only:**
-   
-   // ❌ WRONG - 'highest' variable doesn't exist
-   results.push({
-     highest,  // Error: Cannot find name 'highest'
-     lowest
-   });
-
-   // ✅ CORRECT - Use actual property names
-   results.push({
-     highestPrice: position.highestPrice,
-     lowestPrice: position.lowestPrice
-   });
-
-   // ✅ ALSO CORRECT - If variable matches property name
-   const highestPrice = position.highestPrice;
-   results.push({
-     highestPrice,  // OK because variable exists
-     lowestPrice: position.lowestPrice
-   });
-
-
-4. **Interface Field Names - Use EXACT Field Names from ScannerSignal:**
-   
-   // ❌ WRONG - ScannerSignal doesn't have 'date' or 'time'
-   const date = signal.date;
-   const time = signal.time;
-
-   // ✅ CORRECT - Use signal_date and signal_time
-   const date = signal.signal_date;
-   const time = signal.signal_time;
-
-   // ❌ WRONG - No pattern_type field exists
-   const pattern = signal.pattern_type;
-
-   // ✅ CORRECT - Access metrics instead
-   const vwap = signal.metrics.vwap;
-
-
-5. **Type Conversions - Ensure Type Compatibility:**
-   
-   // ❌ WRONG - Type mismatch between interfaces
-   const customSignal: MyCustomSignal = SCANNER_SIGNALS[0];
-
-   // ✅ CORRECT - Use the ScannerSignal interface directly
-   const signal: ScannerSignal = SCANNER_SIGNALS[0];
-
-
-6. **Date-Keyed Dictionaries - MUST Use Record<string, T> or Map<string, T>:**
-   
-   // ❌ WRONG - Missing type annotation causes "Property '2025-10-13' does not exist" errors
-   const barsByDate = bars.reduce((acc, bar) => {
-     acc[bar.signal_date] = bar;  // TypeScript error: Property doesn't exist on type '{}'
-     return acc;
-   }, {});
-
-   // ✅ CORRECT - Use Record<string, T> type
-   const barsByDate = bars.reduce((acc: Record<string, Bar>, bar: Bar) => {
-     acc[bar.signal_date] = bar;
-     return acc;
-   }, {} as Record<string, Bar>);
-
-   // ✅ ALSO CORRECT - Use Map for better type safety
-   const barsByDate = new Map<string, Bar>();
-   bars.forEach((bar: Bar) => {
-     barsByDate.set(bar.signal_date, bar);
-   });
-
-   // Access with type safety
-   const todayBar = barsByDate.get('2025-10-13');  // Returns Bar | undefined
-
-
-7. **Array Initialization - ⚠️ CRITICAL: NEVER EVER Use null in Typed Arrays:**
-
-   ❌❌❌ THIS IS WRONG - TYPESCRIPT WILL REJECT IT ❌❌❌
-   const tradingDays: string[] = [null];  // ← COMPILATION ERROR!
-
-   ✅ CORRECT OPTIONS:
-
-   Option A: Use empty array (PREFERRED for signal-based execution)
-   const tradingDays: string[] = [];
-
-   Option B: Extract dates from SCANNER_SIGNALS
-   const tradingDays: string[] = ["2025-10-30", "2025-10-29"];
-
-   Option C: If you truly need nullable values (rare), use union type
-   const tradingDays: (string | null)[] = [null];
-
-   ⚠️ FOR SIGNAL-BASED EXECUTION: You do NOT need tradingDays array at all!
-   Just process SCANNER_SIGNALS directly - each signal already has signal_date.
-
-
-8. **Scanner Metrics - NEVER Assume Property Names:**
-
-   // ❌ WRONG - Accessing properties that may not exist in metrics
-   const volumeSpike = metrics.volume_spike || false;
-   const bearishRejection = metrics.bearish_rejection || false;
-
-   // ✅ CORRECT - Only access properties that the scanner actually outputs
-   // Look at the scanner's output metrics to see what properties are available
-   // For VWAP scanner, available metrics are:
-   //   - vwap, price, distance_from_vwap_percent
-   //   - volume_spike_multiplier (NOT volume_spike)
-   //   - rejection_confirmation_bars
-   //   - session_trend
-   //   - mean_reversion_quality
-
-   // Derive pattern type from actual metrics:
-   const hasVolumeSpike = metrics.volume_spike_multiplier >= 1.5;
-   const distanceFromVWAP = metrics.distance_from_vwap_percent;
-   const isBearishSetup = distanceFromVWAP > 0; // Price above VWAP
-   const isBullishSetup = distanceFromVWAP < 0; // Price below VWAP
-
-
-9. **TradeResult Objects - ALWAYS Include Required Fields:**
-
-   // ❌ WRONG - Missing required 'ticker' field
-   results.push({
-     date: signal_date,
-     side: 'LONG',
-     entryPrice: entry
-   });
-
-   // ✅ CORRECT - Include all required fields (date AND ticker)
-   results.push({
-     date: signal_date,
-     ticker: ticker,  // REQUIRED!
-     side: 'LONG',
-     entryPrice: entry,
-     entryTime: entryTime,
-     exitPrice: exit,
-     exitTime: exitTime,
-     pnl: pnl,
-     pnlPercent: pnlPercent,
-     exitReason: 'Stop loss'
-   });
-
-   // ✅ For no-trade results
-   results.push({
-     date: signal_date,
-     ticker: ticker,  // REQUIRED!
-     noTrade: true,
-     noTradeReason: 'No favorable setup'
-   });
-
-
-10. **Complete Code Generation - ⚠️ ABSOLUTELY CRITICAL: NEVER TRUNCATE CODE:**
-
-    🚨 YOUR ENTIRE RESPONSE MUST BE COMPLETE AND RUNNABLE 🚨
-
-    If you start generating code, you MUST:
-    ✅ Finish ALL open code blocks
-    ✅ Close ALL braces, brackets, and parentheses
-    ✅ Complete the entire runBacktest() function with return statement
-    ✅ Include the final closing brace and .catch(console.error) line
-    ✅ Ensure the last line of your response is: runBacktest().catch(console.error);
-
-    ⚠️ TRUNCATED CODE = COMPILATION FAILURE ⚠️
-
-    SIMPLIFICATION STRATEGIES (if approaching token limits):
-    1. Remove ALL comments except critical ones
-    2. Use simpler variable names (e.g., 'bars' instead of 'marketHoursBars')
-    3. Inline simple calculations instead of separate variables
-    4. Remove console.log statements
-    5. Reduce the number of conditions in decision logic
-    6. Combine multiple if-statements into single expressions
-
-    Example of simplification:
-    ❌ TOO VERBOSE:
-    // Calculate the upper wick size
-    const upperWick = bar.high - Math.max(bar.open, bar.close);
-    // Calculate the body size
-    const bodySize = Math.abs(bar.close - bar.open);
-    // Check if rejection pattern exists
-    const hasRejection = upperWick > bodySize * 1.5;
-
-    ✅ SIMPLIFIED:
-    const hasRejection = (bar.high - Math.max(bar.open, bar.close)) > Math.abs(bar.close - bar.open) * 1.5;
-
-    🚨 REMEMBER: Complete simple code > Incomplete complex code 🚨
-
-
-**Critical Rules for Signal-Based Execution:**
-1. ALWAYS check if \`SCANNER_SIGNALS\` exists before using it
-2. Use \`signal_date\` and \`signal_time\` fields to identify when the pattern occurred
-3. Enter trades at the bar AFTER the signal time (next-bar execution)
-4. Process each signal independently
-5. Do NOT re-detect patterns - trust the scanner's signals
-6. Apply your exit rules (stop loss, take profit, time exit) after entry
-7. Trade direction should be based on the strategy logic (e.g., momentum exhaustion = SHORT, bounce = LONG)
+## TypeScript Requirements
+
+| Rule | ❌ Wrong | ✅ Correct |
+|------|----------|------------|
+| **Callback types** | \`bars.reduce((acc, bar) => ...)\` | \`bars.reduce((acc: number, bar: Bar) => ...)\` |
+| **Null handling** | \`let reason: string = null;\` | \`let reason: string | null = null;\` or \`let reason = '';\` |
+| **Array init** | \`const days: string[] = [null];\` | \`const days: string[] = [];\` |
+| **Scanner fields** | \`signal.date, signal.time\` | \`signal.signal_date, signal.signal_time\` |
+| **Optional metrics** | \`if (metrics.trend === 'bullish')\` | \`if (metrics.trend === 'bullish' || metrics.direction === 'LONG')\` or derive from data |
+| **Metrics access** | Assume metrics exist | Use \`metrics.vwap || calculateVWAP(bars)\` or check \`metrics.trend ? ... : ...\` |
+| **TradeResult** | Missing ticker field | \`{ date, ticker, ... }\` (both required) |
+| **Date dicts** | \`const d = bars.reduce((acc, b) => { acc[b.date] = b; }, {});\` | \`const d: Record<string, Bar> = {}; bars.forEach((b: Bar) => { d[b.date] = b; });\` |
+| **Complete code** | Truncated scripts | Finish ALL braces, include runBacktest().catch(console.error); |
+
+⚠️ **CRITICAL:** Never truncate code. If approaching limits:
+1. Remove comments
+2. Use shorter variable names
+3. Inline calculations
+4. Combine if-statements
+5. Remove console.logs
+
+Complete simple code > Incomplete complex code
 
 ## Date Selection
 
-You must determine appropriate testing dates based on the user's strategy description.
+Extract from prompt or use defaults:
+- Simple strategies: 10 days
+- Medium complexity: 15 days
+- Complex strategies: 20 days
 
-**Guidelines:**
-1. If the prompt explicitly mentions dates (e.g., "last 10 days", "past 20 trading days", "from Oct 1 to Oct 22"), extract them
-2. If no dates specified, consider strategy complexity:
-   - Simple strategies (basic ORB, single indicator): 10 trading days
-   - Medium complexity (multiple conditions, VWAP + SMA, conditional logic): 15 trading days
-   - Complex strategies (multi-timeframe, advanced logic, many conditions): 20 trading days
-3. Return dates in YYYY-MM-DD format
-4. Only return trading days (Mon-Fri, excluding major US holidays)
-5. Return dates in descending order (most recent first)
-6. Today's date is ${new Date().toISOString().split('T')[0]}
+Return YYYY-MM-DD format, descending order, trading days only.
+Today: ${new Date().toISOString().split('T')[0]}
 
 ## Response Format
 
-Return your response in this exact format:
-
 DATES: ["2025-10-22", "2025-10-21", ...]
 
-DATE_REASONING: Brief explanation of why these dates were chosen
+DATE_REASONING: Why these dates
 
 SCRIPT:
-[your complete script here]
+[complete script]
 
 ASSUMPTIONS:
-- List each assumption you made (one per line)
-- Example: "Assumed 5-period SMA uses closing prices"
-- Example: "Assumed 1% stop loss applies to entry price"
+- List assumptions made
 
 CONFIDENCE: [0.0-1.0]
 
 INDICATORS: VWAP, SMA(5), etc.
 
-EXPLANATION: [Brief description of the strategy logic]
+EXPLANATION: Strategy description
 
 ## Guidelines
 
-1. Use TEMPLATE_TICKER and TEMPLATE_TIMEFRAME as placeholders, and use the dates you determined in the DATES section for the tradingDays array (e.g., const tradingDays = ['2024-01-02', '2024-01-03'])
-2. Include ALL necessary imports and type definitions
-3. Use realistic next-bar execution (signal detection → next bar entry)
-4. Always handle the "no trade" case
-5. Force exit positions at market close (16:00)
-6. Make reasonable assumptions when details are unclear
-7. List ALL assumptions in the ASSUMPTIONS section
-8. Be precise with time comparisons (use HH:MM:SS format)
-9. Calculate proper PnL and PnL percentage
-10. Include helpful comments in complex logic`;
+1. Use TEMPLATE_TICKER, TEMPLATE_TIMEFRAME placeholders
+2. Include all imports and types
+3. Use next-bar execution
+4. Handle no-trade cases
+5. Exit at market close (16:00)
+6. List all assumptions
+7. Use HH:MM:SS for times
+8. Calculate proper PnL
+`;
   }
 
   /**
