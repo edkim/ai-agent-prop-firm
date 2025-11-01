@@ -67,7 +67,7 @@ export interface ScriptMetrics {
  * Script generation parameters
  */
 export interface ScriptGenerationParams {
-  strategyType: 'orb' | 'momentum' | 'mean-reversion' | 'custom';
+  strategyType: 'orb' | 'momentum' | 'mean-reversion' | 'custom' | 'signal_based';
   ticker: string;
 
   // Date selection options (use one)

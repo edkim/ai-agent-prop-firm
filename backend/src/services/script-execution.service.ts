@@ -140,16 +140,32 @@ export class ScriptExecutionService {
    * Detect script type from filename and content
    */
   private detectScriptType(fileName: string, content: string): 'scanner' | 'execution' | 'unknown' {
-    // Check filename first
-    if (fileName.includes('scanner')) return 'scanner';
-    if (fileName.includes('execution')) return 'execution';
+    // Check filename patterns (but don't trust them completely - verify with content)
+    const filenameHint = fileName.includes('scan-') || fileName.includes('scanner') ? 'scanner'
+      : fileName.includes('backtest') || fileName.includes('execution') ? 'execution'
+      : null;
 
-    // Check content for indicators
-    if (content.includes('SCANNER_SIGNALS') || content.includes('// Scanner script')) {
+    // Check content for definitive indicators
+    // Scanner scripts OUTPUT ScanMatch results
+    const hasScanMatch = content.includes('interface ScanMatch') || content.includes('ScanMatch[]');
+    const hasRunScan = content.includes('function runScan(');
+
+    // Execution scripts CONSUME SCANNER_SIGNALS and OUTPUT TradeResult
+    const hasScannerSignals = content.includes('SCANNER_SIGNALS');
+    const hasTradeResult = content.includes('interface TradeResult') || content.includes('TradeResult[]');
+    const hasRunBacktest = content.includes('function runBacktest(');
+
+    // Prioritize content-based detection over filename
+    if ((hasScanMatch || hasRunScan) && !hasScannerSignals) {
       return 'scanner';
     }
-    if (content.includes('TradeResult') || content.includes('// Execution script')) {
+    if (hasScannerSignals || hasTradeResult || hasRunBacktest) {
       return 'execution';
+    }
+
+    // Fall back to filename hint if content is ambiguous
+    if (filenameHint) {
+      return filenameHint;
     }
 
     return 'unknown';
