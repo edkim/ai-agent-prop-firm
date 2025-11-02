@@ -29,7 +29,7 @@ import { AgentKnowledgeExtractionService } from './agent-knowledge-extraction.se
 
 // Default backtest configuration
 const DEFAULT_BACKTEST_CONFIG: AgentBacktestConfig = {
-  max_signals_per_iteration: 10,      // Conservative limit for testing
+  max_signals_per_iteration: 5,       // Cap at 5 for faster iterations
   max_signals_per_ticker_date: 2,     // Max 2 signals per ticker per day
   max_signals_per_date: 10,            // Max 10 signals per unique date
   min_pattern_strength: 0,             // Minimum quality score (0 = accept all)
@@ -78,7 +78,7 @@ export class AgentLearningService {
 
     // Step 2: Execute scan
     console.log('2️⃣ Running scan...');
-    const scanResults = await this.executeScan(strategy.scanScript);
+    const scanResults = await this.executeScan(strategy.scanScript, strategy.scannerTokenUsage);
     console.log(`   Found ${scanResults.length} signals`);
 
     if (scanResults.length === 0) {
@@ -89,11 +89,26 @@ export class AgentLearningService {
 
     // Step 3: Run backtests on scan results
     console.log('3️⃣ Running backtests...');
-    const backtestResults = await this.runBacktests(strategy.executionScript, scanResults);
+    const backtestResults = await this.runBacktests(strategy.executionScript, scanResults, strategy.executionTokenUsage);
 
-    // Step 4: Agent analyzes results
+    // Step 4: Agent analyzes results (skip if no successful backtests)
     console.log('4️⃣ Analyzing results...');
-    const analysis = await this.analyzeResults(agent, backtestResults, scanResults);
+    let analysis: ExpertAnalysis;
+
+    if (backtestResults.totalTrades === 0) {
+      console.log('   ⚠️  No trades generated - skipping detailed analysis');
+      // Generate minimal analysis for failed execution
+      analysis = {
+        summary: 'No trades were generated. All backtest scripts either failed to compile or failed to execute. Check generated scripts for TypeScript errors.',
+        parameter_recommendations: [],
+        strategic_insights: [],
+        trade_quality_assessment: 'No trades to assess',
+        risk_assessment: 'Unable to assess - no execution data',
+        market_condition_notes: 'Scripts did not execute successfully'
+      };
+    } else {
+      analysis = await this.analyzeResults(agent, backtestResults, scanResults);
+    }
 
     // Step 4.5: Extract and store knowledge from analysis
     console.log('📚 Extracting knowledge...');
@@ -170,6 +185,8 @@ export class AgentLearningService {
     scanScript: string;
     executionScript: string;
     rationale: string;
+    scannerTokenUsage?: any;
+    executionTokenUsage?: any;
   }> {
     // Get agent's accumulated knowledge
     const knowledge = await this.getAgentKnowledge(agent.id);
@@ -179,11 +196,29 @@ export class AgentLearningService {
     console.log(`   Pattern focus: ${agent.pattern_focus.join(', ')}`);
 
     // Step 1: Generate scanner script
-    const scannerQuery = iterationNumber === 1
-      ? `Find ${agent.pattern_focus.join(' or ')} patterns in ${agent.market_conditions.join(' or ')} market conditions. Trading style: ${agent.trading_style}, risk tolerance: ${agent.risk_tolerance}.`
-      : `Find ${agent.pattern_focus.join(' or ')} patterns incorporating these learnings: ${knowledgeSummary}`;
+    // ALWAYS prioritize custom instructions if they exist (for specialized strategies)
+    // Otherwise use generic pattern focus (with learnings on iteration 2+)
+    let scannerQuery: string;
+
+    if (agent.instructions && agent.instructions.trim() !== '') {
+      // Specialized strategy with custom instructions - always use them
+      scannerQuery = agent.instructions;
+
+      // On iteration 2+, append learnings to refine the custom strategy
+      if (iterationNumber > 1 && knowledgeSummary && knowledgeSummary.trim() !== '') {
+        scannerQuery += `\n\nINCORPORATE THESE LEARNINGS: ${knowledgeSummary}`;
+      }
+    } else {
+      // Generic agent - use pattern focus
+      if (iterationNumber === 1) {
+        scannerQuery = `Find ${agent.pattern_focus.join(' or ')} patterns in ${agent.market_conditions.join(' or ')} market conditions. Trading style: ${agent.trading_style}, risk tolerance: ${agent.risk_tolerance}.`;
+      } else {
+        scannerQuery = `Find ${agent.pattern_focus.join(' or ')} patterns incorporating these learnings: ${knowledgeSummary}`;
+      }
+    }
 
     console.log(`   Generating scanner with Claude...`);
+    console.log(`   Scanner query: ${scannerQuery.substring(0, 100)}...`);
     const scannerResult = await this.claude.generateScannerScript({
       query: scannerQuery,
       universe: agent.universe || 'Tech Sector', // Use agent's universe or default to Tech Sector
@@ -198,18 +233,26 @@ export class AgentLearningService {
     const executionPrompt = iterationNumber === 1
       ? `${agent.trading_style} trader with ${agent.risk_tolerance} risk tolerance.
 Focus on ${agent.pattern_focus.join(' or ')} patterns in ${agent.market_conditions.join(' or ')} market conditions.
-Generate a complete backtest script with:
-- Clear entry rules for the specified patterns
-- Exit at market close or on profit/loss targets
-- Maximum ${config.maxTradesPerDay} trade(s) per day
-- Proper TypeScript type annotations for all functions`
-      : `${agent.trading_style} trader with accumulated knowledge: ${knowledgeSummary}.
-Improve the strategy based on previous iterations while maintaining proper TypeScript typing.
-Ensure all callback functions have explicit type annotations.`;
 
-    console.log(`   Generating execution script with Claude...`);
+IMPORTANT: This script will receive SCANNER_SIGNALS from the pattern detection scanner.
+Generate a SIGNAL-BASED execution script that:
+- Checks if SCANNER_SIGNALS exists and uses it (required for learning)
+- Enters trades at signal times (next bar after signal)
+- Applies exit rules: stop loss ${config.stopLossPct}%, take profit ${config.takeProfitPct}%, market close at 15:55
+- Maximum ${config.maxTradesPerDay} trade(s) per day
+- Proper TypeScript type annotations for all functions
+- Falls back to autonomous detection only if SCANNER_SIGNALS is undefined`
+      : `${agent.trading_style} trader with accumulated knowledge: ${knowledgeSummary}.
+
+IMPORTANT: This script will receive SCANNER_SIGNALS from the pattern detection scanner.
+Improve the strategy based on previous iterations:
+- MUST use signal-based execution when SCANNER_SIGNALS is provided
+- Apply refined exit rules and risk management
+- Maintain proper TypeScript typing with explicit type annotations`;
+
+    console.log(`   Generating signal-based execution script with Claude...`);
     const executionResult = await this.claude.generateScript(executionPrompt, {
-      strategyType: 'custom',
+      strategyType: 'signal_based',
       ticker: 'TEMPLATE_TICKER',
       timeframe: agent.timeframe || '5min',
       specificDates: [this.getDateDaysAgo(5)], // Will be replaced during execution
@@ -223,14 +266,16 @@ Ensure all callback functions have explicit type annotations.`;
     return {
       scanScript: scannerResult.script,
       executionScript: executionResult.script,  // Fixed: script not scriptCode
-      rationale
+      rationale,
+      scannerTokenUsage: scannerResult.tokenUsage,
+      executionTokenUsage: executionResult.tokenUsage
     };
   }
 
   /**
    * Execute scan script and return matches
    */
-  private async executeScan(scanScript: string): Promise<any[]> {
+  private async executeScan(scanScript: string, tokenUsage?: any): Promise<any[]> {
     const scriptId = uuidv4();
     const scriptPath = path.join(__dirname, '../../', `agent-scan-${scriptId}.ts`);
 
@@ -241,7 +286,7 @@ Ensure all callback functions have explicit type annotations.`;
 
       // Execute script with 60 second timeout
       console.log(`   Executing scan script...`);
-      const result = await this.scriptExecution.executeScript(scriptPath, 60000);
+      const result = await this.scriptExecution.executeScript(scriptPath, 60000, tokenUsage);
 
       if (!result.success) {
         console.error(`   Scan script execution failed: ${result.error}`);
@@ -277,7 +322,7 @@ Ensure all callback functions have explicit type annotations.`;
   /**
    * Run backtests on scan results using execution script
    */
-  private async runBacktests(executionScript: string, scanResults: any[]): Promise<any> {
+  private async runBacktests(executionScript: string, scanResults: any[], tokenUsage?: any): Promise<any> {
     if (scanResults.length === 0) {
       return {
         totalTrades: 0,
@@ -297,46 +342,77 @@ Ensure all callback functions have explicit type annotations.`;
     const allTrades: any[] = [];
     let successfulBacktests = 0;
 
-    // Execute backtest for each filtered result
-    for (const scanResult of filteredResults) {
-      const { ticker, date } = scanResult;
+    // Group signals by ticker to batch them
+    const signalsByTicker: { [ticker: string]: any[] } = {};
+    for (const signal of filteredResults) {
+      if (!signalsByTicker[signal.ticker]) {
+        signalsByTicker[signal.ticker] = [];
+      }
+      signalsByTicker[signal.ticker].push(signal);
+    }
+
+    console.log(`   Grouped into ${Object.keys(signalsByTicker).length} ticker(s)`);
+
+    // Execute backtests in parallel (up to 5 concurrent)
+    const backtestPromises = Object.entries(signalsByTicker).map(async ([ticker, signals]) => {
       const scriptId = uuidv4();
       const scriptPath = path.join(__dirname, '../../', `agent-backtest-${scriptId}.ts`);
 
       try {
-        // Customize execution script with ticker and date
+        // Inject signals into the script
+        const signalsJSON = JSON.stringify(signals, null, 2);
+        const signalInjection = `
+// SIGNALS FROM SCANNER (injected by learning system)
+const SCANNER_SIGNALS = ${signalsJSON};
+`;
+
+        // Customize execution script with ticker and signals
         const customizedScript = executionScript
           .replace(/TEMPLATE_TICKER/g, ticker)
-          .replace(/const tradingDays: string\[\] = \[[^\]]+\];/s, `const tradingDays: string[] = ['${date}'];`);
+          .replace(/const tradingDays: string\[\] = \[[^\]]*\];/s,
+            `const tradingDays: string[] = ${JSON.stringify([...new Set(signals.map((s: any) => s.signal_date))])};\n${signalInjection}`);
 
         // Save to temp file
         fs.writeFileSync(scriptPath, customizedScript);
 
         // Execute with 120 second timeout
-        const result = await this.scriptExecution.executeScript(scriptPath, 120000);
-
-        if (result.success && result.data) {
-          const trades = result.data.trades || [];
-          allTrades.push(...trades);
-          successfulBacktests++;
-        }
+        const result = await this.scriptExecution.executeScript(scriptPath, 120000, tokenUsage);
 
         // Clean up
         if (fs.existsSync(scriptPath)) {
           fs.unlinkSync(scriptPath);
         }
+
+        if (result.success && result.data) {
+          return { ticker, trades: result.data.trades || [], success: true };
+        } else {
+          console.log(`   ⚠️  Backtest failed for ${ticker}: ${result.error || 'Unknown error'}`);
+          return { ticker, trades: [], success: false, error: result.error };
+        }
       } catch (error: any) {
-        console.error(`   Error backtesting ${ticker} on ${date}: ${error.message}`);
+        console.error(`   Error backtesting ${ticker}: ${error.message}`);
         // Clean up on error
         try {
           if (fs.existsSync(scriptPath)) {
             fs.unlinkSync(scriptPath);
           }
         } catch {}
+        return { ticker, trades: [], success: false, error: error.message };
+      }
+    });
+
+    // Wait for all backtests to complete
+    const results = await Promise.all(backtestPromises);
+
+    // Aggregate successful results
+    for (const result of results) {
+      if (result.success && result.trades.length > 0) {
+        allTrades.push(...result.trades);
+        successfulBacktests++;
       }
     }
 
-    console.log(`   Completed ${successfulBacktests}/${scanResults.length} backtests`);
+    console.log(`   Completed ${successfulBacktests}/${Object.keys(signalsByTicker).length} backtests`);
     console.log(`   Total trades: ${allTrades.length}`);
 
     // Aggregate results
@@ -413,10 +489,10 @@ Ensure all callback functions have explicit type annotations.`;
   ): Promise<Refinement[]> {
     const refinements: Refinement[] = [];
 
-    console.log(`   Converting analysis into ${analysis.parameter_recommendations.length} refinements...`);
+    console.log(`   Converting analysis into ${(analysis.parameter_recommendations || []).length} refinements...`);
 
     // Convert parameter recommendations into refinements
-    for (const param of analysis.parameter_recommendations) {
+    for (const param of analysis.parameter_recommendations || []) {
       refinements.push({
         type: 'parameter_adjustment',
         description: `Adjust ${param.parameter} from ${param.currentValue} to ${param.recommendedValue}`,
@@ -431,7 +507,7 @@ Ensure all callback functions have explicit type annotations.`;
     }
 
     // Convert missing context into data collection refinements
-    for (const missing of analysis.missing_context) {
+    for (const missing of analysis.missing_context || []) {
       refinements.push({
         type: 'missing_data',
         description: `Add data: ${missing}`,
@@ -443,7 +519,7 @@ Ensure all callback functions have explicit type annotations.`;
     }
 
     // Add refinements based on failure points
-    for (const failure of analysis.failure_points) {
+    for (const failure of analysis.failure_points || []) {
       refinements.push({
         type: 'exit_rule',
         description: `Address failure: ${failure}`,
