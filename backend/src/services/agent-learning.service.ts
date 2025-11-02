@@ -26,6 +26,8 @@ import { PerformanceMonitorService } from './performance-monitor.service';
 import { RefinementApprovalService } from './refinement-approval.service';
 import { ScriptExecutionService } from './script-execution.service';
 import { AgentKnowledgeExtractionService } from './agent-knowledge-extraction.service';
+import { TemplateRendererService } from './template-renderer.service';
+import { executionTemplates, DEFAULT_TEMPLATES } from '../templates/execution';
 
 // Default backtest configuration
 const DEFAULT_BACKTEST_CONFIG: AgentBacktestConfig = {
@@ -45,6 +47,7 @@ export class AgentLearningService {
   private performanceMonitor: PerformanceMonitorService;
   private refinementApproval: RefinementApprovalService;
   private scriptExecution: ScriptExecutionService;
+  private templateRenderer: TemplateRendererService;
 
   constructor() {
     this.agentMgmt = new AgentManagementService();
@@ -55,6 +58,7 @@ export class AgentLearningService {
     this.refinementApproval = new RefinementApprovalService();
     this.scriptExecution = new ScriptExecutionService();
     this.knowledgeExtraction = new AgentKnowledgeExtractionService();
+    this.templateRenderer = new TemplateRendererService();
   }
 
   /**
