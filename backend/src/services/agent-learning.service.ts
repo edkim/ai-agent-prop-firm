@@ -26,10 +26,13 @@ import { PerformanceMonitorService } from './performance-monitor.service';
 import { RefinementApprovalService } from './refinement-approval.service';
 import { ScriptExecutionService } from './script-execution.service';
 import { AgentKnowledgeExtractionService } from './agent-knowledge-extraction.service';
+import { TemplateRendererService } from './template-renderer.service';
+import { executionTemplates, DEFAULT_TEMPLATES } from '../templates/execution';
+import { createIterationLogger } from '../utils/logger';
 
 // Default backtest configuration
 const DEFAULT_BACKTEST_CONFIG: AgentBacktestConfig = {
-  max_signals_per_iteration: 5,       // Cap at 5 for faster iterations
+  max_signals_per_iteration: 10,      // Cap at 10 signals (10 signals × 5 templates = 50 scripts)
   max_signals_per_ticker_date: 2,     // Max 2 signals per ticker per day
   max_signals_per_date: 10,            // Max 10 signals per unique date
   min_pattern_strength: 0,             // Minimum quality score (0 = accept all)
@@ -45,6 +48,7 @@ export class AgentLearningService {
   private performanceMonitor: PerformanceMonitorService;
   private refinementApproval: RefinementApprovalService;
   private scriptExecution: ScriptExecutionService;
+  private templateRenderer: TemplateRendererService;
 
   constructor() {
     this.agentMgmt = new AgentManagementService();
@@ -55,14 +59,13 @@ export class AgentLearningService {
     this.refinementApproval = new RefinementApprovalService();
     this.scriptExecution = new ScriptExecutionService();
     this.knowledgeExtraction = new AgentKnowledgeExtractionService();
+    this.templateRenderer = new TemplateRendererService();
   }
 
   /**
    * Run a complete learning iteration for an agent
    */
   async runIteration(agentId: string): Promise<IterationResult> {
-    console.log(`🧠 Starting learning iteration for agent: ${agentId}`);
-
     const agent = await this.agentMgmt.getAgent(agentId);
     if (!agent) {
       throw new Error(`Agent not found: ${agentId}`);
@@ -70,90 +73,120 @@ export class AgentLearningService {
 
     // Get current iteration number
     const iterationNumber = await this.getNextIterationNumber(agentId);
-    console.log(`📊 Iteration #${iterationNumber}`);
 
-    // Step 1: Generate strategy (scan + execution)
-    console.log('1️⃣ Generating strategy...');
-    const strategy = await this.generateStrategy(agent, iterationNumber);
+    // Create iteration-specific logger
+    const logger = createIterationLogger(agentId, iterationNumber);
+    logger.info('Starting learning iteration', { agentName: agent.name });
 
-    // Step 2: Execute scan
-    console.log('2️⃣ Running scan...');
-    const scanResults = await this.executeScan(strategy.scanScript, strategy.scannerTokenUsage);
-    console.log(`   Found ${scanResults.length} signals`);
-
-    if (scanResults.length === 0) {
-      console.log('⚠️  No signals found - iteration will continue with placeholder data');
-      // Allow iteration to continue with empty results for now
-      // TODO: Implement actual scanner execution
-    }
-
-    // Step 3: Run backtests on scan results
-    console.log('3️⃣ Running backtests...');
-    const backtestResults = await this.runBacktests(strategy.executionScript, scanResults, strategy.executionTokenUsage);
-
-    // Step 4: Agent analyzes results (skip if no successful backtests)
-    console.log('4️⃣ Analyzing results...');
-    let analysis: ExpertAnalysis;
-
-    if (backtestResults.totalTrades === 0) {
-      console.log('   ⚠️  No trades generated - skipping detailed analysis');
-      // Generate minimal analysis for failed execution
-      analysis = {
-        summary: 'No trades were generated. All backtest scripts either failed to compile or failed to execute. Check generated scripts for TypeScript errors.',
-        parameter_recommendations: [],
-        strategic_insights: [],
-        trade_quality_assessment: 'No trades to assess',
-        risk_assessment: 'Unable to assess - no execution data',
-        market_condition_notes: 'Scripts did not execute successfully'
-      };
-    } else {
-      analysis = await this.analyzeResults(agent, backtestResults, scanResults);
-    }
-
-    // Step 4.5: Extract and store knowledge from analysis
-    console.log('📚 Extracting knowledge...');
-    const knowledge = await this.knowledgeExtraction.extractKnowledge(agentId, analysis, iterationNumber);
-    await this.knowledgeExtraction.storeKnowledge(agentId, knowledge);
-
-    // Step 5: Agent proposes refinements
-    console.log('5️⃣ Proposing refinements...');
-    const refinements = await this.proposeRefinements(agent, analysis);
-
-    // Step 6: Save iteration to database
-    const iteration = await this.saveIteration({
-      agentId,
-      iterationNumber,
-      strategy,
-      scanResults,
-      backtestResults,
-      analysis,
-      refinements,
-    });
-
-    console.log(`✅ Iteration #${iterationNumber} complete`);
-
-    // Phase 2 Autonomy Features: Post-iteration hooks
     try {
-      // 1. Analyze performance and generate alerts
-      console.log('📊 Analyzing performance...');
-      await this.performanceMonitor.analyzeIteration(agentId, iteration.id);
+      // Step 1: Generate strategy (scan + execution)
+      logger.info('Step 1: Generating strategy');
+      const strategy = await this.generateStrategy(agent, iterationNumber);
+      logger.info('Strategy generated', {
+        scannerTokens: strategy.scannerTokenUsage?.total_tokens,
+        executionTokens: strategy.executionTokenUsage?.total_tokens
+      });
 
-      // 2. Auto-approve refinements if enabled
-      console.log('🔍 Checking auto-approval...');
-      await this.refinementApproval.evaluateAndApply(agentId, iteration.id);
+      // Step 2: Execute scan
+      logger.info('Step 2: Running scan');
+      const scanResults = await this.executeScan(strategy.scanScript, strategy.scannerTokenUsage);
+      logger.info('Scan complete', {
+        signalsFound: scanResults.length,
+        tickers: [...new Set(scanResults.map((s: any) => s.ticker))]
+      });
+
+      if (scanResults.length === 0) {
+        logger.warn('No signals found - iteration will continue with empty results');
+      }
+
+      // Step 3: Run backtests on scan results
+      logger.info('Step 3: Running backtests with template library');
+      const backtestResults = await this.runBacktests(strategy.executionScript, scanResults, strategy.executionTokenUsage);
+      logger.info('Backtests complete', {
+        totalTrades: backtestResults.totalTrades,
+        winningTemplate: backtestResults.winningTemplate,
+        profitFactor: backtestResults.profitFactor,
+        templatesResults: backtestResults.templateResults?.length || 0
+      });
+
+      // Step 4: Agent analyzes results (skip if no successful backtests)
+      logger.info('Step 4: Analyzing results');
+      let analysis: ExpertAnalysis;
+
+      if (backtestResults.totalTrades === 0) {
+        logger.warn('No trades generated - skipping detailed analysis');
+        // Generate minimal analysis for failed execution
+        analysis = {
+          summary: 'No trades were generated. All backtest scripts either failed to compile or failed to execute. Check generated scripts for TypeScript errors.',
+          parameter_recommendations: [],
+          strategic_insights: [],
+          trade_quality_assessment: 'No trades to assess',
+          risk_assessment: 'Unable to assess - no execution data',
+          market_condition_notes: 'Scripts did not execute successfully'
+        };
+      } else {
+        analysis = await this.analyzeResults(agent, backtestResults, scanResults);
+        logger.info('Analysis complete', {
+          winRate: backtestResults.winRate,
+          sharpeRatio: backtestResults.sharpeRatio
+        });
+      }
+
+      // Step 4.5: Extract and store knowledge from analysis
+      logger.info('Step 4.5: Extracting knowledge');
+      const knowledge = await this.knowledgeExtraction.extractKnowledge(agentId, analysis, iterationNumber);
+      await this.knowledgeExtraction.storeKnowledge(agentId, knowledge);
+
+      // Step 5: Agent proposes refinements
+      logger.info('Step 5: Proposing refinements');
+      const refinements = await this.proposeRefinements(agent, analysis);
+      logger.info('Refinements proposed', { count: refinements.length });
+
+      // Step 6: Save iteration to database
+      const iteration = await this.saveIteration({
+        agentId,
+        iterationNumber,
+        strategy,
+        scanResults,
+        backtestResults,
+        analysis,
+        refinements,
+      });
+
+      logger.info('Iteration complete', {
+        iterationId: iteration.id,
+        status: iteration.iteration_status
+      });
+
+      // Phase 2 Autonomy Features: Post-iteration hooks
+      try {
+        // 1. Analyze performance and generate alerts
+        logger.info('Post-iteration: Analyzing performance');
+        await this.performanceMonitor.analyzeIteration(agentId, iteration.id);
+
+        // 2. Auto-approve refinements if enabled
+        logger.info('Post-iteration: Checking auto-approval');
+        await this.refinementApproval.evaluateAndApply(agentId, iteration.id);
+      } catch (error: any) {
+        logger.warn('Post-iteration autonomy hooks failed', { error: error.message });
+        // Don't fail the iteration if autonomy features fail
+      }
+
+      return {
+        iteration,
+        strategy,
+        scanResults,
+        backtestResults,
+        analysis,
+        refinements,
+      };
     } catch (error: any) {
-      console.error('⚠ Post-iteration autonomy hooks failed:', error.message);
-      // Don't fail the iteration if autonomy features fail
+      logger.error('Iteration failed', {
+        error: error.message,
+        stack: error.stack
+      });
+      throw error;
     }
-
-    return {
-      iteration,
-      strategy,
-      scanResults,
-      backtestResults,
-      analysis,
-      refinements,
-    };
   }
 
   /**
@@ -228,47 +261,21 @@ export class AgentLearningService {
       }
     });
 
-    // Step 2: Generate execution script
-    const config = this.buildBacktestConfig(agent);
-    const executionPrompt = iterationNumber === 1
-      ? `${agent.trading_style} trader with ${agent.risk_tolerance} risk tolerance.
-Focus on ${agent.pattern_focus.join(' or ')} patterns in ${agent.market_conditions.join(' or ')} market conditions.
-
-IMPORTANT: This script will receive SCANNER_SIGNALS from the pattern detection scanner.
-Generate a SIGNAL-BASED execution script that:
-- Checks if SCANNER_SIGNALS exists and uses it (required for learning)
-- Enters trades at signal times (next bar after signal)
-- Applies exit rules: stop loss ${config.stopLossPct}%, take profit ${config.takeProfitPct}%, market close at 15:55
-- Maximum ${config.maxTradesPerDay} trade(s) per day
-- Proper TypeScript type annotations for all functions
-- Falls back to autonomous detection only if SCANNER_SIGNALS is undefined`
-      : `${agent.trading_style} trader with accumulated knowledge: ${knowledgeSummary}.
-
-IMPORTANT: This script will receive SCANNER_SIGNALS from the pattern detection scanner.
-Improve the strategy based on previous iterations:
-- MUST use signal-based execution when SCANNER_SIGNALS is provided
-- Apply refined exit rules and risk management
-- Maintain proper TypeScript typing with explicit type annotations`;
-
-    console.log(`   Generating signal-based execution script with Claude...`);
-    const executionResult = await this.claude.generateScript(executionPrompt, {
-      strategyType: 'signal_based',
-      ticker: 'TEMPLATE_TICKER',
-      timeframe: agent.timeframe || '5min',
-      specificDates: [this.getDateDaysAgo(5)], // Will be replaced during execution
-      config: config
-    });
+    // Step 2: Execution templates (no longer generated via Claude)
+    // We now use the execution template library which tests all 5 templates
+    // This saves ~4000 tokens per iteration and ensures consistent backtesting
+    console.log(`   Skipping execution script generation - using template library`);
 
     const rationale = iterationNumber === 1
-      ? `Initial strategy: ${scannerResult.explanation}. ${executionResult.explanation || 'Basic execution rules.'}`
-      : `Iteration ${iterationNumber}: Applied learnings to refine scanner and execution logic.`;
+      ? `Initial strategy: ${scannerResult.explanation}. Using execution template library for backtesting.`
+      : `Iteration ${iterationNumber}: Applied learnings to refine scanner. Using execution template library for backtesting.`;
 
     return {
       scanScript: scannerResult.script,
-      executionScript: executionResult.script,  // Fixed: script not scriptCode
+      executionScript: '',  // No longer needed - using template library
       rationale,
       scannerTokenUsage: scannerResult.tokenUsage,
-      executionTokenUsage: executionResult.tokenUsage
+      executionTokenUsage: undefined  // No tokens used for execution
     };
   }
 
@@ -320,7 +327,8 @@ Improve the strategy based on previous iterations:
   }
 
   /**
-   * Run backtests on scan results using execution script
+   * Run backtests using multiple execution templates
+   * Tests all 5 templates and returns the best performing one
    */
   private async runBacktests(executionScript: string, scanResults: any[], tokenUsage?: any): Promise<any> {
     if (scanResults.length === 0) {
@@ -330,6 +338,7 @@ Improve the strategy based on previous iterations:
         sharpeRatio: 0,
         totalReturn: 0,
         trades: [],
+        templateResults: []
       };
     }
 
@@ -338,11 +347,9 @@ Improve the strategy based on previous iterations:
     // Apply signal filtering to reduce to manageable set
     const filteredResults = this.applySignalFiltering(scanResults, DEFAULT_BACKTEST_CONFIG);
 
-    console.log(`   Running backtests on ${filteredResults.length} filtered signals...`);
-    const allTrades: any[] = [];
-    let successfulBacktests = 0;
+    console.log(`   Testing ${DEFAULT_TEMPLATES.length} execution templates on ${filteredResults.length} filtered signals...`);
 
-    // Group signals by ticker to batch them
+    // Group signals by ticker
     const signalsByTicker: { [ticker: string]: any[] } = {};
     for (const signal of filteredResults) {
       if (!signalsByTicker[signal.ticker]) {
@@ -353,77 +360,119 @@ Improve the strategy based on previous iterations:
 
     console.log(`   Grouped into ${Object.keys(signalsByTicker).length} ticker(s)`);
 
-    // Execute backtests in parallel (up to 5 concurrent)
-    const backtestPromises = Object.entries(signalsByTicker).map(async ([ticker, signals]) => {
-      const scriptId = uuidv4();
-      const scriptPath = path.join(__dirname, '../../', `agent-backtest-${scriptId}.ts`);
+    // Test each template
+    const templateResults: any[] = [];
 
-      try {
-        // Inject signals into the script
-        const signalsJSON = JSON.stringify(signals, null, 2);
-        const signalInjection = `
-// SIGNALS FROM SCANNER (injected by learning system)
-const SCANNER_SIGNALS = ${signalsJSON};
-`;
+    for (const templateName of DEFAULT_TEMPLATES) {
+      const template = executionTemplates[templateName];
+      console.log(`   \n   📊 Testing template: ${template.name}`);
 
-        // Customize execution script with ticker and signals
-        const customizedScript = executionScript
-          .replace(/TEMPLATE_TICKER/g, ticker)
-          .replace(/const tradingDays: string\[\] = \[[^\]]*\];/s,
-            `const tradingDays: string[] = ${JSON.stringify([...new Set(signals.map((s: any) => s.signal_date))])};\n${signalInjection}`);
+      const allTrades: any[] = [];
+      let successfulBacktests = 0;
 
-        // Save to temp file
-        fs.writeFileSync(scriptPath, customizedScript);
+      // Execute backtests for all tickers with this template
+      const backtestPromises = Object.entries(signalsByTicker).map(async ([ticker, signals]) => {
+        const scriptId = uuidv4();
+        const scriptPath = path.join(__dirname, '../../generated-scripts/success', new Date().toISOString().split('T')[0], `${scriptId}-${templateName}-${ticker}.ts`);
 
-        // Execute with 120 second timeout
-        const result = await this.scriptExecution.executeScript(scriptPath, 120000, tokenUsage);
-
-        // Clean up
-        if (fs.existsSync(scriptPath)) {
-          fs.unlinkSync(scriptPath);
+        // Ensure directory exists
+        const dir = path.dirname(scriptPath);
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
         }
 
-        if (result.success && result.data) {
-          return { ticker, trades: result.data.trades || [], success: true };
-        } else {
-          console.log(`   ⚠️  Backtest failed for ${ticker}: ${result.error || 'Unknown error'}`);
-          return { ticker, trades: [], success: false, error: result.error };
-        }
-      } catch (error: any) {
-        console.error(`   Error backtesting ${ticker}: ${error.message}`);
-        // Clean up on error
         try {
-          if (fs.existsSync(scriptPath)) {
-            fs.unlinkSync(scriptPath);
+          // Render script using template
+          const script = this.templateRenderer.renderScript(template, signals, ticker);
+
+          // Save to file
+          fs.writeFileSync(scriptPath, script);
+
+          // Execute with 120 second timeout
+          const result = await this.scriptExecution.executeScript(scriptPath, 120000, tokenUsage);
+
+          // Note: Keep generated scripts for debugging
+
+          if (result.success && result.data) {
+            // Parse results - handle both array and object formats
+            let trades: any[] = [];
+            if (Array.isArray(result.data)) {
+              trades = result.data;
+            } else if (result.data.trades) {
+              trades = result.data.trades;
+            }
+
+            return { ticker, trades, success: true };
+          } else {
+            console.log(`      ⚠️  Backtest failed for ${ticker}: ${result.error || 'Unknown error'}`);
+            return { ticker, trades: [], success: false, error: result.error };
           }
-        } catch {}
-        return { ticker, trades: [], success: false, error: error.message };
-      }
-    });
+        } catch (error: any) {
+          console.error(`      Error backtesting ${ticker}: ${error.message}`);
+          return { ticker, trades: [], success: false, error: error.message };
+        }
+      });
 
-    // Wait for all backtests to complete
-    const results = await Promise.all(backtestPromises);
+      // Wait for all backtests to complete for this template
+      const results = await Promise.all(backtestPromises);
 
-    // Aggregate successful results
-    for (const result of results) {
-      if (result.success && result.trades.length > 0) {
-        allTrades.push(...result.trades);
-        successfulBacktests++;
+      // Aggregate successful results
+      for (const result of results) {
+        if (result.success && result.trades.length > 0) {
+          allTrades.push(...result.trades);
+          successfulBacktests++;
+        }
       }
+
+      console.log(`      Completed ${successfulBacktests}/${Object.keys(signalsByTicker).length} backtests`);
+      console.log(`      Total trades: ${allTrades.length}`);
+
+      // Calculate performance metrics
+      const aggregated = this.aggregateBacktestResults(allTrades);
+      const profitFactor = this.calculateProfitFactor(allTrades);
+
+      templateResults.push({
+        template: templateName,
+        templateDisplayName: template.name,
+        trades: allTrades,
+        totalTrades: allTrades.length,
+        winRate: aggregated.winRate,
+        sharpeRatio: aggregated.sharpeRatio,
+        totalReturn: aggregated.totalReturn,
+        profitFactor: profitFactor,
+        avgWin: this.calculateAvgWin(allTrades),
+        avgLoss: this.calculateAvgLoss(allTrades)
+      });
     }
 
-    console.log(`   Completed ${successfulBacktests}/${Object.keys(signalsByTicker).length} backtests`);
-    console.log(`   Total trades: ${allTrades.length}`);
+    // Sort by profit factor (best first)
+    templateResults.sort((a, b) => b.profitFactor - a.profitFactor);
 
-    // Aggregate results
-    const aggregated = this.aggregateBacktestResults(allTrades);
+    console.log(`\n   📈 Template Performance Summary:`);
+    templateResults.forEach((r, idx) => {
+      console.log(`   ${idx + 1}. ${r.templateDisplayName}: ` +
+        `PF ${r.profitFactor.toFixed(2)}, ` +
+        `WR ${(r.winRate * 100).toFixed(1)}%, ` +
+        `Trades ${r.totalTrades}, ` +
+        `Avg Win ${r.avgWin.toFixed(2)}%, ` +
+        `Avg Loss ${r.avgLoss.toFixed(2)}%`);
+    });
 
+    // Winner is the first (best profit factor)
+    const winner = templateResults[0];
+    console.log(`\n   🏆 Winner: ${winner.templateDisplayName}`);
+
+    // Return winner's results as primary, with all template results included
     return {
-      totalTrades: allTrades.length,
-      winRate: aggregated.winRate,
-      sharpeRatio: aggregated.sharpeRatio,
-      totalReturn: aggregated.totalReturn,
-      trades: allTrades,
+      totalTrades: winner.totalTrades,
+      winRate: winner.winRate,
+      sharpeRatio: winner.sharpeRatio,
+      totalReturn: winner.totalReturn,
+      trades: winner.trades,
+      profitFactor: winner.profitFactor,
+      templateResults: templateResults,  // All template results for analysis
+      winningTemplate: winner.template,
+      recommendation: `${winner.templateDisplayName} template performed best with profit factor ${winner.profitFactor.toFixed(2)}`
     };
   }
 
@@ -455,6 +504,44 @@ const SCANNER_SIGNALS = ${signalsJSON};
     const sharpeRatio = stdDev > 0 ? (avgReturn / stdDev) * Math.sqrt(252) : 0;
 
     return { winRate, sharpeRatio, totalReturn };
+  }
+
+  /**
+   * Calculate profit factor (gross profit / gross loss)
+   */
+  private calculateProfitFactor(trades: any[]): number {
+    if (trades.length === 0) return 0;
+
+    const winners = trades.filter(t => (t.pnl || t.profit || 0) > 0);
+    const losers = trades.filter(t => (t.pnl || t.profit || 0) < 0);
+
+    const grossProfit = winners.reduce((sum, t) => sum + Math.abs(t.pnl || t.profit || 0), 0);
+    const grossLoss = losers.reduce((sum, t) => sum + Math.abs(t.pnl || t.profit || 0), 0);
+
+    if (grossLoss === 0) return grossProfit > 0 ? 999 : 0;
+    return grossProfit / grossLoss;
+  }
+
+  /**
+   * Calculate average win percentage
+   */
+  private calculateAvgWin(trades: any[]): number {
+    const winners = trades.filter(t => (t.pnlPercent || t.profitPercent || 0) > 0);
+    if (winners.length === 0) return 0;
+
+    const totalWinPct = winners.reduce((sum, t) => sum + Math.abs(t.pnlPercent || t.profitPercent || 0), 0);
+    return totalWinPct / winners.length;
+  }
+
+  /**
+   * Calculate average loss percentage
+   */
+  private calculateAvgLoss(trades: any[]): number {
+    const losers = trades.filter(t => (t.pnlPercent || t.profitPercent || 0) < 0);
+    if (losers.length === 0) return 0;
+
+    const totalLossPct = losers.reduce((sum, t) => sum + Math.abs(t.pnlPercent || t.profitPercent || 0), 0);
+    return totalLossPct / losers.length;
   }
 
   /**

@@ -167,7 +167,7 @@ Pre-built, battle-tested exit strategies stored as TypeScript templates. No API 
 - Tight risk management without indicators
 
 **Notes:**
-- Future enhancements may include dynamic position sizing based on volatility
+- Future enhancements may include dynamic position sizing based on volatility or setup quality (bet bigger on A+ setups)
 - Future: Multiple entry/exit scaling (add to winners, scale out at targets)
 - Future: Lower timeframe support (1min, 10sec) for better execution fills
 
