@@ -468,8 +468,8 @@ if (useSignalBasedExecution) {
 | **Null handling** | \`let reason: string = null;\` | \`let reason: string | null = null;\` or \`let reason = '';\` |
 | **Array init** | \`const days: string[] = [null];\` | \`const days: string[] = [];\` |
 | **Scanner fields** | \`signal.date, signal.time\` | \`signal.signal_date, signal.signal_time\` |
-| **Optional metrics** | \`if (metrics.trend === 'bullish')\` | \`if (metrics.trend === 'bullish' || metrics.direction === 'LONG')\` or derive from data |
-| **Metrics access** | Assume metrics exist | Use \`metrics.vwap || calculateVWAP(bars)\` or check \`metrics.trend ? ... : ...\` |
+| **Metrics access** | \`const rsi = metrics.rsi; const vwap = metrics.vwap;\` | \`const rsi = helpers.calculateRSI(bars, 14); const vwap = helpers.calculateVWAP(bars);\` - Always calculate, never assume metrics exist |
+| **Side determination** | \`const side = metrics.trend === 'bullish' ? 'LONG' : 'SHORT';\` | Derive from price action: \`const side = bars[signalBarIndex].close > vwap ? 'LONG' : 'SHORT';\` |
 | **TradeResult** | Missing ticker field | \`{ date, ticker, ... }\` (both required) |
 | **Date dicts** | \`const d = bars.reduce((acc, b) => { acc[b.date] = b; }, {});\` | \`const d: Record<string, Bar> = {}; bars.forEach((b: Bar) => { d[b.date] = b; });\` |
 | **Complete code** | Truncated scripts | Finish ALL braces, include runBacktest().catch(console.error); |
