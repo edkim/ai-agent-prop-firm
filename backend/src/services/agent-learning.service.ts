@@ -324,7 +324,8 @@ Improve the strategy based on previous iterations:
   }
 
   /**
-   * Run backtests on scan results using execution script
+   * Run backtests using multiple execution templates
+   * Tests all 5 templates and returns the best performing one
    */
   private async runBacktests(executionScript: string, scanResults: any[], tokenUsage?: any): Promise<any> {
     if (scanResults.length === 0) {
@@ -334,6 +335,7 @@ Improve the strategy based on previous iterations:
         sharpeRatio: 0,
         totalReturn: 0,
         trades: [],
+        templateResults: []
       };
     }
 
@@ -342,11 +344,9 @@ Improve the strategy based on previous iterations:
     // Apply signal filtering to reduce to manageable set
     const filteredResults = this.applySignalFiltering(scanResults, DEFAULT_BACKTEST_CONFIG);
 
-    console.log(`   Running backtests on ${filteredResults.length} filtered signals...`);
-    const allTrades: any[] = [];
-    let successfulBacktests = 0;
+    console.log(`   Testing ${DEFAULT_TEMPLATES.length} execution templates on ${filteredResults.length} filtered signals...`);
 
-    // Group signals by ticker to batch them
+    // Group signals by ticker
     const signalsByTicker: { [ticker: string]: any[] } = {};
     for (const signal of filteredResults) {
       if (!signalsByTicker[signal.ticker]) {
@@ -357,77 +357,119 @@ Improve the strategy based on previous iterations:
 
     console.log(`   Grouped into ${Object.keys(signalsByTicker).length} ticker(s)`);
 
-    // Execute backtests in parallel (up to 5 concurrent)
-    const backtestPromises = Object.entries(signalsByTicker).map(async ([ticker, signals]) => {
-      const scriptId = uuidv4();
-      const scriptPath = path.join(__dirname, '../../', `agent-backtest-${scriptId}.ts`);
+    // Test each template
+    const templateResults: any[] = [];
 
-      try {
-        // Inject signals into the script
-        const signalsJSON = JSON.stringify(signals, null, 2);
-        const signalInjection = `
-// SIGNALS FROM SCANNER (injected by learning system)
-const SCANNER_SIGNALS = ${signalsJSON};
-`;
+    for (const templateName of DEFAULT_TEMPLATES) {
+      const template = executionTemplates[templateName];
+      console.log(`   \n   📊 Testing template: ${template.name}`);
 
-        // Customize execution script with ticker and signals
-        const customizedScript = executionScript
-          .replace(/TEMPLATE_TICKER/g, ticker)
-          .replace(/const tradingDays: string\[\] = \[[^\]]*\];/s,
-            `const tradingDays: string[] = ${JSON.stringify([...new Set(signals.map((s: any) => s.signal_date))])};\n${signalInjection}`);
+      const allTrades: any[] = [];
+      let successfulBacktests = 0;
 
-        // Save to temp file
-        fs.writeFileSync(scriptPath, customizedScript);
+      // Execute backtests for all tickers with this template
+      const backtestPromises = Object.entries(signalsByTicker).map(async ([ticker, signals]) => {
+        const scriptId = uuidv4();
+        const scriptPath = path.join(__dirname, '../../generated-scripts/success', new Date().toISOString().split('T')[0], `${scriptId}-${templateName}-${ticker}.ts`);
 
-        // Execute with 120 second timeout
-        const result = await this.scriptExecution.executeScript(scriptPath, 120000, tokenUsage);
-
-        // Clean up
-        if (fs.existsSync(scriptPath)) {
-          fs.unlinkSync(scriptPath);
+        // Ensure directory exists
+        const dir = path.dirname(scriptPath);
+        if (!fs.existsSync(dir)) {
+          fs.mkdirSync(dir, { recursive: true });
         }
 
-        if (result.success && result.data) {
-          return { ticker, trades: result.data.trades || [], success: true };
-        } else {
-          console.log(`   ⚠️  Backtest failed for ${ticker}: ${result.error || 'Unknown error'}`);
-          return { ticker, trades: [], success: false, error: result.error };
-        }
-      } catch (error: any) {
-        console.error(`   Error backtesting ${ticker}: ${error.message}`);
-        // Clean up on error
         try {
-          if (fs.existsSync(scriptPath)) {
-            fs.unlinkSync(scriptPath);
+          // Render script using template
+          const script = this.templateRenderer.renderScript(template, signals, ticker);
+
+          // Save to file
+          fs.writeFileSync(scriptPath, script);
+
+          // Execute with 120 second timeout
+          const result = await this.scriptExecution.executeScript(scriptPath, 120000, tokenUsage);
+
+          // Note: Keep generated scripts for debugging
+
+          if (result.success && result.data) {
+            // Parse results - handle both array and object formats
+            let trades: any[] = [];
+            if (Array.isArray(result.data)) {
+              trades = result.data;
+            } else if (result.data.trades) {
+              trades = result.data.trades;
+            }
+
+            return { ticker, trades, success: true };
+          } else {
+            console.log(`      ⚠️  Backtest failed for ${ticker}: ${result.error || 'Unknown error'}`);
+            return { ticker, trades: [], success: false, error: result.error };
           }
-        } catch {}
-        return { ticker, trades: [], success: false, error: error.message };
-      }
-    });
+        } catch (error: any) {
+          console.error(`      Error backtesting ${ticker}: ${error.message}`);
+          return { ticker, trades: [], success: false, error: error.message };
+        }
+      });
 
-    // Wait for all backtests to complete
-    const results = await Promise.all(backtestPromises);
+      // Wait for all backtests to complete for this template
+      const results = await Promise.all(backtestPromises);
 
-    // Aggregate successful results
-    for (const result of results) {
-      if (result.success && result.trades.length > 0) {
-        allTrades.push(...result.trades);
-        successfulBacktests++;
+      // Aggregate successful results
+      for (const result of results) {
+        if (result.success && result.trades.length > 0) {
+          allTrades.push(...result.trades);
+          successfulBacktests++;
+        }
       }
+
+      console.log(`      Completed ${successfulBacktests}/${Object.keys(signalsByTicker).length} backtests`);
+      console.log(`      Total trades: ${allTrades.length}`);
+
+      // Calculate performance metrics
+      const aggregated = this.aggregateBacktestResults(allTrades);
+      const profitFactor = this.calculateProfitFactor(allTrades);
+
+      templateResults.push({
+        template: templateName,
+        templateDisplayName: template.name,
+        trades: allTrades,
+        totalTrades: allTrades.length,
+        winRate: aggregated.winRate,
+        sharpeRatio: aggregated.sharpeRatio,
+        totalReturn: aggregated.totalReturn,
+        profitFactor: profitFactor,
+        avgWin: this.calculateAvgWin(allTrades),
+        avgLoss: this.calculateAvgLoss(allTrades)
+      });
     }
 
-    console.log(`   Completed ${successfulBacktests}/${Object.keys(signalsByTicker).length} backtests`);
-    console.log(`   Total trades: ${allTrades.length}`);
+    // Sort by profit factor (best first)
+    templateResults.sort((a, b) => b.profitFactor - a.profitFactor);
 
-    // Aggregate results
-    const aggregated = this.aggregateBacktestResults(allTrades);
+    console.log(`\n   📈 Template Performance Summary:`);
+    templateResults.forEach((r, idx) => {
+      console.log(`   ${idx + 1}. ${r.templateDisplayName}: ` +
+        `PF ${r.profitFactor.toFixed(2)}, ` +
+        `WR ${(r.winRate * 100).toFixed(1)}%, ` +
+        `Trades ${r.totalTrades}, ` +
+        `Avg Win ${r.avgWin.toFixed(2)}%, ` +
+        `Avg Loss ${r.avgLoss.toFixed(2)}%`);
+    });
 
+    // Winner is the first (best profit factor)
+    const winner = templateResults[0];
+    console.log(`\n   🏆 Winner: ${winner.templateDisplayName}`);
+
+    // Return winner's results as primary, with all template results included
     return {
-      totalTrades: allTrades.length,
-      winRate: aggregated.winRate,
-      sharpeRatio: aggregated.sharpeRatio,
-      totalReturn: aggregated.totalReturn,
-      trades: allTrades,
+      totalTrades: winner.totalTrades,
+      winRate: winner.winRate,
+      sharpeRatio: winner.sharpeRatio,
+      totalReturn: winner.totalReturn,
+      trades: winner.trades,
+      profitFactor: winner.profitFactor,
+      templateResults: templateResults,  // All template results for analysis
+      winningTemplate: winner.template,
+      recommendation: `${winner.templateDisplayName} template performed best with profit factor ${winner.profitFactor.toFixed(2)}`
     };
   }
 
@@ -459,6 +501,44 @@ const SCANNER_SIGNALS = ${signalsJSON};
     const sharpeRatio = stdDev > 0 ? (avgReturn / stdDev) * Math.sqrt(252) : 0;
 
     return { winRate, sharpeRatio, totalReturn };
+  }
+
+  /**
+   * Calculate profit factor (gross profit / gross loss)
+   */
+  private calculateProfitFactor(trades: any[]): number {
+    if (trades.length === 0) return 0;
+
+    const winners = trades.filter(t => (t.pnl || t.profit || 0) > 0);
+    const losers = trades.filter(t => (t.pnl || t.profit || 0) < 0);
+
+    const grossProfit = winners.reduce((sum, t) => sum + Math.abs(t.pnl || t.profit || 0), 0);
+    const grossLoss = losers.reduce((sum, t) => sum + Math.abs(t.pnl || t.profit || 0), 0);
+
+    if (grossLoss === 0) return grossProfit > 0 ? 999 : 0;
+    return grossProfit / grossLoss;
+  }
+
+  /**
+   * Calculate average win percentage
+   */
+  private calculateAvgWin(trades: any[]): number {
+    const winners = trades.filter(t => (t.pnlPercent || t.profitPercent || 0) > 0);
+    if (winners.length === 0) return 0;
+
+    const totalWinPct = winners.reduce((sum, t) => sum + Math.abs(t.pnlPercent || t.profitPercent || 0), 0);
+    return totalWinPct / winners.length;
+  }
+
+  /**
+   * Calculate average loss percentage
+   */
+  private calculateAvgLoss(trades: any[]): number {
+    const losers = trades.filter(t => (t.pnlPercent || t.profitPercent || 0) < 0);
+    if (losers.length === 0) return 0;
+
+    const totalLossPct = losers.reduce((sum, t) => sum + Math.abs(t.pnlPercent || t.profitPercent || 0), 0);
+    return totalLossPct / losers.length;
   }
 
   /**
