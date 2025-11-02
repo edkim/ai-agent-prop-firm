@@ -303,7 +303,7 @@ async function runBacktest() {
 
   const ticker = 'TEMPLATE_TICKER';
   const timeframe = 'TEMPLATE_TIMEFRAME';
-  const tradingDays: string[] = []; // Fill with dates
+  const tradingDays: string[] = []; // NEVER use [null] - always empty array []
 
   const results: TradeResult[] = [];
 
@@ -361,36 +361,46 @@ if (bars[i].close > vwap && rsi < 30) { /* oversold bounce */ }
 
 ## Trade Execution
 
-Next-bar entry pattern:
+Next-bar entry pattern (use proper types - NEVER mix boolean and string):
 
-let signalDetected = false;
-let position: { entry: number; entryTime: string; highestPrice: number } | null = null;
+let signalDetected: false | 'LONG' | 'SHORT' = false;  // Union type for signal direction
+let position: { side: 'LONG' | 'SHORT'; entry: number; entryTime: string; highestPrice: number; lowestPrice: number } | null = null;
 
 for (let i = 0; i < bars.length; i++) {
   const bar = bars[i];
   if (bar.timeOfDay < '09:30:00') continue;
 
   if (signalDetected && !position) {
-    position = { entry: bar.open, entryTime: bar.timeOfDay, highestPrice: bar.high };
+    const side = signalDetected; // 'LONG' or 'SHORT', NOT boolean
+    position = { side, entry: bar.open, entryTime: bar.timeOfDay, highestPrice: bar.high, lowestPrice: bar.low };
     signalDetected = false;
   }
 
-  if (!position && !signalDetected && /* entry condition */) {
-    signalDetected = true;
+  if (!position && !signalDetected) {
+    // Detect LONG signals
+    if (/* long entry condition */) {
+      signalDetected = 'LONG';  // String, NOT true
+    }
+    // Detect SHORT signals
+    else if (/* short entry condition */) {
+      signalDetected = 'SHORT';  // String, NOT true
+    }
   }
 
   if (position) {
     position.highestPrice = Math.max(position.highestPrice, bar.high);
+    position.lowestPrice = Math.min(position.lowestPrice, bar.low);
 
     if (/* exit condition */ || bar.timeOfDay >= '15:55:00') {
+      const pnl = position.side === 'LONG' ? bar.close - position.entry : position.entry - bar.close;
       results.push({
-        date, ticker, side: 'LONG',
+        date, ticker, side: position.side,
         entryTime: position.entryTime, entryPrice: position.entry,
         exitTime: bar.timeOfDay, exitPrice: bar.close,
-        pnl: bar.close - position.entry,
-        pnlPercent: ((bar.close - position.entry) / position.entry) * 100,
+        pnl, pnlPercent: (pnl / position.entry) * 100,
         exitReason: 'Stop/Profit/Close',
-        highestPrice: position.highestPrice
+        highestPrice: position.highestPrice,
+        lowestPrice: position.lowestPrice
       });
       position = null;
     }
@@ -496,14 +506,18 @@ if (useSignalBasedExecution) {
 
 ## TypeScript Requirements
 
+⚠️ **CRITICAL TYPESCRIPT RULES - FOLLOW EXACTLY:**
+
 | Rule | ❌ Wrong | ✅ Correct |
 |------|----------|------------|
+| **🚫 NULL ARRAYS** | \`const days: string[] = [null];\` | \`const days: string[] = [];\` ← EMPTY ARRAY, NEVER NULL |
+| **🚫 TYPE MIXING** | \`let signal = false; signal = 'LONG';\` (mixes boolean/string) | \`let signal: false \| 'LONG' \| 'SHORT' = false;\` ← UNION TYPE |
+| **🚫 BOOLEAN AS STRING** | \`if (signalDetected) { side = signalDetected; }\` where signalDetected is boolean | \`let signal: false \| 'LONG' \| 'SHORT' = false;\` then \`signal = 'LONG';\` |
 | **Callback types** | \`bars.reduce((acc, bar) => ...)\` | \`bars.reduce((acc: number, bar: Bar) => ...)\` |
 | **Null handling** | \`let reason: string = null;\` | \`let reason: string | null = null;\` or \`let reason = '';\` |
-| **Array init** | \`const days: string[] = [null];\` | \`const days: string[] = [];\` |
 | **Scanner fields** | \`signal.date, signal.time\` | \`signal.signal_date, signal.signal_time\` |
-| **Metrics access** | \`const rsi = metrics.rsi; const vwap = metrics.vwap;\` | \`const rsi = helpers.calculateRSI(bars, 14); const vwap = helpers.calculateVWAP(bars);\` - Always calculate, never assume metrics exist |
-| **Side determination** | \`const side = metrics.trend === 'bullish' ? 'LONG' : 'SHORT';\` | Derive from price action: \`const side = bars[signalBarIndex].close > vwap ? 'LONG' : 'SHORT';\` |
+| **Metrics access** | \`const rsi = metrics.rsi;\` | \`const rsi = helpers.calculateRSI(bars, 14);\` - Always calculate, never assume metrics exist |
+| **Side determination** | \`const side = metrics.trend === 'bullish' ? 'LONG' : 'SHORT';\` | Derive from price action: \`const side = bar.close > vwap ? 'LONG' : 'SHORT';\` |
 | **TradeResult** | Missing ticker field | \`{ date, ticker, ... }\` (both required) |
 | **Date dicts** | \`const d = bars.reduce((acc, b) => { acc[b.date] = b; }, {});\` | \`const d: Record<string, Bar> = {}; bars.forEach((b: Bar) => { d[b.date] = b; });\` |
 | **Complete code** | Truncated scripts | Finish ALL braces, include runBacktest().catch(console.error); |
