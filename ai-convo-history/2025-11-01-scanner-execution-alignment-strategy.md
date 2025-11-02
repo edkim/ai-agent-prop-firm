@@ -210,6 +210,85 @@ Iteration 5: Test timing window (first 1hr vs 2hr vs 3hr)
 
 ---
 
+#### Recommended: Adaptive Approach (Option 3.5)
+
+**Based on discussion, we're adopting an adaptive strategy that respects user intent:**
+
+**How It Works:**
+
+1. **Iteration 1**: Use user's prompt as-is (respect their initial intent)
+2. **Classify** based on results:
+   - **High signal count (>25)**: Discovery mode → analyze patterns, tighten criteria
+   - **Low signal count (<10)**: Refinement mode → optimize parameters, test variations
+   - **Moderate (10-25)**: Hybrid mode → balanced refinement
+
+3. **Adapt** subsequent iterations based on classification
+
+**Implementation:**
+
+```typescript
+async runIteration(agentId: string, iterationNumber: number) {
+  const scanResults = await this.runScan(scanScript);
+  const signalCount = scanResults.length;
+
+  if (iterationNumber === 1) {
+    // Classify based on results
+    let learningStrategy: 'discovery' | 'refinement' | 'hybrid';
+    let guidance: string;
+
+    if (signalCount > 25) {
+      learningStrategy = 'discovery';
+      guidance = `
+        Found ${signalCount} signals - indicates broad search space.
+        Next iteration: Analyze winning patterns, tighten criteria to 10-15 signals.
+      `;
+    } else if (signalCount < 10) {
+      learningStrategy = 'refinement';
+      guidance = `
+        Found ${signalCount} signals - focused strategy detected.
+        Next iteration: A/B test parameters to optimize performance.
+      `;
+    } else {
+      learningStrategy = 'hybrid';
+      guidance = `
+        Found ${signalCount} signals - balanced approach.
+        Next iteration: Refine based on trade quality metrics.
+      `;
+    }
+
+    // Store for next iteration
+    await this.storeLearningStrategy(agentId, learningStrategy, guidance);
+  }
+}
+```
+
+**Benefits:**
+- ✅ Respects user's initial prompt (doesn't override)
+- ✅ Adapts to actual results (data-driven)
+- ✅ No upfront decision needed
+- ✅ Self-correcting based on signal volume
+
+**Example Flow:**
+
+```
+User prompt: "Find parabolic moves showing exhaustion"
+
+Iteration 1:
+→ Scanner interprets broadly (50%+ gain, any cross)
+→ Results: 35 signals → DISCOVERY MODE
+
+Iteration 2 (auto-guidance):
+→ "Analyze winners: avg 120% gain, RSI > 70, cross before 10 AM"
+→ Tighten criteria based on learnings
+→ Results: 12 signals → HYBRID MODE
+
+Iteration 3+:
+→ Optimize parameters (RSI 70 vs 75, etc.)
+→ Maintain edge, improve execution
+```
+
+---
+
 ### 2. Finding Repeatable Edge
 
 **Question:** How do we increase chances of finding a strategy with consistent alpha?
@@ -490,6 +569,344 @@ Why: More signals = more compute time (not API cost)
 - 250,000 tokens ≈ **$6.30 for 10 iterations**
 
 **Savings: 94% cost reduction ($6.30 → $0.40)**
+
+---
+
+## Dual Learning Tracks: Scanner + Execution
+
+**Key Insight:** With scanner owning entry criteria and execution owning exits, we have **two independent but complementary learning processes**.
+
+### The Two Tracks
+
+```
+Scanner Learning Track:  "WHAT to trade" (entry criteria evolution)
+Execution Learning Track: "HOW to trade it" (exit strategy evolution)
+```
+
+### How They Work Together
+
+**Iteration Structure:**
+
+```
+Iteration N:
+  ├─ Scanner generates signals (with current entry criteria)
+  ├─ Execution trades ALL signals (with current exit strategy)
+  ├─ Analysis separates entry quality from exit quality
+  │  ├─ Scanner analysis: Which entry patterns led to wins?
+  │  └─ Execution analysis: Which exits captured most profit?
+  └─ Dual refinement for Iteration N+1
+     ├─ Scanner: Tighten entry criteria based on winning patterns
+     └─ Execution: Optimize exits based on trade management
+```
+
+### Scanner Learning (Entry Evolution)
+
+**What It Learns:**
+- Which patterns correlate with winning trades
+- Optimal parameter thresholds (RSI, volume, timing)
+- Signal quality vs quantity trade-offs
+
+**Example Progression:**
+
+```
+Iteration 1:
+Scanner: 3-day gain > 50%, RSI > 60, volume > 1.5×
+→ 35 signals, 40% win rate
+
+Analysis: "Winners averaged 120% gain (vs 65% for losers)"
+
+Iteration 2:
+Scanner: 3-day gain > 100%, RSI > 70, volume > 2×
+→ 14 signals, 57% win rate ✅
+
+Analysis: "Win rate improved, signal quality up"
+
+Iteration 3:
+Scanner: 3-day gain > 100%, RSI > 75, volume > 2.5×
+→ 8 signals, 62% win rate ✅
+```
+
+**Guidance Focus:**
+- Pattern identification
+- Threshold optimization
+- Signal filtering
+- **NOT:** Exit strategy or trade management
+
+---
+
+### Execution Learning (Exit Evolution)
+
+**What It Learns:**
+- Optimal stop loss placement
+- Take profit targets
+- Trailing stop activation and width
+- Time-based exit rules
+- Indicator-based exit signals
+
+**Example Progression:**
+
+```
+Iteration 1:
+Execution: Stop 1.5%, Target 2.0%, Trailing 1.0%
+→ Avg win +1.8%, Avg loss -1.5%
+
+Analysis: "Trailing stops exit too early (avg +0.8% vs +2.0% potential)"
+
+Iteration 2:
+Execution: Stop 1.5%, Target 2.5%, Trailing 1.5%
+→ Avg win +2.2%, Avg loss -1.5% ✅
+
+Analysis: "Better profit capture, risk still controlled"
+
+Iteration 3:
+Execution: Stop 1.5%, Target 3.0%, Trailing 1.5%
+→ Avg win +2.6%, Avg loss -1.5% ✅
+```
+
+**Guidance Focus:**
+- Exit timing
+- Risk/reward optimization
+- Position management
+- **NOT:** Entry criteria or signal generation
+
+---
+
+### Coordinated Analysis
+
+**Analysis service separates concerns:**
+
+```typescript
+async analyzeResults(agent, backtestResults, scanResults, iteration) {
+  return {
+    summary: `Iteration ${iteration.number}: ${scanResults.length} signals → ${backtestResults.totalTrades} trades`,
+
+    // SCANNER TRACK
+    entry_quality: {
+      signal_count: scanResults.length,
+      win_rate: backtestResults.winRate,
+      winning_patterns: this.analyzeWinningPatterns(scanResults, backtestResults),
+      scanner_recommendations: [
+        "Winning trades had avg RSI 76 (vs 68 for losers) → raise threshold to 75",
+        "All wins occurred before 10 AM → add time filter"
+      ]
+    },
+
+    // EXECUTION TRACK
+    exit_quality: {
+      avg_win: backtestResults.avgWin,
+      avg_loss: backtestResults.avgLoss,
+      profit_factor: backtestResults.profitFactor,
+      exit_breakdown: this.analyzeExitReasons(backtestResults),
+      execution_recommendations: [
+        "Trailing stops working well (+2.0% avg) → maintain",
+        "Take profit rarely hit (only 30% of wins) → consider widening to 3.5%"
+      ]
+    },
+
+    // COMBINED STRATEGIC DIRECTION
+    strategic_insights: [
+      "Entry quality improved (40% → 57% win rate)",
+      "Exit efficiency improved (+1.8% → +2.2% avg win)",
+      "Combined profit factor: 1.2 → 1.8 ✅"
+    ]
+  };
+}
+```
+
+---
+
+### Separation of Concerns
+
+**Scanner Prompt (Iteration N+1):**
+
+```
+Previous iteration entry quality:
+- 14 signals generated, 57% win rate
+- Winners had: RSI > 75, volume > 3×, cross before 10 AM
+- Losers had: RSI 60-70, lower volume, afternoon crosses
+
+ENTRY CRITERIA REFINEMENTS:
+- Raise RSI threshold from 70 to 75
+- Increase volume requirement from 2× to 2.5×
+- Add time filter: signals before 10 AM only
+
+Generate scanner with these refined entry criteria.
+DO NOT include exit rules - execution handles that.
+```
+
+**Execution Prompt (Iteration N+1):**
+
+```
+Previous iteration exit performance:
+- Stop loss: Hit on 43% of trades (appropriate)
+- Take profit: Hit on 30% of trades (could be wider)
+- Trailing stop: Hit on 38% of trades, avg +2.0% (working well)
+- Winners averaged +2.2%, losers averaged -1.5%
+
+EXIT STRATEGY REFINEMENTS:
+- Widen take profit from 2.5% to 3.0%
+- Maintain stop loss at 1.5%
+- Maintain trailing stop at 1.5%
+
+Generate execution script with refined exits.
+IMPORTANT: Script MUST enter on ALL signals - no filtering.
+```
+
+---
+
+### Adaptive Strategy Applied to Both Tracks
+
+**Discovery Mode** (High signal count):
+
+```
+Scanner Focus:
+→ "Too many signals - analyze winning patterns"
+→ Tighten entry criteria aggressively
+→ Goal: Reduce to 10-15 high-quality signals
+
+Execution Focus:
+→ "Wide variety of setups - use conservative exits"
+→ Protect capital with tight stops
+→ Don't over-optimize until entries are validated
+```
+
+**Refinement Mode** (Low signal count):
+
+```
+Scanner Focus:
+→ "Good signal count - optimize thresholds"
+→ Fine-tune parameters (RSI 70 vs 75 vs 77)
+→ Maintain signal quality
+
+Execution Focus:
+→ "High-quality entries - can use wider exits"
+→ Let winners run more
+→ Optimize for profit capture, not just win rate
+```
+
+**Hybrid Mode** (Moderate signal count):
+
+```
+Scanner Focus:
+→ "Balanced - refine based on quality metrics"
+→ Adjust criteria if win rate < 45%
+
+Execution Focus:
+→ "Balanced risk management"
+→ Standard optimization approach
+```
+
+---
+
+### Example: Full Dual-Track Flow
+
+**Iteration 1 Results:**
+```
+Scanner: 35 signals
+Execution: 14 wins / 35 trades (40% win rate), +1.8% avg win
+System classification: DISCOVERY MODE
+```
+
+**Iteration 2 Plan:**
+
+**Scanner Task:**
+```
+Focus: Reduce signal count, improve quality
+Action: Add RSI > 70, volume > 2×, time < 10 AM filters
+Expected: 12-15 signals, 50%+ win rate
+```
+
+**Execution Task:**
+```
+Focus: Protect capital during discovery
+Action: Keep stops conservative (1.5%), widen targets slightly (2.5%)
+Expected: Maintain -1.5% avg loss, improve avg win
+```
+
+**Iteration 2 Results:**
+```
+Scanner: 14 signals
+Execution: 8 wins / 14 trades (57% win rate), +2.2% avg win
+System classification: HYBRID MODE
+```
+
+**Iteration 3 Plan:**
+
+**Scanner Task:**
+```
+Focus: Validate current criteria are stable
+Action: Test RSI 75 vs 70 (minor variation)
+Expected: 10-12 signals, maintain 55%+ win rate
+```
+
+**Execution Task:**
+```
+Focus: Optimize for quality entries
+Action: Widen trailing stops to capture more upside
+Expected: +2.5%+ avg wins
+```
+
+---
+
+### Key Principles
+
+**1. Scanner Never Optimizes Exits**
+- Scanner prompt includes overall win rate
+- Includes which entry patterns worked
+- **Excludes** exit reasons, profit targets, stop placement
+
+**2. Execution Never Validates Entries**
+- Execution prompt includes exit performance metrics
+- Includes risk/reward analysis
+- **Excludes** signal generation criteria
+
+**3. Analysis Connects Them**
+- Evaluates: Are we finding good opportunities? → Scanner feedback
+- Evaluates: Are we managing them well? → Execution feedback
+- Evaluates: Is combined system profitable? → Strategic direction
+
+**4. Both Evolve Simultaneously**
+- Scanner gets better at finding trades (40% → 57% win rate)
+- Execution gets better at managing them (+1.8% → +2.2% avg win)
+- Combined improvement is exponential (1.2 → 1.8 profit factor)
+
+---
+
+### Benefits of Dual-Track Learning
+
+**1. Faster Convergence**
+- Two independent optimization processes
+- Scanner and execution improve in parallel
+- Don't wait for one to perfect before optimizing the other
+
+**2. Clear Attribution**
+- Win rate degradation → Scanner problem (bad entries)
+- Profit factor degradation → Execution problem (bad exits)
+- Both degrading → Strategy fundamentally broken
+
+**3. Reusable Components**
+- Good execution strategy can be applied to different scanners
+- Good scanner can be tested with multiple exit strategies
+- Mix and match to find optimal combinations
+
+**4. Easier Debugging**
+- "Win rate is 60% but profit factor is 1.1" → Execution issue (exits too early)
+- "Win rate is 30% but profit factor is 1.5" → Scanner issue (bad entries, lucky exits)
+
+---
+
+## Related Documents
+
+**Companion Document:** [Learning Enhancements Implementation Plan](./2025-11-01-learning-enhancements-implementation-plan.md)
+
+This companion document details:
+- Priority 1: Execution Template Library (reusable exit strategies)
+- Priority 2: Multiple Execution Scripts per Scan (test 5 exits per scan)
+- Priority 3: Manual Guidance Between Iterations
+- Priority 4: Grid Search for Parameters
+- Priority 5: AI-Powered Execution Analysis
+
+Expected impact: 92% cost reduction, 67% faster learning
 
 ---
 
