@@ -16,6 +16,16 @@ import {
 } from '../types/script.types';
 import logger from './logger.service';
 
+interface TokenUsageMetadata {
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+  max_tokens: number;
+  utilization_percent: string;
+  stop_reason: string;
+  truncated: boolean;
+}
+
 interface ScriptMetadata {
   scriptId: string;
   agentId?: string;
@@ -30,6 +40,7 @@ interface ScriptMetadata {
   signals?: number;
   stdout?: string;
   stderr?: string;
+  tokenUsage?: TokenUsageMetadata;
 }
 
 const execAsync = promisify(exec);
@@ -45,7 +56,8 @@ export class ScriptExecutionService {
   private async saveScriptWithMetadata(
     scriptPath: string,
     result: ScriptExecutionResult,
-    agentId?: string
+    agentId?: string,
+    tokenUsage?: TokenUsageMetadata
   ): Promise<void> {
     try {
       // Read the script content
@@ -59,7 +71,7 @@ export class ScriptExecutionService {
       const status = result.success ? 'success' : 'failed';
 
       // Parse compilation errors from stderr
-      const compilationErrors = this.extractCompilationErrors(result.stderr);
+      const compilationErrors = this.extractCompilationErrors(result.stderr || '');
 
       // Parse trade/signal counts from data
       let trades = 0;
@@ -83,11 +95,15 @@ export class ScriptExecutionService {
         language,
         compilationErrors: compilationErrors.length > 0 ? compilationErrors : undefined,
         runtimeErrors: result.success ? undefined : result.error,
-        executionTime: result.executionTime,
+        executionTime: result.executionTime || 0,
         trades: trades > 0 ? trades : undefined,
         signals: signals > 0 ? signals : undefined,
         stdout: result.stdout?.substring(0, 1000), // First 1000 chars
         stderr: result.stderr?.substring(0, 1000),
+        tokenUsage: tokenUsage ? {
+          ...tokenUsage,
+          truncated: tokenUsage.stop_reason === 'max_tokens'
+        } : undefined,
       };
 
       // Create date-based directory structure
@@ -193,7 +209,11 @@ export class ScriptExecutionService {
   /**
    * Execute a TypeScript script and return parsed results
    */
-  async executeScript(scriptPath: string, timeout?: number): Promise<ScriptExecutionResult> {
+  async executeScript(
+    scriptPath: string,
+    timeout?: number,
+    tokenUsage?: TokenUsageMetadata
+  ): Promise<ScriptExecutionResult> {
     const startTime = Date.now();
     const absolutePath = path.resolve(scriptPath);
     const command = `npx ts-node "${absolutePath}"`;
@@ -252,7 +272,7 @@ export class ScriptExecutionService {
       };
 
       // Preserve successful script before cleanup
-      await this.saveScriptWithMetadata(scriptPath, successResult);
+      await this.saveScriptWithMetadata(scriptPath, successResult, undefined, tokenUsage);
 
       return successResult;
 
@@ -278,7 +298,7 @@ export class ScriptExecutionService {
       };
 
       // Preserve failed script before cleanup
-      await this.saveScriptWithMetadata(scriptPath, failedResult);
+      await this.saveScriptWithMetadata(scriptPath, failedResult, undefined, tokenUsage);
 
       return failedResult;
     } finally {

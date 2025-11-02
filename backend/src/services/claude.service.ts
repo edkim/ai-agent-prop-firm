@@ -64,10 +64,23 @@ export class ClaudeService {
         ],
       });
 
+      // Log token usage
+      const tokenUsage = {
+        input_tokens: response.usage.input_tokens,
+        output_tokens: response.usage.output_tokens,
+        total_tokens: response.usage.input_tokens + response.usage.output_tokens,
+        max_tokens: this.maxTokens,
+        utilization_percent: ((response.usage.output_tokens / this.maxTokens) * 100).toFixed(1),
+        stop_reason: response.stop_reason || 'end_turn',
+      };
+      console.log('📊 Token Usage:', JSON.stringify(tokenUsage, null, 2));
+
       // Check for truncation
       if (response.stop_reason === 'max_tokens') {
         console.warn('⚠️  Script generation truncated due to token limit!');
         console.warn('   Consider simplifying the prompt or increasing max_tokens further.');
+      } else if (response.usage.output_tokens > this.maxTokens * 0.9) {
+        console.warn(`⚠️  WARNING: Using ${tokenUsage.utilization_percent}% of max_tokens (close to limit)`);
       }
 
       // Extract text from response
@@ -76,8 +89,12 @@ export class ClaudeService {
         throw new Error('No text content in Claude response');
       }
 
-      // Parse the response
-      return this.parseClaudeResponse(textContent.text);
+      // Parse the response and include token usage
+      const parsed = this.parseClaudeResponse(textContent.text);
+      return {
+        ...parsed,
+        tokenUsage,
+      };
     } catch (error: any) {
       console.error('Error calling Claude API:', error);
       throw new Error(`Claude API error: ${error.message}`);
@@ -177,7 +194,7 @@ Based on the strategy complexity and any explicit date mentions, what dates shou
     query: string;
     universe: string;
     dateRange?: { start: string; end: string };
-  }): Promise<{ script: string; explanation: string }> {
+  }): Promise<{ script: string; explanation: string; tokenUsage?: any }> {
     console.log('🔍 Claude generating scanner script for query:', params.query);
 
     const systemPrompt = this.buildScannerSystemPrompt();
@@ -198,10 +215,23 @@ Based on the strategy complexity and any explicit date mentions, what dates shou
         ],
       });
 
+      // Log token usage
+      const tokenUsage = {
+        input_tokens: response.usage.input_tokens,
+        output_tokens: response.usage.output_tokens,
+        total_tokens: response.usage.input_tokens + response.usage.output_tokens,
+        max_tokens: this.maxTokens,
+        utilization_percent: ((response.usage.output_tokens / this.maxTokens) * 100).toFixed(1),
+        stop_reason: response.stop_reason || 'end_turn',
+      };
+      console.log('📊 Scanner Token Usage:', JSON.stringify(tokenUsage, null, 2));
+
       // Check for truncation
       if (response.stop_reason === 'max_tokens') {
         console.warn('⚠️  Scanner script truncated due to token limit!');
         console.warn('   Consider simplifying the prompt or increasing max_tokens further.');
+      } else if (response.usage.output_tokens > this.maxTokens * 0.9) {
+        console.warn(`⚠️  WARNING: Using ${tokenUsage.utilization_percent}% of max_tokens (close to limit)`);
       }
 
       // Extract text from response
@@ -210,8 +240,12 @@ Based on the strategy complexity and any explicit date mentions, what dates shou
         throw new Error('No text content in Claude response');
       }
 
-      // Parse the response
-      return this.parseScannerResponse(textContent.text);
+      // Parse the response and include token usage
+      const parsed = this.parseScannerResponse(textContent.text);
+      return {
+        ...parsed,
+        tokenUsage,
+      };
     } catch (error: any) {
       console.error('Error calling Claude API for scanner:', error);
       throw new Error(`Claude API error: ${error.message}`);

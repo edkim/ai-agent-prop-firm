@@ -78,7 +78,7 @@ export class AgentLearningService {
 
     // Step 2: Execute scan
     console.log('2️⃣ Running scan...');
-    const scanResults = await this.executeScan(strategy.scanScript);
+    const scanResults = await this.executeScan(strategy.scanScript, strategy.scannerTokenUsage);
     console.log(`   Found ${scanResults.length} signals`);
 
     if (scanResults.length === 0) {
@@ -89,7 +89,7 @@ export class AgentLearningService {
 
     // Step 3: Run backtests on scan results
     console.log('3️⃣ Running backtests...');
-    const backtestResults = await this.runBacktests(strategy.executionScript, scanResults);
+    const backtestResults = await this.runBacktests(strategy.executionScript, scanResults, strategy.executionTokenUsage);
 
     // Step 4: Agent analyzes results (skip if no successful backtests)
     console.log('4️⃣ Analyzing results...');
@@ -185,6 +185,8 @@ export class AgentLearningService {
     scanScript: string;
     executionScript: string;
     rationale: string;
+    scannerTokenUsage?: any;
+    executionTokenUsage?: any;
   }> {
     // Get agent's accumulated knowledge
     const knowledge = await this.getAgentKnowledge(agent.id);
@@ -264,14 +266,16 @@ Improve the strategy based on previous iterations:
     return {
       scanScript: scannerResult.script,
       executionScript: executionResult.script,  // Fixed: script not scriptCode
-      rationale
+      rationale,
+      scannerTokenUsage: scannerResult.tokenUsage,
+      executionTokenUsage: executionResult.tokenUsage
     };
   }
 
   /**
    * Execute scan script and return matches
    */
-  private async executeScan(scanScript: string): Promise<any[]> {
+  private async executeScan(scanScript: string, tokenUsage?: any): Promise<any[]> {
     const scriptId = uuidv4();
     const scriptPath = path.join(__dirname, '../../', `agent-scan-${scriptId}.ts`);
 
@@ -282,7 +286,7 @@ Improve the strategy based on previous iterations:
 
       // Execute script with 60 second timeout
       console.log(`   Executing scan script...`);
-      const result = await this.scriptExecution.executeScript(scriptPath, 60000);
+      const result = await this.scriptExecution.executeScript(scriptPath, 60000, tokenUsage);
 
       if (!result.success) {
         console.error(`   Scan script execution failed: ${result.error}`);
@@ -318,7 +322,7 @@ Improve the strategy based on previous iterations:
   /**
    * Run backtests on scan results using execution script
    */
-  private async runBacktests(executionScript: string, scanResults: any[]): Promise<any> {
+  private async runBacktests(executionScript: string, scanResults: any[], tokenUsage?: any): Promise<any> {
     if (scanResults.length === 0) {
       return {
         totalTrades: 0,
@@ -372,7 +376,7 @@ const SCANNER_SIGNALS = ${signalsJSON};
         fs.writeFileSync(scriptPath, customizedScript);
 
         // Execute with 120 second timeout
-        const result = await this.scriptExecution.executeScript(scriptPath, 120000);
+        const result = await this.scriptExecution.executeScript(scriptPath, 120000, tokenUsage);
 
         // Clean up
         if (fs.existsSync(scriptPath)) {
