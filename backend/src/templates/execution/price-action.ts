@@ -65,7 +65,7 @@ export const priceActionTemplate: ExecutionTemplate = {
         continue;
       }
 
-      const side: 'LONG' | 'SHORT' = 'SHORT';
+      const side = 'SHORT' as 'LONG' | 'SHORT';  // Type assertion to allow comparisons
 
       const entryBar = bars[signalBarIndex + 1];
       let position = {

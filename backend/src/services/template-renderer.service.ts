@@ -34,13 +34,15 @@ export class TemplateRendererService {
     const executionCode = templateWithOverrides.generateExecutionCode();
 
     // Build complete script with imports, interfaces, and execution logic
+    // Note: Scripts are saved in backend/generated-scripts/success/YYYY-MM-DD/
+    // So imports need to go up 3 levels to reach backend/, then into src/
     const fullScript = `
-import { initializeDatabase, getDatabase } from './src/database/db';
-import * as helpers from './src/utils/backtest-helpers';
+import { initializeDatabase, getDatabase } from '../../../src/database/db';
+import * as helpers from '../../../src/utils/backtest-helpers';
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
 
 interface Bar {
   timestamp: number;

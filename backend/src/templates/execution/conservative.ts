@@ -65,7 +65,7 @@ export const conservativeTemplate: ExecutionTemplate = {
       }
 
       // Determine direction from signal metrics or default to SHORT for momentum exhaustion
-      const side: 'LONG' | 'SHORT' = 'SHORT';  // Can be customized based on scanner strategy
+      const side = 'SHORT' as 'LONG' | 'SHORT';  // Type assertion to allow comparisons
 
       const entryBar = bars[signalBarIndex + 1];
       let position = {
