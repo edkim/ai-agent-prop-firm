@@ -16,16 +16,204 @@ import {
 } from '../types/script.types';
 import logger from './logger.service';
 
+interface TokenUsageMetadata {
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+  max_tokens: number;
+  utilization_percent: string;
+  stop_reason: string;
+  truncated: boolean;
+}
+
+interface ScriptMetadata {
+  scriptId: string;
+  agentId?: string;
+  timestamp: string;
+  scriptType: 'scanner' | 'execution' | 'unknown';
+  status: 'success' | 'failed';
+  language: 'typescript' | 'javascript';
+  compilationErrors?: string[];
+  runtimeErrors?: string;
+  executionTime: number;
+  trades?: number;
+  signals?: number;
+  stdout?: string;
+  stderr?: string;
+  tokenUsage?: TokenUsageMetadata;
+}
+
 const execAsync = promisify(exec);
 
 export class ScriptExecutionService {
   private readonly defaultTimeout = 30000; // 30 seconds
-  private readonly maxBuffer = 10 * 1024 * 1024; // 10MB
+  private readonly maxBuffer = 100 * 1024 * 1024; // 100MB (increased for large scan results)
+  private readonly generatedScriptsDir = path.join(__dirname, '../../generated-scripts');
+
+  /**
+   * Save a generated script with metadata for analysis
+   */
+  private async saveScriptWithMetadata(
+    scriptPath: string,
+    result: ScriptExecutionResult,
+    agentId?: string,
+    tokenUsage?: TokenUsageMetadata
+  ): Promise<void> {
+    try {
+      // Read the script content
+      const scriptContent = await fs.readFile(scriptPath, 'utf-8');
+
+      // Extract script metadata from path and result
+      const fileName = path.basename(scriptPath);
+      const scriptId = this.extractScriptId(fileName);
+      const scriptType = this.detectScriptType(fileName, scriptContent);
+      const language = fileName.endsWith('.ts') ? 'typescript' : 'javascript';
+      const status = result.success ? 'success' : 'failed';
+
+      // Parse compilation errors from stderr
+      const compilationErrors = this.extractCompilationErrors(result.stderr || '');
+
+      // Parse trade/signal counts from data
+      let trades = 0;
+      let signals = 0;
+      if (result.success && result.data) {
+        if (Array.isArray(result.data)) {
+          // Scanner result
+          signals = result.data.length;
+        } else if (result.data.trades) {
+          trades = result.data.trades.length;
+        }
+      }
+
+      // Create metadata object
+      const metadata: ScriptMetadata = {
+        scriptId,
+        agentId,
+        timestamp: new Date().toISOString(),
+        scriptType,
+        status,
+        language,
+        compilationErrors: compilationErrors.length > 0 ? compilationErrors : undefined,
+        runtimeErrors: result.success ? undefined : result.error,
+        executionTime: result.executionTime || 0,
+        trades: trades > 0 ? trades : undefined,
+        signals: signals > 0 ? signals : undefined,
+        stdout: result.stdout?.substring(0, 1000), // First 1000 chars
+        stderr: result.stderr?.substring(0, 1000),
+        tokenUsage: tokenUsage ? {
+          ...tokenUsage,
+          truncated: tokenUsage.stop_reason === 'max_tokens'
+        } : undefined,
+      };
+
+      // Create date-based directory structure
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      const statusDir = path.join(this.generatedScriptsDir, status, today);
+      await fs.mkdir(statusDir, { recursive: true });
+
+      // Save script file
+      const scriptFileName = `${scriptId}-${scriptType}.${language === 'typescript' ? 'ts' : 'js'}`;
+      const savedScriptPath = path.join(statusDir, scriptFileName);
+      await fs.writeFile(savedScriptPath, scriptContent);
+
+      // Save metadata
+      const metadataPath = path.join(statusDir, `${scriptId}-metadata.json`);
+      await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+
+      // Save errors log if failed
+      if (!result.success && result.stderr) {
+        const errorsPath = path.join(statusDir, `${scriptId}-errors.log`);
+        await fs.writeFile(errorsPath, result.stderr);
+      }
+
+      await logger.info('Script preserved with metadata', {
+        scriptId,
+        scriptType,
+        status,
+        savedPath: savedScriptPath,
+      });
+    } catch (error: any) {
+      // Don't fail execution if preservation fails
+      await logger.error('Failed to save script with metadata', {
+        error: error.message,
+        scriptPath,
+      });
+    }
+  }
+
+  /**
+   * Extract script ID from filename (UUID)
+   */
+  private extractScriptId(fileName: string): string {
+    // Extract UUID from patterns like:
+    // - agent-backtest-079c39fc-e941-42a0-a665-052c13524373.ts
+    // - backtest-5597410e-944b-495f-be50-e8fb7ab68184.ts
+    const uuidMatch = fileName.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i);
+    return uuidMatch ? uuidMatch[1] : 'unknown';
+  }
+
+  /**
+   * Detect script type from filename and content
+   */
+  private detectScriptType(fileName: string, content: string): 'scanner' | 'execution' | 'unknown' {
+    // Check filename patterns (but don't trust them completely - verify with content)
+    const filenameHint = fileName.includes('scan-') || fileName.includes('scanner') ? 'scanner'
+      : fileName.includes('backtest') || fileName.includes('execution') ? 'execution'
+      : null;
+
+    // Check content for definitive indicators
+    // Scanner scripts OUTPUT ScanMatch results
+    const hasScanMatch = content.includes('interface ScanMatch') || content.includes('ScanMatch[]');
+    const hasRunScan = content.includes('function runScan(');
+
+    // Execution scripts CONSUME SCANNER_SIGNALS and OUTPUT TradeResult
+    const hasScannerSignals = content.includes('SCANNER_SIGNALS');
+    const hasTradeResult = content.includes('interface TradeResult') || content.includes('TradeResult[]');
+    const hasRunBacktest = content.includes('function runBacktest(');
+
+    // Prioritize content-based detection over filename
+    if ((hasScanMatch || hasRunScan) && !hasScannerSignals) {
+      return 'scanner';
+    }
+    if (hasScannerSignals || hasTradeResult || hasRunBacktest) {
+      return 'execution';
+    }
+
+    // Fall back to filename hint if content is ambiguous
+    if (filenameHint) {
+      return filenameHint;
+    }
+
+    return 'unknown';
+  }
+
+  /**
+   * Extract TypeScript compilation errors from stderr
+   */
+  private extractCompilationErrors(stderr: string): string[] {
+    if (!stderr) return [];
+
+    const errors: string[] = [];
+    const lines = stderr.split('\n');
+
+    for (const line of lines) {
+      // Match TypeScript error patterns
+      if (line.includes('error TS')) {
+        errors.push(line.trim());
+      }
+    }
+
+    return errors;
+  }
 
   /**
    * Execute a TypeScript script and return parsed results
    */
-  async executeScript(scriptPath: string, timeout?: number): Promise<ScriptExecutionResult> {
+  async executeScript(
+    scriptPath: string,
+    timeout?: number,
+    tokenUsage?: TokenUsageMetadata
+  ): Promise<ScriptExecutionResult> {
     const startTime = Date.now();
     const absolutePath = path.resolve(scriptPath);
     const command = `npx ts-node "${absolutePath}"`;
@@ -75,13 +263,18 @@ export class ScriptExecutionService {
         } : 'No result data',
       });
 
-      return {
+      const successResult = {
         success: true,
         data: result,
         stdout,
         stderr,
         executionTime,
       };
+
+      // Preserve successful script before cleanup
+      await this.saveScriptWithMetadata(scriptPath, successResult, undefined, tokenUsage);
+
+      return successResult;
 
     } catch (error: any) {
       const executionTime = Date.now() - startTime;
@@ -96,16 +289,22 @@ export class ScriptExecutionService {
         scriptPath: absolutePath,
       });
 
-      return {
+      const failedResult = {
         success: false,
         error: error.message,
         stdout: error.stdout || '',
         stderr: error.stderr || '',
         executionTime,
       };
+
+      // Preserve failed script before cleanup
+      await this.saveScriptWithMetadata(scriptPath, failedResult, undefined, tokenUsage);
+
+      return failedResult;
     } finally {
-      // Clean up temp file (starts with 'backtest-' in backend directory)
-      if (scriptPath.includes('backtest-') && scriptPath.endsWith('.ts')) {
+      // Clean up temp file (starts with 'backtest-', 'agent-backtest-', or 'agent-scan-' in backend directory)
+      if ((scriptPath.includes('backtest-') || scriptPath.includes('agent-backtest-') || scriptPath.includes('agent-scan-')) &&
+          (scriptPath.endsWith('.ts') || scriptPath.endsWith('.js'))) {
         await fs.unlink(scriptPath).catch(() => {
           // Ignore cleanup errors
         });
@@ -142,6 +341,13 @@ export class ScriptExecutionService {
     if (arrayMatch) {
       try {
         const parsed = JSON.parse(arrayMatch[0]);
+
+        // If it's a scanner result array (has signal_date), return it directly
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].signal_date) {
+          console.log('[DEBUG] Found JSON array with', parsed.length, 'scanner signals');
+          // Scanner results are returned as-is (not wrapped in BacktestScriptOutput)
+          return parsed as any;
+        }
 
         // If it's an array of trades, convert to expected format
         if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].date) {
