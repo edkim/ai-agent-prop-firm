@@ -136,30 +136,40 @@ Pre-built, battle-tested exit strategies stored as TypeScript templates. No API 
 
 ---
 
-#### 5. Indicator-Based (RSI Reversal)
-**Use Case:** Exit on technical reversal signals
+#### 5. Price Action Trailing (Bar-by-Bar)
+**Use Case:** Follow price action closely, exit on bar structure breaks
 
 ```typescript
 {
-  name: "RSI Reversal Exit",
-  description: "Exit when momentum reverses (RSI crossover). Catches reversals early.",
+  name: "Price Action Trailing",
+  description: "Uses prior bar extremes as trailing stop. Tight tracking of price action.",
 
   parameters: {
-    stopLossPct: 2.0,
-    takeProfitPct: 4.0,
-    rsiPeriod: 14,
-    rsiExitThreshold: 40,  // LONG: exit if RSI < 40, SHORT: exit if RSI > 60
-    rsiOverbought: 60
+    stopLossPct: 2.0,           // Initial hard stop
+    takeProfitPct: 4.0,         // Initial target
+    usePriorBarTrailing: true,  // Enable bar-by-bar trailing
+    barsToActivate: 2           // Start trailing after N profitable bars
   },
 
-  strategy: "Fixed stops as backstop, but exit early if RSI reverses."
+  strategy: `
+    LONG positions: Trail stop at prior bar's low
+    SHORT positions: Trail stop at prior bar's high
+
+    Activates after position moves favorably for N bars.
+    Provides tight exit on first sign of reversal.
+  `
 }
 ```
 
 **Ideal for:**
-- Mean reversion strategies
-- Momentum exhaustion
-- Indicator-driven systems
+- Price action-focused strategies
+- Capturing quick moves before reversal
+- Tight risk management without indicators
+
+**Notes:**
+- Future enhancements may include dynamic position sizing based on volatility
+- Future: Multiple entry/exit scaling (add to winners, scale out at targets)
+- Future: Lower timeframe support (1min, 10sec) for better execution fills
 
 ---
 
@@ -170,7 +180,7 @@ Pre-built, battle-tested exit strategies stored as TypeScript templates. No API 
 export interface ExecutionTemplate {
   name: string;
   description: string;
-  category: 'scalping' | 'swing' | 'time_based' | 'volatility_adaptive' | 'indicator_based';
+  category: 'scalping' | 'swing' | 'time_based' | 'volatility_adaptive' | 'price_action';
 
   parameters: {
     [key: string]: number | string;  // Parameterizable values
@@ -257,7 +267,7 @@ backend/
         aggressive.ts               # Aggressive template
         time-based.ts              # Time-based template
         volatility-adaptive.ts      # ATR-based template
-        indicator-based.ts          # RSI reversal template
+        price-action.ts             # Price action trailing template
         template.interface.ts       # TypeScript interfaces
 ```
 
@@ -1601,7 +1611,7 @@ Data Increase: 60× more data (600 vs 10 points)
 **Question:** Should we start with the 5 templates outlined, or do you have specific exit strategies you want included?
 
 **Options:**
-- A) Start with outlined 5 (Conservative, Aggressive, Time-based, ATR-adaptive, RSI-reversal)
+- A) Start with outlined 5 (Conservative, Aggressive, Time-based, ATR-adaptive, Price-action)
 - B) You provide custom templates based on your trading experience
 - C) Mix: 3 standard + 2 custom
 
