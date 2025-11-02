@@ -160,6 +160,18 @@ export interface RoutingDecision {
 }
 
 /**
+ * Token usage information from Claude API
+ */
+export interface TokenUsage {
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+  max_tokens: number;
+  utilization_percent: string;
+  stop_reason: string;
+}
+
+/**
  * Claude script generation response
  */
 export interface ClaudeScriptGenerationResponse {
@@ -170,4 +182,5 @@ export interface ClaudeScriptGenerationResponse {
   explanation?: string;           // Human-readable explanation of the strategy
   dates: string[];                // Dates to test (determined by Claude based on prompt)
   dateReasoning?: string;         // Explanation of why these dates were chosen
+  tokenUsage?: TokenUsage;        // Token usage stats from the API call
 }
