@@ -585,6 +585,8 @@ PARAMETERS:
 - Timeframe: ${params.timeframe}
 - Strategy Type: ${params.strategyType}
 
+IMPORTANT: Replace TEMPLATE_TICKER with "${params.ticker}" and TEMPLATE_TIMEFRAME with EXACTLY "${params.timeframe}" (use this exact string, do not abbreviate or modify it).
+
 Please generate a complete, runnable TypeScript backtest script following the structure and guidelines provided.`;
   }
 

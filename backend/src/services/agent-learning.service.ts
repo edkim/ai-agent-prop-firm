@@ -369,8 +369,8 @@ const SCANNER_SIGNALS = ${signalsJSON};
         // Customize execution script with ticker and signals
         const customizedScript = executionScript
           .replace(/TEMPLATE_TICKER/g, ticker)
-          .replace(/const tradingDays: string\[\] = \[[^\]]+\];/s,
-            `const tradingDays: string[] = ${JSON.stringify([...new Set(signals.map((s: any) => s.date))])};\n${signalInjection}`);
+          .replace(/const tradingDays: string\[\] = \[[^\]]*\];/s,
+            `const tradingDays: string[] = ${JSON.stringify([...new Set(signals.map((s: any) => s.signal_date))])};\n${signalInjection}`);
 
         // Save to temp file
         fs.writeFileSync(scriptPath, customizedScript);
