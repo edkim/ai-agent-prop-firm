@@ -288,57 +288,80 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-gray-200">
-                            {selectedIteration.backtest_results.trades.map((trade: any, idx: number) => (
-                              <tr key={idx} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                                  {trade.ticker}
-                                </td>
-                                <td className="px-4 py-3 text-sm">
-                                  <span className={`px-2 py-1 text-xs rounded ${
-                                    trade.side === 'LONG' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                  }`}>
-                                    {trade.side}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900">
-                                  <div>${trade.entryPrice?.toFixed(2)}</div>
-                                  <div className="text-xs text-gray-500">
-                                    {new Date(trade.entryTimestamp).toLocaleDateString()}
-                                  </div>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900">
-                                  {trade.exitPrice ? (
-                                    <>
-                                      <div>${trade.exitPrice.toFixed(2)}</div>
+                            {selectedIteration.backtest_results.trades.map((trade: any, idx: number) => {
+                              // Handle both camelCase and snake_case field names
+                              const entryPrice = trade.entryPrice || trade.entry_price;
+                              const exitPrice = trade.exitPrice || trade.exit_price;
+                              const pnl = trade.pnl;
+                              const pnlPercent = trade.pnlPercent !== undefined ? trade.pnlPercent : trade.pnl_percent;
+                              const exitReason = trade.exitReason || trade.exit_reason;
+                              const quantity = trade.quantity || 1;
+                              const bars = trade.bars;
+
+                              // Construct timestamps from date + time fields if needed
+                              const entryTimestamp = trade.entryTimestamp || (trade.date && trade.entry_time)
+                                ? `${trade.date}T${trade.entry_time || '00:00'}:00Z`
+                                : null;
+                              const exitTimestamp = trade.exitTimestamp || (trade.date && trade.exit_time)
+                                ? `${trade.date}T${trade.exit_time || '00:00'}:00Z`
+                                : null;
+
+                              return (
+                                <tr key={idx} className="hover:bg-gray-50">
+                                  <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                                    {trade.ticker}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm">
+                                    <span className={`px-2 py-1 text-xs rounded ${
+                                      trade.side === 'LONG' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                    }`}>
+                                      {trade.side}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-900">
+                                    <div>${entryPrice?.toFixed(2)}</div>
+                                    {entryTimestamp && (
                                       <div className="text-xs text-gray-500">
-                                        {new Date(trade.exitTimestamp).toLocaleDateString()}
+                                        {new Date(entryTimestamp).toLocaleDateString()} {trade.entry_time || ''}
                                       </div>
-                                    </>
-                                  ) : (
-                                    <span className="text-gray-400">Open</span>
-                                  )}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900">
-                                  {trade.quantity}
-                                </td>
-                                <td className={`px-4 py-3 text-sm font-medium ${
-                                  trade.pnl >= 0 ? 'text-green-600' : 'text-red-600'
-                                }`}>
-                                  {trade.pnl >= 0 ? '+' : ''}${trade.pnl?.toFixed(2)}
-                                </td>
-                                <td className={`px-4 py-3 text-sm font-medium ${
-                                  trade.pnlPercent >= 0 ? 'text-green-600' : 'text-red-600'
-                                }`}>
-                                  {trade.pnlPercent >= 0 ? '+' : ''}{(trade.pnlPercent * 100).toFixed(2)}%
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-900">
-                                  {trade.bars || '-'}
-                                </td>
-                                <td className="px-4 py-3 text-sm text-gray-600">
-                                  {trade.exitReason?.replace(/_/g, ' ') || '-'}
-                                </td>
-                              </tr>
-                            ))}
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-900">
+                                    {exitPrice ? (
+                                      <>
+                                        <div>${exitPrice.toFixed(2)}</div>
+                                        {exitTimestamp && (
+                                          <div className="text-xs text-gray-500">
+                                            {new Date(exitTimestamp).toLocaleDateString()} {trade.exit_time || ''}
+                                          </div>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <span className="text-gray-400">Open</span>
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-900">
+                                    {quantity}
+                                  </td>
+                                  <td className={`px-4 py-3 text-sm font-medium ${
+                                    pnl >= 0 ? 'text-green-600' : 'text-red-600'
+                                  }`}>
+                                    {pnl >= 0 ? '+' : ''}${pnl?.toFixed(2)}
+                                  </td>
+                                  <td className={`px-4 py-3 text-sm font-medium ${
+                                    pnlPercent >= 0 ? 'text-green-600' : 'text-red-600'
+                                  }`}>
+                                    {pnlPercent >= 0 ? '+' : ''}{pnlPercent?.toFixed(2)}%
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-900">
+                                    {bars || '-'}
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-600">
+                                    {exitReason?.replace(/_/g, ' ') || '-'}
+                                  </td>
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>

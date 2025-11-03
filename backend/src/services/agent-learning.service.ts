@@ -488,15 +488,15 @@ export class AgentLearningService {
       return { winRate: 0, sharpeRatio: 0, totalReturn: 0 };
     }
 
-    // Calculate win rate
-    const wins = trades.filter(t => t.profit > 0).length;
+    // Calculate win rate (handle both 'pnl' and 'profit' field names)
+    const wins = trades.filter(t => (t.pnl || t.profit || 0) > 0).length;
     const winRate = wins / trades.length;
 
-    // Calculate total return
-    const totalReturn = trades.reduce((sum, t) => sum + (t.profit || 0), 0);
+    // Calculate total return (handle both 'pnl' and 'profit' field names)
+    const totalReturn = trades.reduce((sum, t) => sum + (t.pnl || t.profit || 0), 0);
 
-    // Calculate Sharpe ratio (simplified)
-    const returns = trades.map(t => t.profit || 0);
+    // Calculate Sharpe ratio (simplified) - handle both field names
+    const returns = trades.map(t => t.pnl || t.profit || 0);
     const avgReturn = returns.reduce((sum, r) => sum + r, 0) / returns.length;
     const stdDev = Math.sqrt(
       returns.reduce((sum, r) => sum + Math.pow(r - avgReturn, 2), 0) / returns.length
@@ -578,13 +578,19 @@ export class AgentLearningService {
 
     console.log(`   Converting analysis into ${(analysis.parameter_recommendations || []).length} refinements...`);
 
-    // Convert parameter recommendations into refinements
+    // Convert parameter recommendations into refinements (only if values are defined)
     for (const param of analysis.parameter_recommendations || []) {
+      // Skip if parameter values are undefined or missing
+      if (!param.parameter || param.currentValue === undefined || param.recommendedValue === undefined) {
+        console.log(`   Skipping refinement with undefined values: ${JSON.stringify(param)}`);
+        continue;
+      }
+
       refinements.push({
         type: 'parameter_adjustment',
         description: `Adjust ${param.parameter} from ${param.currentValue} to ${param.recommendedValue}`,
-        reasoning: param.expectedImprovement,
-        projected_improvement: `Expected improvement based on analysis`,
+        reasoning: param.expectedImprovement || 'Expected improvement based on analysis',
+        projected_improvement: param.expectedImprovement || 'Expected improvement based on analysis',
         specific_changes: {
           parameter: param.parameter,
           old_value: param.currentValue,
