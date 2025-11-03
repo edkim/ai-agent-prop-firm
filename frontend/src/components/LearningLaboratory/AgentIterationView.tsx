@@ -18,6 +18,9 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
   const [activeTab, setActiveTab] = useState<IterationTab>('summary');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [manualGuidance, setManualGuidance] = useState('');
+  const [showGuidanceInput, setShowGuidanceInput] = useState(false);
+  const [startingIteration, setStartingIteration] = useState(false);
 
   useEffect(() => {
     loadIterations();
@@ -37,6 +40,27 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
       setError(err.message || 'Failed to load iterations');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleStartIteration = async () => {
+    try {
+      setStartingIteration(true);
+      setError(null);
+      const guidance = manualGuidance.trim() || undefined;
+      await learningAgentApi.startIteration(agentId, guidance);
+
+      // Clear manual guidance and hide input
+      setManualGuidance('');
+      setShowGuidanceInput(false);
+
+      // Reload iterations
+      await loadIterations();
+    } catch (err: any) {
+      console.error('Failed to start iteration:', err);
+      setError(err.message || 'Failed to start iteration');
+    } finally {
+      setStartingIteration(false);
     }
   };
 
@@ -72,12 +96,56 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
   }
 
   return (
-    <div className="grid grid-cols-3 gap-4">
-      {/* Iterations List */}
-      <div className="col-span-1 space-y-2">
-        <h3 className="text-sm font-medium text-gray-900 mb-2">
-          Learning History ({iterations.length} iterations)
-        </h3>
+    <div className="space-y-4">
+      {/* Start New Iteration Section */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <button
+          onClick={() => setShowGuidanceInput(!showGuidanceInput)}
+          className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-2 mb-2"
+        >
+          {showGuidanceInput ? '− Hide' : '+ Add'} Manual Guidance
+        </button>
+
+        {showGuidanceInput && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Manual Guidance for Next Iteration
+            </label>
+            <textarea
+              value={manualGuidance}
+              onChange={(e) => setManualGuidance(e.target.value)}
+              placeholder="e.g., 'Scan last 2 years of data, include stocks with 100%+ gain in 5 or fewer days, relax RSI filters'"
+              className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+              rows={3}
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Provide specific guidance to steer the next iteration's strategy generation. This takes priority over automated refinements.
+            </p>
+          </div>
+        )}
+
+        <button
+          onClick={handleStartIteration}
+          disabled={startingIteration}
+          className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+        >
+          {startingIteration ? (
+            <span className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Starting Iteration...
+            </span>
+          ) : (
+            'Start New Iteration'
+          )}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        {/* Iterations List */}
+        <div className="col-span-1 space-y-2">
+          <h3 className="text-sm font-medium text-gray-900 mb-2">
+            Learning History ({iterations.length} iterations)
+          </h3>
         <div className="space-y-2 max-h-[600px] overflow-y-auto">
           {iterations.map(iteration => (
             <button
@@ -196,6 +264,14 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
                       </div>
                     </div>
                   </div>
+
+                  {/* Manual Guidance */}
+                  {selectedIteration.manual_guidance && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h4 className="text-sm font-medium text-blue-900 mb-2">🎯 Manual Guidance</h4>
+                      <p className="text-sm text-blue-800 whitespace-pre-wrap">{selectedIteration.manual_guidance}</p>
+                    </div>
+                  )}
 
                   {/* Version Notes */}
                   {selectedIteration.version_notes && (
@@ -384,6 +460,7 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
             Select an iteration to view details
           </div>
         )}
+      </div>
       </div>
     </div>
   );
