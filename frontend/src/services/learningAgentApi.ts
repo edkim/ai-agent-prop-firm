@@ -40,6 +40,7 @@ export interface AgentIteration {
   scan_script: string;
   execution_script: string;
   version_notes?: string;
+  manual_guidance?: string;
   signals_found: number;
   backtest_results: any;
   win_rate: number;
@@ -171,8 +172,10 @@ export const learningAgentApi = {
   /**
    * Start a new learning iteration for an agent
    */
-  async startIteration(agentId: string): Promise<StartIterationResponse> {
-    const response = await apiClient.post<StartIterationResponse>(`/${agentId}/iterations/start`);
+  async startIteration(agentId: string, manualGuidance?: string): Promise<StartIterationResponse> {
+    const response = await apiClient.post<StartIterationResponse>(`/${agentId}/iterations/start`, {
+      manualGuidance,
+    });
     return response.data;
   },
 
