@@ -20,7 +20,7 @@ import * as os from 'os';
 const PROJECT_ROOT = path.resolve(__dirname, '../..');
 const DATABASE_PATH = path.join(PROJECT_ROOT, 'backtesting.db');
 const SCRIPTS_DIR = path.join(PROJECT_ROOT, 'backend/claude-generated-scripts');
-const BACKUP_DIR = path.join(os.homedir(), 'Backups/ai-backtest');
+const BACKUP_DIR = path.join(os.homedir(), 'Documents/ai-backtest-backups');
 const MAX_BACKUPS = 30;
 
 // Get timestamp for filename
