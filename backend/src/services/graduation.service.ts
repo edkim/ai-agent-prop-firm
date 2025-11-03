@@ -5,6 +5,7 @@
 
 import { getDatabase } from '../database/db';
 import { AgentActivityLogService } from './agent-activity-log.service';
+import { PaperAccountService } from './paper-account.service';
 
 export interface GraduationCriteria {
   min_iterations: number;           // e.g., 20
@@ -32,9 +33,11 @@ export interface GraduationEligibility {
 
 export class GraduationService {
   private activityLog: AgentActivityLogService;
+  private paperAccountService: PaperAccountService;
 
   constructor() {
     this.activityLog = new AgentActivityLogService();
+    this.paperAccountService = new PaperAccountService();
   }
 
   /**
@@ -155,6 +158,21 @@ export class GraduationService {
     `).run(nextStatus, agentId);
 
     console.log(`🎓 Agent ${agentId} graduated from ${currentStatus} to ${nextStatus}`);
+
+    // Create paper trading account if graduating to paper_trading
+    if (nextStatus === 'paper_trading') {
+      try {
+        const paperAccount = await this.paperAccountService.createAccount(agentId);
+        console.log(`💰 Created paper trading account with $${paperAccount.initial_balance.toLocaleString()}`);
+      } catch (error: any) {
+        // If account already exists, that's ok
+        if (error.message.includes('UNIQUE constraint failed')) {
+          console.log(`💰 Paper trading account already exists`);
+        } else {
+          throw error;
+        }
+      }
+    }
 
     await this.activityLog.log({
       agent_id: agentId,

@@ -1,0 +1,429 @@
+{
+  "timestamp": "2025-11-03T18:53:45.233Z",
+  "5min": {
+    "signalCount": 2,
+    "uniqueTickers": [
+      "INTC",
+      "WBD"
+    ],
+    "avgPatternStrength": 91,
+    "avgDeviation": 1.64,
+    "avgVolumeRatio": 2.5,
+    "bullishCount": 0,
+    "bearishCount": 2,
+    "signals": [
+      {
+        "ticker": "INTC",
+        "signal_date": "2025-10-28",
+        "signal_time": "12:15",
+        "pattern_strength": 86,
+        "metrics": {
+          "price": 41.74,
+          "vwap": 41.071404121561265,
+          "deviation_percent": 1.63,
+          "volume_ratio": 1.86,
+          "rejection_type": "bearish_rejection",
+          "wick_ratio": 0.79
+        }
+      },
+      {
+        "ticker": "WBD",
+        "signal_date": "2025-10-29",
+        "signal_time": "11:25",
+        "pattern_strength": 96,
+        "metrics": {
+          "price": 21.605,
+          "vwap": 21.253441842011686,
+          "deviation_percent": 1.65,
+          "volume_ratio": 3.14,
+          "rejection_type": "bearish_rejection",
+          "wick_ratio": 0.83
+        }
+      }
+    ]
+  },
+  "1min": {
+    "signalCount": 26,
+    "uniqueTickers": [
+      "CTSH",
+      "EBAY",
+      "ETSY",
+      "INTC",
+      "MCHP",
+      "ON",
+      "SWKS",
+      "WBD"
+    ],
+    "avgPatternStrength": 85.84615384615384,
+    "avgDeviation": 1.8449999999999998,
+    "avgVolumeRatio": 2.230769230769231,
+    "bullishCount": 14,
+    "bearishCount": 12,
+    "signals": [
+      {
+        "ticker": "CTSH",
+        "signal_date": "2025-10-29",
+        "signal_time": "11:14",
+        "pattern_strength": 81,
+        "metrics": {
+          "price": 71.52,
+          "vwap": 72.72457133577728,
+          "deviation_percent": -1.66,
+          "volume_ratio": 1.35,
+          "rejection_type": "bullish_rejection",
+          "wick_ratio": 0.67
+        }
+      },
+      {
+        "ticker": "EBAY",
+        "signal_date": "2025-10-30",
+        "signal_time": "10:19",
+        "pattern_strength": 88,
+        "metrics": {
+          "price": 87.34,
+          "vwap": 85.71942286998903,
+          "deviation_percent": 1.89,
+          "volume_ratio": 1.94,
+          "rejection_type": "bearish_rejection",
+          "wick_ratio": 0.65
+        }
+      },
+      {
+        "ticker": "ETSY",
+        "signal_date": "2025-10-15",
+        "signal_time": "11:42",
+        "pattern_strength": 82,
+        "metrics": {
+          "price": 71.86,
+          "vwap": 72.9548138998513,
+          "deviation_percent": -1.5,
+          "volume_ratio": 1.48,
+          "rejection_type": "bullish_rejection",
+          "wick_ratio": 0.67
+        }
+      },
+      {
+        "ticker": "ETSY",
+        "signal_date": "2025-10-15",
+        "signal_time": "12:35",
+        "pattern_strength": 87,
+        "metrics": {
+          "price": 71.445,
+          "vwap": 72.6705771296435,
+          "deviation_percent": -1.69,
+          "volume_ratio": 1.87,
+          "rejection_type": "bullish_rejection",
+          "wick_ratio": 0.7
+        }
+      },
+      {
+        "ticker": "ETSY",
+        "signal_date": "2025-10-15",
+        "signal_time": "12:44",
+        "pattern_strength": 83,
+        "metrics": {
+          "price": 71.29,
+          "vwap": 72.6333592179788,
+          "deviation_percent": -1.85,
+          "volume_ratio": 1.42,
+          "rejection_type": "bullish_rejection",
+          "wick_ratio": 0.67
+        }
+      },
+      {
+        "ticker": "ETSY",
+        "signal_date": "2025-10-15",
+        "signal_time": "12:55",
+        "pattern_strength": 87,
+        "metrics": {
+          "price": 71.37,
+          "vwap": 72.58301916307776,
+          "deviation_percent": -1.67,
+          "volume_ratio": 1.91,
+          "rejection_type": "bullish_rejection",
+          "wick_ratio": 0.67
+        }
+      },
+      {
+        "ticker": "ETSY",
+        "signal_date": "2025-10-16",
+        "signal_time": "11:22",
+        "pattern_strength": 80,
+        "metrics": {
+          "price": 71.635,
+          "vwap": 72.74027112789219,
+          "deviation_percent": -1.52,
+          "volume_ratio": 1.44,
+          "rejection_type": "bullish_rejection",
+          "wick_ratio": 0.6
+        }
+      },
+      {
+        "ticker": "ETSY",
+        "signal_date": "2025-10-29",
+        "signal_time": "14:00",
+        "pattern_strength": 90,
+        "metrics": {
+          "price": 67.85,
+          "vwap": 69.02844017586682,
+          "deviation_percent": -1.71,
+          "volume_ratio": 2.23,
+          "rejection_type": "bullish_rejection",
+          "wick_ratio": 0.65
+        }
+      },
+      {
+        "ticker": "INTC",
+        "signal_date": "2025-10-14",
+        "signal_time": "13:07",
+        "pattern_strength": 85,
+        "metrics": {
+          "price": 36.1799,
+          "vwap": 35.44891396873078,
+          "deviation_percent": 2.06,
+          "volume_ratio": 1.54,
+          "rejection_type": "bearish_rejection",
+          "wick_ratio": 0.72
+        }
+      },
+      {
+        "ticker": "INTC",
+        "signal_date": "2025-10-22",
+        "signal_time": "10:40",
+        "pattern_strength": 80,
+        "metrics": {
+          "price": 36.7399,
+          "vwap": 37.336464151335015,
+          "deviation_percent": -1.6,
+          "volume_ratio": 1.35,
+          "rejection_type": "bullish_rejection",
+          "wick_ratio": 0.58
+        }
+      },
+      {
+        "ticker": "INTC",
+        "signal_date": "2025-10-22",
+        "signal_time": "12:27",
+        "pattern_strength": 85,
+        "metrics": {
+          "price": 36.445,
+          "vwap": 37.02843500150444,
+          "deviation_percent": -1.58,
+          "volume_ratio": 1.81,
+          "rejection_type": "bullish_rejection",
+          "wick_ratio": 0.75
+        }
+      },
+      {
+        "ticker": "INTC",
+        "signal_date": "2025-10-22",
+        "signal_time": "13:25",
+        "pattern_strength": 85,
+        "metrics": {
+          "price": 36.285,
+          "vwap": 36.91210227891873,
+          "deviation_percent": -1.7,
+          "volume_ratio": 1.71,
+          "rejection_type": "bullish_rejection",
+          "wick_ratio": 0.67
+        }
+      },
+      {
+        "ticker": "INTC",
+        "signal_date": "2025-10-27",
+        "signal_time": "10:39",
+        "pattern_strength": 81,
+        "metrics": {
+          "price": 40.415,
+          "vwap": 39.80005753914707,
+          "deviation_percent": 1.55,
+          "volume_ratio": 1.33,
+          "rejection_type": "bearish_rejection",
+          "wick_ratio": 0.71
+        }
+      },
+      {
+        "ticker": "INTC",
+        "signal_date": "2025-10-28",
+        "signal_time": "11:50",
+        "pattern_strength": 83,
+        "metrics": {
+          "price": 41.89,
+          "vwap": 40.941021195491736,
+          "deviation_percent": 2.32,
+          "volume_ratio": 1.33,
+          "rejection_type": "bearish_rejection",
+          "wick_ratio": 0.58
+        }
+      },
+      {
+        "ticker": "INTC",
+        "signal_date": "2025-10-28",
+        "signal_time": "11:55",
+        "pattern_strength": 84,
+        "metrics": {
+          "price": 41.645,
+          "vwap": 40.96363509760611,
+          "deviation_percent": 1.66,
+          "volume_ratio": 1.67,
+          "rejection_type": "bearish_rejection",
+          "wick_ratio": 0.77
+        }
+      },
+      {
+        "ticker": "INTC",
+        "signal_date": "2025-10-28",
+        "signal_time": "12:31",
+        "pattern_strength": 88,
+        "metrics": {
+          "price": 42.0048,
+          "vwap": 41.14253128716269,
+          "deviation_percent": 2.1,
+          "volume_ratio": 1.78,
+          "rejection_type": "bearish_rejection",
+          "wick_ratio": 0.67
+        }
+      },
+      {
+        "ticker": "INTC",
+        "signal_date": "2025-10-28",
+        "signal_time": "12:40",
+        "pattern_strength": 85,
+        "metrics": {
+          "price": 42.1805,
+          "vwap": 41.19209963994615,
+          "deviation_percent": 2.4,
+          "volume_ratio": 1.43,
+          "rejection_type": "bearish_rejection",
+          "wick_ratio": 0.63
+        }
+      },
+      {
+        "ticker": "MCHP",
+        "signal_date": "2025-10-14",
+        "signal_time": "13:14",
+        "pattern_strength": 84,
+        "metrics": {
+          "price": 66.13,
+          "vwap": 64.75241491046438,
+          "deviation_percent": 2.13,
+          "volume_ratio": 1.38,
+          "rejection_type": "bearish_rejection",
+          "wick_ratio": 0.67
+        }
+      },
+      {
+        "ticker": "MCHP",
+        "signal_date": "2025-10-14",
+        "signal_time": "13:19",
+        "pattern_strength": 82,
+        "metrics": {
+          "price": 66.2,
+          "vwap": 64.78458510987046,
+          "deviation_percent": 2.18,
+          "volume_ratio": 1.36,
+          "rejection_type": "bearish_rejection",
+          "wick_ratio": 0.56
+        }
+      },
+      {
+        "ticker": "ON",
+        "signal_date": "2025-10-31",
+        "signal_time": "13:57",
+        "pattern_strength": 82,
+        "metrics": {
+          "price": 50.3698,
+          "vwap": 51.15546039763951,
+          "deviation_percent": -1.54,
+          "volume_ratio": 1.5,
+          "rejection_type": "bullish_rejection",
+          "wick_ratio": 0.73
+        }
+      },
+      {
+        "ticker": "SWKS",
+        "signal_date": "2025-10-20",
+        "signal_time": "12:07",
+        "pattern_strength": 93,
+        "metrics": {
+          "price": 76.51,
+          "vwap": 75.06085868531467,
+          "deviation_percent": 1.93,
+          "volume_ratio": 2.64,
+          "rejection_type": "bearish_rejection",
+          "wick_ratio": 0.5
+        }
+      },
+      {
+        "ticker": "SWKS",
+        "signal_date": "2025-10-28",
+        "signal_time": "10:51",
+        "pattern_strength": 85,
+        "metrics": {
+          "price": 85.3,
+          "vwap": 87.23760293391796,
+          "deviation_percent": -2.22,
+          "volume_ratio": 1.68,
+          "rejection_type": "bullish_rejection",
+          "wick_ratio": 0.53
+        }
+      },
+      {
+        "ticker": "SWKS",
+        "signal_date": "2025-10-28",
+        "signal_time": "11:55",
+        "pattern_strength": 93,
+        "metrics": {
+          "price": 84.93,
+          "vwap": 86.85386277657649,
+          "deviation_percent": -2.22,
+          "volume_ratio": 2.24,
+          "rejection_type": "bullish_rejection",
+          "wick_ratio": 0.64
+        }
+      },
+      {
+        "ticker": "SWKS",
+        "signal_date": "2025-10-29",
+        "signal_time": "13:30",
+        "pattern_strength": 97,
+        "metrics": {
+          "price": 81.28,
+          "vwap": 82.94447636333248,
+          "deviation_percent": -2.01,
+          "volume_ratio": 11.04,
+          "rejection_type": "bullish_rejection",
+          "wick_ratio": 0.63
+        }
+      },
+      {
+        "ticker": "WBD",
+        "signal_date": "2025-10-14",
+        "signal_time": "12:22",
+        "pattern_strength": 88,
+        "metrics": {
+          "price": 17.97,
+          "vwap": 17.660059758429313,
+          "deviation_percent": 1.76,
+          "volume_ratio": 1.93,
+          "rejection_type": "bearish_rejection",
+          "wick_ratio": 0.83
+        }
+      },
+      {
+        "ticker": "WBD",
+        "signal_date": "2025-10-14",
+        "signal_time": "12:46",
+        "pattern_strength": 94,
+        "metrics": {
+          "price": 17.975,
+          "vwap": 17.705645232659116,
+          "deviation_percent": 1.52,
+          "volume_ratio": 6.64,
+          "rejection_type": "bearish_rejection",
+          "wick_ratio": 0.57
+        }
+      }
+    ]
+  }
+}

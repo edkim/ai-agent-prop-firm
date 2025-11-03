@@ -1,0 +1,19 @@
+{
+  "timestamp": "2025-11-03T18:41:18.904Z",
+  "5min": {
+    "signalCount": 0,
+    "uniqueTickers": [],
+    "avgPatternStrength": 0,
+    "avgDistanceFromHigh": 0,
+    "avgVolumeRatio": 0,
+    "signals": []
+  },
+  "1min": {
+    "signalCount": 0,
+    "uniqueTickers": [],
+    "avgPatternStrength": 0,
+    "avgDistanceFromHigh": 0,
+    "avgVolumeRatio": 0,
+    "signals": []
+  }
+}
