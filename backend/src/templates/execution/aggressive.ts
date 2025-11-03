@@ -156,7 +156,13 @@ export const aggressiveTemplate: ExecutionTemplate = {
         }
 
         if (exitTriggered) {
-          const pnl = side === 'LONG' ? exitPrice - position.entry : position.entry - exitPrice;
+          // Position sizing: $10,000 trade size
+          const TRADE_SIZE = 10000;
+          const quantity = Math.floor(TRADE_SIZE / position.entry);
+          const pnlPerShare = side === 'LONG' ? exitPrice - position.entry : position.entry - exitPrice;
+          const pnl = pnlPerShare * quantity;
+          const pnlPercent = (pnlPerShare / position.entry) * 100;
+
           results.push({
             date: signal_date,
             ticker: sigTicker,
@@ -165,8 +171,9 @@ export const aggressiveTemplate: ExecutionTemplate = {
             entryPrice: position.entry,
             exitTime: bar.timeOfDay,
             exitPrice,
+            quantity,
             pnl,
-            pnlPercent: (pnl / position.entry) * 100,
+            pnlPercent,
             exitReason,
             highestPrice: position.highestPrice,
             lowestPrice: position.lowestPrice
