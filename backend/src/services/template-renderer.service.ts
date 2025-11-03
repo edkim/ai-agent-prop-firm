@@ -62,6 +62,7 @@ interface TradeResult {
   entryPrice?: number;
   exitTime?: string;
   exitPrice?: number;
+  quantity?: number;
   pnl?: number;
   pnlPercent?: number;
   exitReason?: string;

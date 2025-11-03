@@ -248,7 +248,8 @@ router.delete('/:id', async (req: Request, res: Response) => {
 router.post('/:id/iterations/start', async (req: Request, res: Response) => {
   try {
     const agentId = req.params.id;
-    const result = await agentLearning.runIteration(agentId);
+    const { manualGuidance } = req.body;
+    const result = await agentLearning.runIteration(agentId, manualGuidance);
 
     res.json({
       success: true,
