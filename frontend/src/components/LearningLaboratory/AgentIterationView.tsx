@@ -258,8 +258,8 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
                         <div className={`text-2xl font-bold ${
                           selectedIteration.total_return >= 0 ? 'text-green-600' : 'text-red-600'
                         }`}>
-                          {selectedIteration.total_return >= 0 ? '+' : ''}
-                          {(selectedIteration.total_return * 100).toFixed(2)}%
+                          {selectedIteration.total_return >= 0 ? '+' : ''}$
+                          {selectedIteration.total_return.toFixed(2)}
                         </div>
                       </div>
                     </div>
@@ -371,7 +371,20 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
                               const pnl = trade.pnl;
                               const pnlPercent = trade.pnlPercent !== undefined ? trade.pnlPercent : trade.pnl_percent;
                               const exitReason = trade.exitReason || trade.exit_reason;
-                              const quantity = trade.quantity || 1;
+
+                              // Calculate quantity from PnL and price difference if not provided
+                              let quantity = trade.quantity;
+                              if (!quantity && pnl !== undefined && entryPrice && exitPrice) {
+                                const priceDiff = Math.abs(exitPrice - entryPrice);
+                                if (priceDiff > 0) {
+                                  quantity = Math.round(Math.abs(pnl) / priceDiff);
+                                } else {
+                                  quantity = 1; // Fallback if price didn't change
+                                }
+                              } else if (!quantity) {
+                                quantity = 1; // Final fallback
+                              }
+
                               const bars = trade.bars;
 
                               // Construct timestamps from date + time fields if needed

@@ -69,6 +69,68 @@ Result: Iteration 22 found 15 signals including BYND's 454% move
 
 ---
 
+## 🎓 Paper Trading System (2025-11-03)
+
+**Graduate successful agents from backtesting to live market simulation**
+
+Once an agent demonstrates strong performance (high win rate, good Sharpe ratio), graduate it to **paper trading** where it trades with simulated money using real-time market data.
+
+### Key Features
+
+✅ **Virtual Accounts** - Each agent gets its own isolated $100,000 paper trading account
+✅ **Real-Time Data** - Integrates with Polygon.io for live market data (60s polling)
+✅ **Realistic Fills** - Simulates slippage (0.01%) and commissions ($0.50/trade)
+✅ **Risk Management** - Enforces position limits, stop losses, and buying power checks
+✅ **Live Monitoring** - Track positions, P&L, and performance in real-time
+
+### Graduation Process
+
+```bash
+# 1. Agent must meet criteria (or force graduate for testing)
+cd backend
+npx ts-node helper-scripts/graduate-vwap-agent.ts
+
+# 2. Graduation creates paper account automatically
+✅ Agent graduated to: paper_trading
+💰 Paper account created: $100,000 initial balance
+
+# 3. Enable paper trading in environment
+# Add to .env:
+PAPER_TRADING_ENABLED=true
+
+# 4. Start backend
+npm run dev
+
+# Paper trading system will automatically:
+- Load graduated agents
+- Subscribe to their tickers
+- Monitor for signals
+- Execute trades with virtual money
+- Track P&L in real-time
+```
+
+### Current Status
+
+**VWAP Mean Reversion Trader** graduated to paper trading:
+- **Performance**: 80% win rate, 11.23 Sharpe ratio (iteration 1)
+- **Validation**: Successfully validated at 1-min resolution
+- **Account**: $100,000 virtual balance
+- **Risk Rules**: Max 20% per position, 10 positions max, stop loss at -5%, take profit at +10%
+
+### Paper Trading vs Live Trading
+
+| Feature | Paper Trading | Live Trading |
+|---------|---------------|--------------|
+| **Money** | Simulated ($100k) | Real (your capital) |
+| **Data** | Real-time (Polygon) | Real-time (Polygon) |
+| **Fills** | Simulated | Real (via TradeStation) |
+| **Risk** | Zero | Real financial risk |
+| **Purpose** | Validate strategy | Generate returns |
+
+**Next Step**: After successful paper trading performance → Graduate to live trading (when ready)
+
+---
+
 ## 🧪 The Learning Laboratory
 
 ### Core Concept: Autonomous Strategy Evolution

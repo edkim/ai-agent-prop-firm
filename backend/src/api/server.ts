@@ -25,6 +25,7 @@ import claudeAnalysisRoutes from './routes/claude-analysis';
 import batchBacktestRoutes from './routes/batch-backtest';
 import tradingAgentRoutes from './routes/trading-agent';
 import learningAgentRoutes from './routes/agents'; // Learning laboratory agents
+import paperTradingRoutes from './routes/paper-trading';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
@@ -58,6 +59,7 @@ app.use('/api/analysis', claudeAnalysisRoutes);
 app.use('/api/batch-backtest', batchBacktestRoutes);
 app.use('/api/agents', tradingAgentRoutes); // Live trading agents
 app.use('/api/learning-agents', learningAgentRoutes); // Learning laboratory agents
+app.use('/api/paper-trading', paperTradingRoutes); // Paper trading
 
 // Error handling middleware
 app.use((err: Error, _req: Request, res: Response, _next: any) => {
@@ -115,6 +117,23 @@ app.listen(PORT, async () => {
     console.log('ℹ️  Autonomous trading disabled (AUTO_EXECUTION_ENABLED not true)');
     console.log('   Set AUTO_EXECUTION_ENABLED=true in .env to enable');
   }
+
+  // Auto-start paper trading services if enabled
+  if (process.env.PAPER_TRADING_ENABLED === 'true') {
+    try {
+      console.log('🎓 PAPER_TRADING_ENABLED is true, starting paper trading services...');
+      console.log('');
+
+      const paperTradingStartupService = (await import('../services/paper-trading-startup.service')).default;
+      await paperTradingStartupService.start();
+    } catch (error: any) {
+      console.error('❌ Failed to start paper trading services:', error.message);
+      console.error('   Paper trading will not be active. Check configuration and restart.');
+    }
+  } else {
+    console.log('ℹ️  Paper trading disabled (PAPER_TRADING_ENABLED not true)');
+    console.log('   Set PAPER_TRADING_ENABLED=true in .env to enable');
+  }
 });
 
 // Graceful shutdown
@@ -132,6 +151,10 @@ const gracefulShutdown = async (signal: string) => {
     // Stop trading services
     const tradingStartupService = (await import('../services/trading-startup.service')).default;
     await tradingStartupService.stop();
+
+    // Stop paper trading services
+    const paperTradingStartupService = (await import('../services/paper-trading-startup.service')).default;
+    await paperTradingStartupService.stop();
 
     // Close database
     const { closeDatabase } = await import('../database/db');
