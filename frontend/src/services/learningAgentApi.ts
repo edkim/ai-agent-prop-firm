@@ -12,7 +12,7 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 60000, // Longer timeout for learning iterations
+  timeout: 180000, // 3 minute timeout for learning iterations (can take 1-2 minutes)
 });
 
 // ===== Types =====
