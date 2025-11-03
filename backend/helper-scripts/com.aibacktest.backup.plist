@@ -11,7 +11,7 @@
     <array>
         <string>/bin/bash</string>
         <string>-c</string>
-        <string>cd /Users/edwardkim/Code/ai-backtest/backend && /usr/local/bin/npm run backup >> /Users/edwardkim/Backups/ai-backtest/backup.log 2>&1</string>
+        <string>cd /Users/edwardkim/Code/ai-backtest/backend && /usr/local/bin/npm run backup >> /Users/edwardkim/Documents/ai-backtest-backups/backup.log 2>&1</string>
     </array>
 
     <!-- Schedule: Daily at 2:00 AM -->
@@ -29,11 +29,11 @@
 
     <!-- Standard output log -->
     <key>StandardOutPath</key>
-    <string>/Users/edwardkim/Backups/ai-backtest/backup.log</string>
+    <string>/Users/edwardkim/Documents/ai-backtest-backups/backup.log</string>
 
     <!-- Standard error log -->
     <key>StandardErrorPath</key>
-    <string>/Users/edwardkim/Backups/ai-backtest/backup-error.log</string>
+    <string>/Users/edwardkim/Documents/ai-backtest-backups/backup-error.log</string>
 
     <!-- Working directory -->
     <key>WorkingDirectory</key>
