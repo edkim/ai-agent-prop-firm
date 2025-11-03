@@ -29,6 +29,90 @@ const performanceMonitor = new PerformanceMonitorService();
 const graduation = new GraduationService();
 const activityLog = new AgentActivityLogService();
 
+/**
+ * Helper function to format expert analysis JSON for display
+ */
+function formatExpertAnalysis(analysisJson: string | null): string {
+  if (!analysisJson) return 'No analysis available';
+
+  try {
+    const analysis = JSON.parse(analysisJson);
+
+    let formatted = '';
+
+    // Summary
+    if (analysis.summary) {
+      formatted += `SUMMARY\n${analysis.summary}\n\n`;
+    }
+
+    // Working Elements
+    if (analysis.working_elements && analysis.working_elements.length > 0) {
+      formatted += 'WORKING ELEMENTS\n';
+      analysis.working_elements.forEach((element: string) => {
+        formatted += `• ${element}\n`;
+      });
+      formatted += '\n';
+    }
+
+    // Failure Points
+    if (analysis.failure_points && analysis.failure_points.length > 0) {
+      formatted += 'FAILURE POINTS\n';
+      analysis.failure_points.forEach((point: string) => {
+        formatted += `• ${point}\n`;
+      });
+      formatted += '\n';
+    }
+
+    // Strategic Insights
+    if (analysis.strategic_insights && analysis.strategic_insights.length > 0) {
+      formatted += 'STRATEGIC INSIGHTS\n';
+      analysis.strategic_insights.forEach((insight: string) => {
+        formatted += `• ${insight}\n`;
+      });
+      formatted += '\n';
+    }
+
+    // Parameter Recommendations
+    if (analysis.parameter_recommendations && analysis.parameter_recommendations.length > 0) {
+      formatted += 'PARAMETER RECOMMENDATIONS\n';
+      analysis.parameter_recommendations.forEach((rec: any) => {
+        formatted += `• ${rec.parameter}: ${rec.currentValue} → ${rec.recommendedValue}\n`;
+        formatted += `  Reason: ${rec.expectedImprovement}\n`;
+      });
+      formatted += '\n';
+    }
+
+    // Trade Quality Assessment
+    if (analysis.trade_quality_assessment) {
+      formatted += `TRADE QUALITY\n${analysis.trade_quality_assessment}\n\n`;
+    }
+
+    // Risk Assessment
+    if (analysis.risk_assessment) {
+      formatted += `RISK ASSESSMENT\n${analysis.risk_assessment}\n\n`;
+    }
+
+    // Market Conditions
+    if (analysis.market_condition_notes) {
+      formatted += `MARKET CONDITIONS\n${analysis.market_condition_notes}\n\n`;
+    }
+
+    // Missing Context
+    if (analysis.missing_context && analysis.missing_context.length > 0) {
+      formatted += 'MISSING DATA\n';
+      analysis.missing_context.forEach((item: string) => {
+        formatted += `• ${item}\n`;
+      });
+      formatted += '\n';
+    }
+
+    return formatted.trim();
+  } catch (error) {
+    console.error('Error formatting expert analysis:', error);
+    return analysisJson; // Return raw JSON if parsing fails
+  }
+}
+
 // ========================================
 // Agent CRUD Routes
 // ========================================
@@ -194,11 +278,12 @@ router.get('/:id/iterations', async (req: Request, res: Response) => {
       ORDER BY iteration_number DESC
     `).all(agentId);
 
-    // Parse JSON fields
+    // Parse JSON fields and format expert_analysis
     const iterations = rows.map((row: any) => ({
       ...row,
       backtest_results: row.backtest_results ? JSON.parse(row.backtest_results) : null,
       refinements_suggested: row.refinements_suggested ? JSON.parse(row.refinements_suggested) : [],
+      expert_analysis: formatExpertAnalysis(row.expert_analysis),
     }));
 
     res.json({
@@ -236,11 +321,12 @@ router.get('/:id/iterations/:iteration_id', async (req: Request, res: Response) 
       });
     }
 
-    // Parse JSON fields
+    // Parse JSON fields and format expert_analysis
     const iteration = {
       ...row,
       backtest_results: row.backtest_results ? JSON.parse(row.backtest_results) : null,
       refinements_suggested: row.refinements_suggested ? JSON.parse(row.refinements_suggested) : [],
+      expert_analysis: formatExpertAnalysis(row.expert_analysis),
     };
 
     res.json({
