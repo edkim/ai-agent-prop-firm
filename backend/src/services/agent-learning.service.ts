@@ -65,7 +65,7 @@ export class AgentLearningService {
   /**
    * Run a complete learning iteration for an agent
    */
-  async runIteration(agentId: string): Promise<IterationResult> {
+  async runIteration(agentId: string, manualGuidance?: string): Promise<IterationResult> {
     const agent = await this.agentMgmt.getAgent(agentId);
     if (!agent) {
       throw new Error(`Agent not found: ${agentId}`);
@@ -76,12 +76,12 @@ export class AgentLearningService {
 
     // Create iteration-specific logger
     const logger = createIterationLogger(agentId, iterationNumber);
-    logger.info('Starting learning iteration', { agentName: agent.name });
+    logger.info('Starting learning iteration', { agentName: agent.name, hasManualGuidance: !!manualGuidance });
 
     try {
       // Step 1: Generate strategy (scan + execution)
       logger.info('Step 1: Generating strategy');
-      const strategy = await this.generateStrategy(agent, iterationNumber);
+      const strategy = await this.generateStrategy(agent, iterationNumber, manualGuidance);
       logger.info('Strategy generated', {
         scannerTokens: strategy.scannerTokenUsage?.total_tokens,
         executionTokens: strategy.executionTokenUsage?.total_tokens
@@ -151,6 +151,7 @@ export class AgentLearningService {
         backtestResults,
         analysis,
         refinements,
+        manualGuidance,
       });
 
       logger.info('Iteration complete', {
@@ -213,7 +214,8 @@ export class AgentLearningService {
    */
   private async generateStrategy(
     agent: TradingAgent,
-    iterationNumber: number
+    iterationNumber: number,
+    manualGuidance?: string
   ): Promise<{
     scanScript: string;
     executionScript: string;
@@ -227,6 +229,9 @@ export class AgentLearningService {
 
     console.log(`   Agent personality: ${agent.trading_style}, ${agent.risk_tolerance}`);
     console.log(`   Pattern focus: ${agent.pattern_focus.join(', ')}`);
+    if (manualGuidance) {
+      console.log(`   Manual guidance provided: ${manualGuidance.substring(0, 100)}...`);
+    }
 
     // Step 1: Generate scanner script
     // ALWAYS prioritize custom instructions if they exist (for specialized strategies)
@@ -248,6 +253,11 @@ export class AgentLearningService {
       } else {
         scannerQuery = `Find ${agent.pattern_focus.join(' or ')} patterns incorporating these learnings: ${knowledgeSummary}`;
       }
+    }
+
+    // Add manual guidance if provided - this takes priority over automated learnings
+    if (manualGuidance && manualGuidance.trim() !== '') {
+      scannerQuery += `\n\n🎯 MANUAL GUIDANCE FROM USER (PRIORITY):\n${manualGuidance.trim()}\n\nIMPORTANT: The user has provided specific guidance above. Incorporate this guidance into your strategy generation. This takes priority over automated refinements.`;
     }
 
     console.log(`   Generating scanner with Claude...`);
@@ -718,6 +728,7 @@ export class AgentLearningService {
       scan_script: data.strategy.scanScript,
       execution_script: data.strategy.executionScript,
       version_notes: `Iteration ${data.iterationNumber}`,
+      manual_guidance: data.manualGuidance || null,
       signals_found: data.scanResults.length,
       backtest_results: data.backtestResults,
       win_rate: data.backtestResults.winRate || 0,
@@ -732,9 +743,9 @@ export class AgentLearningService {
     db.prepare(`
       INSERT INTO agent_iterations (
         id, agent_id, iteration_number, scan_script, execution_script,
-        version_notes, signals_found, backtest_results, win_rate, sharpe_ratio,
+        version_notes, manual_guidance, signals_found, backtest_results, win_rate, sharpe_ratio,
         total_return, expert_analysis, refinements_suggested, iteration_status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       iteration.id,
       iteration.agent_id,
@@ -742,6 +753,7 @@ export class AgentLearningService {
       iteration.scan_script,
       iteration.execution_script,
       iteration.version_notes,
+      iteration.manual_guidance,
       iteration.signals_found,
       JSON.stringify(iteration.backtest_results),
       iteration.win_rate,

@@ -783,6 +783,7 @@ CREATE TABLE IF NOT EXISTS agent_iterations (
   scan_script TEXT NOT NULL, -- Generated scan TypeScript
   execution_script TEXT NOT NULL, -- Generated execution TypeScript
   version_notes TEXT, -- "Testing tighter stops", "Added volume filter"
+  manual_guidance TEXT, -- Optional manual guidance from user for this iteration
 
   -- Results
   signals_found INTEGER,
