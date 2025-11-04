@@ -734,6 +734,7 @@ export class AgentLearningService {
       win_rate: data.backtestResults.winRate || 0,
       sharpe_ratio: data.backtestResults.sharpeRatio || 0,
       total_return: data.backtestResults.totalReturn || 0,
+      winning_template: data.backtestResults.winningTemplate || null,
       expert_analysis: JSON.stringify(data.analysis),
       refinements_suggested: data.refinements,
       iteration_status: 'completed',
@@ -744,8 +745,8 @@ export class AgentLearningService {
       INSERT INTO agent_iterations (
         id, agent_id, iteration_number, scan_script, execution_script,
         version_notes, manual_guidance, signals_found, backtest_results, win_rate, sharpe_ratio,
-        total_return, expert_analysis, refinements_suggested, iteration_status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        total_return, winning_template, expert_analysis, refinements_suggested, iteration_status, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       iteration.id,
       iteration.agent_id,
@@ -759,6 +760,7 @@ export class AgentLearningService {
       iteration.win_rate,
       iteration.sharpe_ratio,
       iteration.total_return,
+      iteration.winning_template,
       iteration.expert_analysis,
       JSON.stringify(iteration.refinements_suggested),
       iteration.iteration_status,

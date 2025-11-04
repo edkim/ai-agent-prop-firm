@@ -34,6 +34,15 @@ export interface AgentBacktestConfig {
   backtest_timeout_ms: number;           // Timeout per backtest in milliseconds
 }
 
+export interface ExitStrategyConfig {
+  template: string; // 'conservative' | 'aggressive' | 'intraday_time' | 'atr_adaptive' | 'price_action'
+  stopLossPercent?: number | null; // Fixed stop loss % (null = use template default)
+  takeProfitPercent?: number | null; // Fixed take profit % (null = use template default)
+  trailingStopPercent?: number | null; // For price_action template
+  exitTime?: string | null; // For intraday_time template (e.g., "15:55")
+  atrMultiplier?: number | null; // For atr_adaptive template
+}
+
 export interface TradingAgent {
   id: string;
   name: string;
@@ -52,7 +61,8 @@ export interface TradingAgent {
   status: AgentStatus;
   active: boolean;
 
-  // Live trading fields (populated when graduated to live)
+  // Paper/Live trading configuration
+  exit_strategy_config?: ExitStrategyConfig; // Which execution template to use
   account_id?: string;
   timeframe: string; // 'intraday', 'swing', 'position'
   strategies?: string[]; // JSON array of strategy pattern IDs
@@ -77,6 +87,7 @@ export interface TradingAgentRow {
   universe: string | null;
   status: string | null;
   active: number; // SQLite boolean
+  exit_strategy_config: string | null; // JSON string - ExitStrategyConfig
   account_id: string | null;
   timeframe: string;
   strategies: string | null; // JSON string
@@ -127,6 +138,7 @@ export interface AgentIteration {
   win_rate: number;
   sharpe_ratio: number;
   total_return: number;
+  winning_template?: string; // Which execution template performed best (e.g., 'price_action')
 
   // Claude's analysis
   expert_analysis: string;
