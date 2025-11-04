@@ -398,6 +398,111 @@ Iteration  Signals  Win%  Sharpe   Key Learning
 
 ---
 
+## 🚀 Production Deployment (2025-11-04)
+
+**Deploy your AI trading platform to a production VPS for 24/7 operation**
+
+The platform includes complete deployment infrastructure to run continuously on a cloud server, enabling paper trading agents to operate around the clock.
+
+### Deployment Features
+
+✅ **Automated Setup** - One-script server provisioning (Ubuntu 22.04)
+✅ **Auto-Restart** - PM2 process manager with crash recovery
+✅ **HTTPS/SSL** - Automatic Let's Encrypt certificates via Caddy
+✅ **Cloud Backups** - Daily database backups to DigitalOcean Spaces/S3
+✅ **Monitoring** - Uptime monitoring and alerting (UptimeRobot)
+✅ **Security** - UFW firewall, fail2ban, secure environment variables
+
+### Quick Deployment
+
+```bash
+# 1. Create VPS (DigitalOcean, Linode, Vultr - $6-12/mo)
+# 2. SSH into server
+ssh root@your-server-ip
+
+# 3. Run automated setup
+wget https://raw.githubusercontent.com/your-username/ai-backtest/main/deployment/setup-server.sh
+chmod +x setup-server.sh
+./setup-server.sh
+
+# 4. Follow the comprehensive guide
+# See: deployment/DEPLOYMENT.md
+```
+
+**Total deployment time:** ~1.5-2 hours
+**Monthly cost:** ~$12-18 (VPS + cloud storage)
+
+### What Gets Deployed
+
+```
+Production VPS Architecture:
+├─ Caddy Web Server (Port 443)
+│  ├─ Automatic HTTPS/SSL
+│  ├─ Reverse proxy to Node.js
+│  └─ Security headers
+├─ Node.js Application (Port 3000)
+│  ├─ Managed by PM2
+│  ├─ Auto-restart on crash
+│  └─ Memory limit: 1GB
+├─ SQLite Database
+│  ├─ Daily automated backups
+│  └─ Cloud storage sync
+└─ Monitoring
+   ├─ UptimeRobot (uptime checks)
+   ├─ PM2 metrics (CPU, memory)
+   └─ Log aggregation
+```
+
+### Deployment Files
+
+All ready-to-use in the `deployment/` directory:
+
+- **DEPLOYMENT.md** - Complete step-by-step deployment guide
+- **MONITORING.md** - Monitoring and alerting setup
+- **setup-server.sh** - Automated VPS provisioning
+- **backup-db.sh** - Database backup automation
+- **Caddyfile** - HTTPS reverse proxy configuration
+- **ecosystem.config.js** - PM2 process configuration
+- **.env.production.template** - Environment variables
+
+### Paper Trading 24/7
+
+Once deployed, your graduated agents run continuously:
+
+1. **Backend runs 24/7** - PM2 keeps application alive
+2. **Real-time monitoring** - Agents scan markets continuously
+3. **Automatic trading** - Paper accounts execute simulated trades
+4. **Performance tracking** - P&L updated in real-time
+5. **Daily backups** - Database backed up to cloud storage automatically
+
+### Cost Breakdown
+
+| Service | Monthly Cost | Purpose |
+|---------|-------------|---------|
+| VPS (DigitalOcean $6 plan) | $6-12 | Server hosting |
+| Cloud Storage (Spaces) | $5 | Database backups |
+| Domain (optional) | ~$1 | HTTPS certificate |
+| **Total** | **~$12-18** | Full stack |
+
+**Free components:**
+- SSL certificates (Let's Encrypt)
+- UptimeRobot monitoring
+- PM2 process management
+- Caddy web server
+
+### Security Features
+
+✅ Firewall (UFW) - SSH, HTTP, HTTPS only
+✅ fail2ban - Auto-block failed login attempts
+✅ SSL/TLS - Automatic HTTPS with Let's Encrypt
+✅ Secure secrets - Environment variables in .env (chmod 600)
+✅ Auto-updates - Unattended security updates
+✅ Encrypted backups - Cloud storage with encryption
+
+**Documentation:** See `deployment/README.md` to get started
+
+---
+
 ## 💡 Key Features
 
 ### 1. Natural Language Agent Creation
@@ -727,4 +832,4 @@ MIT
 
 *Where AI agents autonomously learn to trade, iterate by iterate, guided by human intuition when needed.*
 
-*Last updated: 2025-11-03*
+*Last updated: 2025-11-04*
