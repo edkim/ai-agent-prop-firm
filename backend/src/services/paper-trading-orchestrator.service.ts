@@ -11,6 +11,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { ScriptExecutionService } from './script-execution.service';
+import { ExecutionTemplateExitsService } from './execution-template-exits.service';
+import { ExitStrategyConfig } from '../types/agent.types';
 
 interface Bar {
   ticker: string;
@@ -32,14 +34,17 @@ interface PaperTradingAgent {
   iteration_number: number;
   tickers: string[];
   account_id: string;
+  exit_strategy_config: ExitStrategyConfig | null;
 }
 
 export class PaperTradingOrchestratorService {
   private paperAccountService: PaperAccountService;
   private virtualExecutor: VirtualExecutorService;
   private scriptExecution: ScriptExecutionService;
+  private templateExits: ExecutionTemplateExitsService;
   private activeAgents: Map<string, PaperTradingAgent> = new Map();
   private recentBars: Map<string, Bar[]> = new Map(); // ticker -> recent bars
+  private positionMetadata: Map<string, any> = new Map(); // positionId -> metadata for template exits
   private readonly MAX_BARS_PER_TICKER = 100; // Keep last 100 bars per ticker
   private isRunning: boolean = false;
 
@@ -47,6 +52,7 @@ export class PaperTradingOrchestratorService {
     this.paperAccountService = new PaperAccountService();
     this.virtualExecutor = new VirtualExecutorService();
     this.scriptExecution = new ScriptExecutionService();
+    this.templateExits = new ExecutionTemplateExitsService();
   }
 
   /**
@@ -76,6 +82,7 @@ export class PaperTradingOrchestratorService {
         a.id,
         a.name,
         a.status,
+        a.exit_strategy_config,
         i.scan_script as latest_scan_script,
         i.execution_script as latest_execution_script,
         i.iteration_number,
@@ -111,6 +118,19 @@ export class PaperTradingOrchestratorService {
         continue;
       }
 
+      // Parse exit strategy config
+      let exitConfig: ExitStrategyConfig | null = null;
+      if (agent.exit_strategy_config) {
+        try {
+          exitConfig = JSON.parse(agent.exit_strategy_config);
+          logger.info(`📊 Agent ${agent.name} will use "${exitConfig?.template}" exit template`);
+        } catch (error) {
+          logger.warn(`Failed to parse exit_strategy_config for agent ${agent.name}, using fallback`);
+        }
+      } else {
+        logger.info(`📊 Agent ${agent.name} has no exit template configured, using simple exits`);
+      }
+
       const paperAgent: PaperTradingAgent = {
         id: agent.id,
         name: agent.name,
@@ -119,7 +139,8 @@ export class PaperTradingOrchestratorService {
         latest_execution_script: agent.latest_execution_script,
         iteration_number: agent.iteration_number,
         tickers: tickers,
-        account_id: agent.account_id
+        account_id: agent.account_id,
+        exit_strategy_config: exitConfig
       };
 
       this.activeAgents.set(agent.id, paperAgent);
@@ -390,37 +411,110 @@ export class PaperTradingOrchestratorService {
   }
 
   /**
-   * Check exit conditions for a position
+   * Check exit conditions for a position using template-based exits
    */
   private async checkExitConditions(agent: PaperTradingAgent, position: any, bar: Bar): Promise<void> {
-    // Simplified exit logic:
-    // - Stop loss at -5%
-    // - Take profit at +10%
+    try {
+      // Get recent bars for this ticker (need prior bar for price action trailing)
+      const recentBars = this.recentBars.get(position.ticker);
+      if (!recentBars || recentBars.length < 2) {
+        return; // Need at least 2 bars for template logic
+      }
 
-    const STOP_LOSS_PERCENT = -5;
-    const TAKE_PROFIT_PERCENT = 10;
+      const currentBar = recentBars[recentBars.length - 1];
+      const priorBar = recentBars[recentBars.length - 2];
 
-    if (position.unrealized_pnl_percent <= STOP_LOSS_PERCENT) {
-      logger.info(`🛑 Stop loss triggered for ${position.ticker}: ${position.unrealized_pnl_percent.toFixed(2)}%`);
+      // Get or initialize position metadata
+      const positionKey = `${agent.agent_id}-${position.ticker}`;
+      let metadata = this.positionMetadata.get(positionKey);
 
-      await this.virtualExecutor.executeMarketOrder(
-        agent.agent_id,
-        position.ticker,
-        'sell',
-        position.quantity,
-        bar.close
-      );
-    } else if (position.unrealized_pnl_percent >= TAKE_PROFIT_PERCENT) {
-      logger.info(`💰 Take profit triggered for ${position.ticker}: ${position.unrealized_pnl_percent.toFixed(2)}%`);
+      // Build position object for template exits service
+      const templatePosition = {
+        side: position.side || 'LONG',
+        entry_price: position.entry_price,
+        current_price: bar.close,
+        highest_price: position.highest_price || bar.high,
+        lowest_price: position.lowest_price || bar.low,
+        unrealized_pnl_percent: position.unrealized_pnl_percent,
+        metadata: metadata
+      };
 
-      await this.virtualExecutor.executeMarketOrder(
-        agent.agent_id,
-        position.ticker,
-        'sell',
-        position.quantity,
-        bar.close
-      );
+      // Convert Bar to template service format
+      const templateBar = {
+        timestamp: bar.timestamp,
+        open: bar.open,
+        high: bar.high,
+        low: bar.low,
+        close: bar.close,
+        volume: bar.volume,
+        time_of_day: this.getTimeOfDay(bar.timestamp)
+      };
+
+      const templatePriorBar = {
+        timestamp: priorBar.timestamp,
+        open: priorBar.open,
+        high: priorBar.high,
+        low: priorBar.low,
+        close: priorBar.close,
+        volume: priorBar.volume,
+        time_of_day: this.getTimeOfDay(priorBar.timestamp)
+      };
+
+      // Use template-based exit logic
+      let exitDecision;
+      if (agent.exit_strategy_config) {
+        exitDecision = this.templateExits.checkExit(
+          agent.exit_strategy_config,
+          templatePosition,
+          templateBar,
+          templatePriorBar
+        );
+      } else {
+        // Fallback to simple exit if no template configured
+        exitDecision = this.templateExits.checkExit(
+          { template: 'simple' },
+          templatePosition,
+          templateBar,
+          templatePriorBar
+        );
+      }
+
+      // Update metadata if changed
+      if (exitDecision.updatedMetadata) {
+        this.positionMetadata.set(positionKey, exitDecision.updatedMetadata);
+      }
+
+      // Execute exit if triggered
+      if (exitDecision.shouldExit) {
+        logger.info(
+          `🎯 Exit triggered for ${position.ticker}: ${exitDecision.exitReason} ` +
+          `(P&L: ${position.unrealized_pnl_percent.toFixed(2)}%)`
+        );
+
+        await this.virtualExecutor.executeMarketOrder(
+          agent.agent_id,
+          position.ticker,
+          'sell',
+          position.quantity,
+          exitDecision.exitPrice
+        );
+
+        // Clean up metadata after exit
+        this.positionMetadata.delete(positionKey);
+      }
+
+    } catch (error: any) {
+      logger.error(`Error checking exit conditions for ${position.ticker}:`, error.message);
+      // Don't throw - continue monitoring other positions
     }
+  }
+
+  /**
+   * Extract time of day from timestamp
+   */
+  private getTimeOfDay(timestamp: number): string {
+    const date = new Date(timestamp);
+    return date.toTimeString().split(' ')[0]; // Returns HH:MM:SS
   }
 
   /**

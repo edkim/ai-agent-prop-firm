@@ -172,6 +172,36 @@ export class GraduationService {
           throw error;
         }
       }
+
+      // Copy winning template from latest iteration to agent config
+      const latestIteration = db.prepare(`
+        SELECT winning_template
+        FROM agent_iterations
+        WHERE agent_id = ?
+        ORDER BY iteration_number DESC
+        LIMIT 1
+      `).get(agentId) as { winning_template: string | null } | undefined;
+
+      if (latestIteration?.winning_template) {
+        const exitConfig = {
+          template: latestIteration.winning_template,
+          stopLossPercent: null,
+          takeProfitPercent: null,
+          trailingStopPercent: latestIteration.winning_template === 'price_action' ? 2.0 : null,
+          exitTime: latestIteration.winning_template === 'intraday_time' ? '15:55' : null,
+          atrMultiplier: latestIteration.winning_template === 'atr_adaptive' ? 2.0 : null
+        };
+
+        db.prepare(`
+          UPDATE trading_agents
+          SET exit_strategy_config = ?
+          WHERE id = ?
+        `).run(JSON.stringify(exitConfig), agentId);
+
+        console.log(`📊 Set exit strategy to "${latestIteration.winning_template}" template`);
+      } else {
+        console.log(`⚠️  No winning template found - will use default exit strategy`);
+      }
     }
 
     await this.activityLog.log({
