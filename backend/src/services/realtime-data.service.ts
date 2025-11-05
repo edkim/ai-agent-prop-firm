@@ -35,6 +35,31 @@ class RealtimeDataService {
   }
 
   /**
+   * Initialize lastFetchTimestamps from database (for restart recovery)
+   */
+  private initializeLastFetchTimestamps(): void {
+    try {
+      const db = getDatabase();
+
+      // Get most recent bar timestamp for each subscribed ticker
+      for (const ticker of this.subscribedTickers) {
+        const result = db.prepare(`
+          SELECT MAX(timestamp) as lastTimestamp
+          FROM ohlcv_data
+          WHERE ticker = ? AND timeframe = ?
+        `).get(ticker, this.TIMEFRAME) as { lastTimestamp: number | null };
+
+        if (result && result.lastTimestamp) {
+          this.lastFetchTimestamps.set(ticker, result.lastTimestamp);
+          logger.info(`📊 ${ticker}: Resuming from ${new Date(result.lastTimestamp).toISOString()}`);
+        }
+      }
+    } catch (error: any) {
+      logger.warn('Could not initialize from database, will use default timestamps:', error.message);
+    }
+  }
+
+  /**
    * Initialize and start polling
    */
   async connect(): Promise<void> {
@@ -51,6 +76,9 @@ class RealtimeDataService {
       logger.info('📡 Starting Polygon REST API polling...');
 
       this.isConnected = true;
+
+      // Initialize timestamps from database (for restart recovery)
+      this.initializeLastFetchTimestamps();
 
       // Start polling immediately
       await this.pollLatestBars();
