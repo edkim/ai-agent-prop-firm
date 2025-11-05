@@ -133,14 +133,11 @@ export class PaperTradingOrchestratorService {
       }
 
       // Create persistent scan script for this agent (avoid file creation overhead on each scan)
-      logger.info(`[DEBUG] About to create persistent scan script for agent ${agent.name} (id: ${agent.id})`);
       let persistentScriptPath: string | undefined;
       try {
         persistentScriptPath = this.createPersistentScanScript(agent.id, agent.latest_scan_script);
-        logger.info(`[DEBUG] Successfully created persistent scan script: ${persistentScriptPath}`);
       } catch (error: any) {
         logger.error(`Failed to create persistent scan script for agent ${agent.name}: ${error.message}`);
-        logger.error(`[DEBUG] Stack trace:`, error.stack);
       }
 
       const paperAgent: PaperTradingAgent = {
@@ -283,19 +280,12 @@ export class PaperTradingOrchestratorService {
    * Create a persistent scan script file for an agent (created once, reused many times)
    */
   private createPersistentScanScript(agentId: string, scanScript: string): string {
-    logger.info(`[DEBUG] createPersistentScanScript called for agent ${agentId}`);
-    logger.info(`[DEBUG] __dirname = ${__dirname}`);
-
     const scriptPath = path.join(__dirname, '../../', `paper-trading-agent-${agentId}.ts`);
-    logger.info(`[DEBUG] Calculated script path: ${scriptPath}`);
 
     // Adapt script for real-time use
-    logger.info(`[DEBUG] Adapting script for real-time use...`);
     const adaptedScript = this.adaptScanScriptForRealTime(scanScript);
-    logger.info(`[DEBUG] Script adapted, length: ${adaptedScript.length} characters`);
 
     // Write once
-    logger.info(`[DEBUG] Writing file to: ${scriptPath}`);
     fs.writeFileSync(scriptPath, adaptedScript);
     logger.info(`📝 Created persistent scan script for agent ${agentId}: ${scriptPath}`);
 
