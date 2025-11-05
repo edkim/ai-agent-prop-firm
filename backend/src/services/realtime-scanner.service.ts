@@ -591,13 +591,19 @@ export class RealtimeScannerService {
    * Store bar in database
    */
   private async storeBar(bar: OHLCVBar): Promise<void> {
+    const db = getDatabase();
+
+    // Calculate time_of_day and day_of_week for scanner compatibility
+    const barDate = new Date(bar.timestamp);
+    const timeOfDay = barDate.toTimeString().split(' ')[0]; // HH:MM:SS
+    const dayOfWeek = barDate.getDay(); // 0=Sunday, 6=Saturday
+
     const query = `
-      INSERT OR REPLACE INTO realtime_bars (
-        ticker, timestamp, open, high, low, close, volume, timeframe, received_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      INSERT OR REPLACE INTO ohlcv_data (
+        ticker, timestamp, open, high, low, close, volume, timeframe, time_of_day, day_of_week
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    const db = getDatabase();
     db.prepare(query).run(
       bar.ticker,
       bar.timestamp,
@@ -606,7 +612,9 @@ export class RealtimeScannerService {
       bar.low,
       bar.close,
       bar.volume,
-      bar.timeframe
+      bar.timeframe,
+      timeOfDay,
+      dayOfWeek
     );
   }
 
