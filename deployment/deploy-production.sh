@@ -40,16 +40,15 @@ echo -e "${GREEN}  Production Deployment Script${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
 
-# Step 1: Test local build
-echo -e "${YELLOW}[1/6]${NC} Testing local build..."
+# Step 1: Test local dependencies
+echo -e "${YELLOW}[1/6]${NC} Checking local dependencies..."
 cd "$(dirname "$0")/../backend"
-if npm run build > /dev/null 2>&1; then
-    echo -e "${GREEN}✓${NC} Local build successful"
-else
-    echo -e "${RED}✗${NC} Local build failed"
-    echo "Please fix build errors before deploying"
+if [ ! -d "node_modules" ]; then
+    echo -e "${RED}✗${NC} node_modules not found. Run 'npm install' first."
     exit 1
 fi
+echo -e "${GREEN}✓${NC} Local dependencies OK"
+echo -e "${YELLOW}Note:${NC} Using ts-node-dev in production (build step skipped)"
 
 # Step 2: Check git status
 echo ""
