@@ -324,9 +324,9 @@ export class PaperTradingOrchestratorService {
       `const endDate = '${today}'`
     );
 
-    // If querying realtime_bars, add time filter for 9:30am onwards
-    // Add WHERE clause to filter bars after 9:30am ET (13:30 UTC during standard time, 14:30 during DST)
-    if (adapted.includes('realtime_bars')) {
+    // If querying ohlcv_data, add time filter helper for 9:30am onwards
+    // (ohlcv_data has time_of_day column, but this helper is for legacy compatibility)
+    if (adapted.includes('ohlcv_data')) {
       // Add a helper function to calculate time of day from timestamp
       const timeHelper = `
 // Helper: Calculate time of day from timestamp
