@@ -514,23 +514,6 @@ CREATE TABLE IF NOT EXISTS trading_agents (
 
 CREATE INDEX IF NOT EXISTS idx_agents_active ON trading_agents(active);
 
--- Real-time Market Data Bars
-CREATE TABLE IF NOT EXISTS realtime_bars (
-    ticker TEXT NOT NULL,
-    timestamp INTEGER NOT NULL,
-    open REAL NOT NULL,
-    high REAL NOT NULL,
-    low REAL NOT NULL,
-    close REAL NOT NULL,
-    volume INTEGER NOT NULL,
-    timeframe TEXT NOT NULL, -- '1min', '5min', etc.
-    received_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (ticker, timestamp, timeframe)
-);
-
-CREATE INDEX IF NOT EXISTS idx_realtime_bars_ticker_time ON realtime_bars(ticker, timestamp);
-CREATE INDEX IF NOT EXISTS idx_realtime_bars_timeframe ON realtime_bars(timeframe, timestamp);
-
 -- Live Pattern Detections
 CREATE TABLE IF NOT EXISTS live_signals (
     id TEXT PRIMARY KEY,
