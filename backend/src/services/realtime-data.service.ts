@@ -35,31 +35,6 @@ class RealtimeDataService {
   }
 
   /**
-   * Initialize lastFetchTimestamps from database (for restart recovery)
-   */
-  private initializeLastFetchTimestamps(): void {
-    try {
-      const db = getDatabase();
-
-      // Get most recent bar timestamp for each subscribed ticker
-      for (const ticker of this.subscribedTickers) {
-        const result = db.prepare(`
-          SELECT MAX(timestamp) as lastTimestamp
-          FROM ohlcv_data
-          WHERE ticker = ? AND timeframe = ?
-        `).get(ticker, this.TIMEFRAME) as { lastTimestamp: number | null };
-
-        if (result && result.lastTimestamp) {
-          this.lastFetchTimestamps.set(ticker, result.lastTimestamp);
-          logger.info(`📊 ${ticker}: Resuming from ${new Date(result.lastTimestamp).toISOString()}`);
-        }
-      }
-    } catch (error: any) {
-      logger.warn('Could not initialize from database, will use default timestamps:', error.message);
-    }
-  }
-
-  /**
    * Initialize and start polling
    */
   async connect(): Promise<void> {
@@ -77,10 +52,7 @@ class RealtimeDataService {
 
       this.isConnected = true;
 
-      // Initialize timestamps from database (for restart recovery)
-      this.initializeLastFetchTimestamps();
-
-      // Start polling immediately
+      // Start polling immediately (timestamps initialized on-demand per ticker)
       await this.pollLatestBars();
 
       // Set up recurring polling
@@ -130,8 +102,33 @@ class RealtimeDataService {
    */
   private async fetchLatestBarForTicker(ticker: string, now: number): Promise<void> {
     try {
-      // Get last fetch timestamp or default to 30 minutes ago
-      const lastTimestamp = this.lastFetchTimestamps.get(ticker) || (now - 30 * 60 * 1000);
+      // Get last fetch timestamp - initialize from database on first fetch for this ticker
+      let lastTimestamp = this.lastFetchTimestamps.get(ticker);
+
+      if (!lastTimestamp) {
+        // First fetch for this ticker - check database for most recent bar
+        try {
+          const db = getDatabase();
+          const result = db.prepare(`
+            SELECT MAX(timestamp) as lastTimestamp
+            FROM ohlcv_data
+            WHERE ticker = ? AND timeframe = ?
+          `).get(ticker, this.TIMEFRAME) as { lastTimestamp: number | null };
+
+          if (result && result.lastTimestamp) {
+            lastTimestamp = result.lastTimestamp;
+            logger.info(`📊 ${ticker}: Resuming from ${new Date(lastTimestamp).toISOString()}`);
+          } else {
+            // No data in database, start from 30 minutes ago
+            lastTimestamp = now - 30 * 60 * 1000;
+          }
+        } catch (error: any) {
+          logger.warn(`Could not check database for ${ticker}, using default:`, error.message);
+          lastTimestamp = now - 30 * 60 * 1000;
+        }
+
+        this.lastFetchTimestamps.set(ticker, lastTimestamp);
+      }
 
       // Fetch bars from last timestamp to now
       const fromDate = new Date(lastTimestamp).toISOString().split('T')[0];
