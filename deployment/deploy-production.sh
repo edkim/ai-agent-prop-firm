@@ -78,7 +78,8 @@ echo -e "${GREEN}✓${NC} Dependencies updated"
 echo ""
 echo -e "${YELLOW}[5/6]${NC} Restarting application..."
 ssh $SERVER "pm2 restart ai-backtest-backend"
-sleep 3
+echo "Waiting for application to start..."
+sleep 8
 echo -e "${GREEN}✓${NC} Application restarted"
 
 # Step 6: Verify health
