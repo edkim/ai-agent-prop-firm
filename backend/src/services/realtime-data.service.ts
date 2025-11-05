@@ -118,15 +118,19 @@ class RealtimeDataService {
         100 // Limit to recent bars
       );
 
+      logger.info(`[DEBUG] ${ticker}: API returned ${bars.length} bars for range ${fromDate} to ${toDate}, lastTimestamp=${new Date(lastTimestamp).toISOString()}`);
+
       if (bars.length === 0) {
         return;
       }
 
       // Process new bars
       let newBarsCount = 0;
+      let skippedCount = 0;
       for (const polygonBar of bars) {
         // Skip if we've already processed this bar
         if (polygonBar.t <= lastTimestamp) {
+          skippedCount++;
           continue;
         }
 
