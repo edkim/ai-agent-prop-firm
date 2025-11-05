@@ -1,55 +1,49 @@
-# Caddyfile - HTTPS Reverse Proxy Configuration
-#
-# Caddy automatically provisions and renews Let's Encrypt SSL certificates
-# and acts as a reverse proxy to the Node.js backend on port 3000.
-#
-# Setup:
-#   1. Replace 'your-domain.com' with your actual domain
-#   2. Ensure DNS A record points to your server IP
-#   3. Copy this file: sudo cp deployment/Caddyfile /etc/caddy/Caddyfile
-#   4. Restart Caddy: sudo systemctl restart caddy
-#   5. Check status: sudo systemctl status caddy
-#   6. View logs: sudo journalctl -u caddy -f
-#
-# Features:
-#   - Automatic HTTPS with Let's Encrypt
-#   - HTTP to HTTPS redirect
-#   - Gzip compression
-#   - Security headers
-#   - Request logging
-#   - WebSocket support
+# Caddy configuration for frontend + backend
+http://104.131.34.225, http://104.131.34.225:80 {
+    redir https://104.131.34.225{uri} permanent
+}
 
-# =============================================================================
-# Main Site Configuration
-# =============================================================================
+https://104.131.34.225, https://104.131.34.225:443 {
+    tls internal
 
-# Replace with your domain name
-your-domain.com {
-    # Reverse proxy to Node.js backend
-    reverse_proxy localhost:3000 {
-        # Health check
-        health_uri /health
-        health_interval 30s
-        health_timeout 5s
+    # Root directory for static files
+    root * /var/www/ai-backtest/frontend/dist
 
-        # Headers
-        header_up Host {host}
-        header_up X-Real-IP {remote}
-        header_up X-Forwarded-For {remote}
-        header_up X-Forwarded-Proto {scheme}
-        header_up X-Forwarded-Host {host}
-        header_up X-Forwarded-Port {port}
+    # API proxy - forward /api/* to backend (handled first)
+    handle /api/* {
+        reverse_proxy localhost:3000 {
+            # Health check
+            health_uri /health
+            health_interval 30s
+            health_timeout 5s
 
-        # WebSocket support
-        header_up Connection {>Connection}
-        header_up Upgrade {>Upgrade}
+            # Headers
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+            header_up X-Forwarded-For {remote}
+            header_up X-Forwarded-Proto {scheme}
 
-        # Timeouts
-        transport http {
-            read_timeout 60s
-            write_timeout 60s
-            dial_timeout 10s
+            # WebSocket support
+            header_up Connection {>Connection}
+            header_up Upgrade {>Upgrade}
         }
+    }
+
+    # Health check endpoint (direct to backend)
+    handle /health {
+        reverse_proxy localhost:3000
+    }
+
+    # Serve static files with cache headers
+    @static {
+        path *.js *.css *.png *.jpg *.jpeg *.gif *.svg *.ico *.woff *.woff2 *.ttf
+    }
+    header @static Cache-Control "public, max-age=31536000, immutable"
+
+    # Everything else: serve static files or fallback to index.html for SPA
+    handle {
+        try_files {path} /index.html
+        file_server
     }
 
     # Gzip compression
@@ -57,23 +51,10 @@ your-domain.com {
 
     # Security headers
     header {
-        # Prevent clickjacking
         X-Frame-Options "SAMEORIGIN"
-
-        # XSS protection
         X-Content-Type-Options "nosniff"
         X-XSS-Protection "1; mode=block"
-
-        # Referrer policy
         Referrer-Policy "strict-origin-when-cross-origin"
-
-        # Content Security Policy (adjust as needed)
-        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' wss: https:;"
-
-        # HSTS (HTTP Strict Transport Security)
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-
-        # Remove Server header
         -Server
     }
 
@@ -82,93 +63,8 @@ your-domain.com {
         output file /var/log/caddy/access.log {
             roll_size 100mb
             roll_keep 10
-            roll_keep_for 720h
         }
         format console
     }
-
-    # Error handling
-    handle_errors {
-        @5xx expression {http.error.status_code} >= 500
-        respond @5xx "Server error: {http.error.status_code}" {http.error.status_code}
-
-        @4xx expression {http.error.status_code} >= 400 && {http.error.status_code} < 500
-        respond @4xx "Client error: {http.error.status_code}" {http.error.status_code}
-    }
 }
 
-# =============================================================================
-# Alternative Configuration: Without Domain (IP-based)
-# =============================================================================
-#
-# If you don't have a domain name yet, you can use your server IP address.
-# Note: Let's Encrypt requires a domain, so this will use self-signed certs.
-#
-# Uncomment the section below and comment out the domain section above:
-
-# :443 {
-#     tls internal  # Use self-signed certificate
-#
-#     reverse_proxy localhost:3000 {
-#         header_up Host {host}
-#         header_up X-Real-IP {remote}
-#         header_up X-Forwarded-For {remote}
-#         header_up X-Forwarded-Proto {scheme}
-#     }
-#
-#     encode gzip
-# }
-
-# =============================================================================
-# Development/Staging Configuration (Optional)
-# =============================================================================
-#
-# If you want a staging subdomain:
-
-# staging.your-domain.com {
-#     reverse_proxy localhost:3001
-#     encode gzip
-#
-#     # Optional: Basic auth for staging
-#     basicauth {
-#         admin $2a$14$YOUR_HASHED_PASSWORD
-#     }
-# }
-
-# =============================================================================
-# API-Only Configuration (Optional)
-# =============================================================================
-#
-# If you want to separate API and frontend:
-
-# api.your-domain.com {
-#     reverse_proxy localhost:3000
-#     encode gzip
-#
-#     # CORS headers for API
-#     header {
-#         Access-Control-Allow-Origin "*"
-#         Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-#         Access-Control-Allow-Headers "Content-Type, Authorization"
-#     }
-# }
-
-# =============================================================================
-# Static File Serving (Optional)
-# =============================================================================
-#
-# If you want to serve frontend from Caddy directly:
-
-# your-domain.com {
-#     # Serve static files
-#     root * /var/www/ai-backtest/frontend/dist
-#     file_server
-#
-#     # API routes go to backend
-#     handle /api/* {
-#         reverse_proxy localhost:3000
-#     }
-#
-#     # Fallback to index.html for SPA routing
-#     try_files {path} /index.html
-# }
