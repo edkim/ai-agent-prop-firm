@@ -181,7 +181,7 @@ export default function AgentDashboard() {
                   <div>
                     <h3 className="font-semibold text-gray-900">{agent.name}</h3>
                     <p className="text-xs text-gray-500 mt-1">
-                      {agent.timeframe.toUpperCase()} • {agent.strategies.length} strategies
+                      {agent.timeframe.toUpperCase()} • {(agent.strategies || []).length} strategies
                     </p>
                   </div>
                   <div className="flex items-center space-x-2">
