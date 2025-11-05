@@ -464,7 +464,7 @@ Guidelines:
    */
   private async getHistoricalBars(ticker: string, timeframe: string, limit: number): Promise<OHLCVBar[]> {
     const query = `
-      SELECT * FROM realtime_bars
+      SELECT * FROM ohlcv_data
       WHERE ticker = ? AND timeframe = ?
       ORDER BY timestamp DESC
       LIMIT ?

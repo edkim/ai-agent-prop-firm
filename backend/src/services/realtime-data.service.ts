@@ -27,7 +27,7 @@ class RealtimeDataService {
   private pollingInterval: NodeJS.Timeout | null = null;
   private dataCallbacks: ((bar: Bar) => void)[] = [];
   private lastFetchTimestamps: Map<string, number> = new Map();
-  private readonly POLL_INTERVAL_MS = 60000; // 60 seconds
+  private readonly POLL_INTERVAL_MS = 300000; // 5 minutes (matches 5-min bar timeframe)
   private readonly TIMEFRAME = '5min';
 
   constructor() {
@@ -257,10 +257,16 @@ class RealtimeDataService {
     try {
       const db = getDatabase();
 
+      // Insert into ohlcv_data table (used by scanner scripts)
+      // Calculate time_of_day and day_of_week for scanner compatibility
+      const barDate = new Date(bar.timestamp);
+      const timeOfDay = barDate.toTimeString().split(' ')[0]; // HH:MM:SS
+      const dayOfWeek = barDate.getDay(); // 0=Sunday, 6=Saturday
+
       db.prepare(`
-        INSERT OR REPLACE INTO realtime_bars (
-          ticker, timestamp, open, high, low, close, volume, timeframe
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT OR REPLACE INTO ohlcv_data (
+          ticker, timestamp, open, high, low, close, volume, timeframe, time_of_day, day_of_week
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         bar.ticker,
         bar.timestamp,
@@ -269,7 +275,9 @@ class RealtimeDataService {
         bar.low,
         bar.close,
         bar.volume,
-        bar.timeframe
+        bar.timeframe,
+        timeOfDay,
+        dayOfWeek
       );
 
     } catch (error: any) {
@@ -316,7 +324,7 @@ class RealtimeDataService {
 
     const bars = db.prepare(`
       SELECT ticker, timestamp, open, high, low, close, volume, timeframe
-      FROM realtime_bars
+      FROM ohlcv_data
       WHERE ticker = ? AND timeframe = ?
       ORDER BY timestamp DESC
       LIMIT ?

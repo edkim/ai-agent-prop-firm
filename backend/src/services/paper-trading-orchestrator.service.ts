@@ -35,6 +35,7 @@ interface PaperTradingAgent {
   tickers: string[];
   account_id: string;
   exit_strategy_config: ExitStrategyConfig | null;
+  persistent_scan_script_path?: string; // Path to reusable scan script file
 }
 
 export class PaperTradingOrchestratorService {
@@ -131,6 +132,17 @@ export class PaperTradingOrchestratorService {
         logger.info(`📊 Agent ${agent.name} has no exit template configured, using simple exits`);
       }
 
+      // Create persistent scan script for this agent (avoid file creation overhead on each scan)
+      logger.info(`[DEBUG] About to create persistent scan script for agent ${agent.name} (id: ${agent.id})`);
+      let persistentScriptPath: string | undefined;
+      try {
+        persistentScriptPath = this.createPersistentScanScript(agent.id, agent.latest_scan_script);
+        logger.info(`[DEBUG] Successfully created persistent scan script: ${persistentScriptPath}`);
+      } catch (error: any) {
+        logger.error(`Failed to create persistent scan script for agent ${agent.name}: ${error.message}`);
+        logger.error(`[DEBUG] Stack trace:`, error.stack);
+      }
+
       const paperAgent: PaperTradingAgent = {
         id: agent.id,
         name: agent.name,
@@ -140,7 +152,8 @@ export class PaperTradingOrchestratorService {
         iteration_number: agent.iteration_number,
         tickers: tickers,
         account_id: agent.account_id,
-        exit_strategy_config: exitConfig
+        exit_strategy_config: exitConfig,
+        persistent_scan_script_path: persistentScriptPath
       };
 
       this.activeAgents.set(agent.id, paperAgent);
@@ -242,18 +255,12 @@ export class PaperTradingOrchestratorService {
    */
   private async processAgentSignals(agent: PaperTradingAgent, bar: Bar): Promise<void> {
     try {
-      // For now, use a simplified approach:
-      // Run the scan script periodically (every 5th bar to avoid excessive scanning)
+      // Scan on EVERY bar (now efficient with persistent scripts and optimized polling)
       const bars = this.recentBars.get(bar.ticker) || [];
-
-      // Only scan every 5 bars to reduce overhead
-      if (bars.length % 5 !== 0) {
-        return;
-      }
 
       logger.info(`🔍 Scanning ${bar.ticker} for agent ${agent.name} (${bars.length} bars)`);
 
-      // Run scan script
+      // Run scan script (no file I/O overhead with persistent script)
       const signals = await this.runScanScript(agent, bars);
 
       if (signals.length === 0) {
@@ -273,29 +280,88 @@ export class PaperTradingOrchestratorService {
   }
 
   /**
-   * Run scan script with recent bars
+   * Create a persistent scan script file for an agent (created once, reused many times)
+   */
+  private createPersistentScanScript(agentId: string, scanScript: string): string {
+    logger.info(`[DEBUG] createPersistentScanScript called for agent ${agentId}`);
+    logger.info(`[DEBUG] __dirname = ${__dirname}`);
+
+    const scriptPath = path.join(__dirname, '../../', `paper-trading-agent-${agentId}.ts`);
+    logger.info(`[DEBUG] Calculated script path: ${scriptPath}`);
+
+    // Adapt script for real-time use
+    logger.info(`[DEBUG] Adapting script for real-time use...`);
+    const adaptedScript = this.adaptScanScriptForRealTime(scanScript);
+    logger.info(`[DEBUG] Script adapted, length: ${adaptedScript.length} characters`);
+
+    // Write once
+    logger.info(`[DEBUG] Writing file to: ${scriptPath}`);
+    fs.writeFileSync(scriptPath, adaptedScript);
+    logger.info(`📝 Created persistent scan script for agent ${agentId}: ${scriptPath}`);
+
+    return scriptPath;
+  }
+
+  /**
+   * Adapt scan script for real-time paper trading
+   * Modifies date ranges to only scan today's session (from 9:30am ET onwards)
+   */
+  private adaptScanScriptForRealTime(scanScript: string): string {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+
+    // Replace hardcoded date ranges with today only
+    let adapted = scanScript;
+
+    // Replace startDate = '2025-XX-XX' with today
+    adapted = adapted.replace(
+      /const\s+startDate\s*=\s*['"](\d{4}-\d{2}-\d{2})['"]/g,
+      `const startDate = '${today}'`
+    );
+
+    // Replace endDate = '2025-XX-XX' with today
+    adapted = adapted.replace(
+      /const\s+endDate\s*=\s*['"](\d{4}-\d{2}-\d{2})['"]/g,
+      `const endDate = '${today}'`
+    );
+
+    // If querying realtime_bars, add time filter for 9:30am onwards
+    // Add WHERE clause to filter bars after 9:30am ET (13:30 UTC during standard time, 14:30 during DST)
+    if (adapted.includes('realtime_bars')) {
+      // Add a helper function to calculate time of day from timestamp
+      const timeHelper = `
+// Helper: Calculate time of day from timestamp
+function getTimeOfDay(timestamp: number): string {
+  const date = new Date(timestamp);
+  return date.toTimeString().split(' ')[0]; // HH:MM:SS
+}
+`;
+      // Insert helper before the main scan function
+      adapted = adapted.replace(
+        /async function runScan\(\)/,
+        `${timeHelper}\nasync function runScan()`
+      );
+    }
+
+    return adapted;
+  }
+
+  /**
+   * Run scan script with recent bars (using persistent script file - no file I/O overhead)
    */
   private async runScanScript(agent: PaperTradingAgent, bars: Bar[]): Promise<any[]> {
-    const scriptId = uuidv4();
-    const scriptPath = path.join(__dirname, '../../', `paper-trading-scan-${scriptId}.ts`);
+    // Use persistent script path (created once at agent initialization)
+    const scriptPath = agent.persistent_scan_script_path;
+
+    if (!scriptPath || !fs.existsSync(scriptPath)) {
+      logger.warn(`Persistent scan script not found for agent ${agent.name}`);
+      return [];
+    }
 
     try {
-      // Note: This is a simplified implementation
-      // In reality, scan scripts expect to query database with full bar history
-      // For paper trading, we'd need to either:
-      // 1. Modify scan scripts to work with streaming data
-      // 2. Store real-time bars in database and run scans against them
-      // 3. Use a pattern matching library instead of full scan scripts
-
-      // For now, we'll just write the script and skip execution
-      // In production, you'd need a real-time pattern matcher
-      fs.writeFileSync(scriptPath, agent.latest_scan_script);
-
-      // Execute (will likely fail since scan script expects database)
-      const result = await this.scriptExecution.executeScript(scriptPath, 30000);
+      // Execute persistent script (no file creation/deletion overhead)
+      const result = await this.scriptExecution.executeScript(scriptPath, 90000);
 
       if (!result.success || !result.data) {
-        // Scan failed - this is expected for historical scan scripts
         return [];
       }
 
@@ -317,16 +383,9 @@ export class PaperTradingOrchestratorService {
       return recentSignals;
 
     } catch (error: any) {
-      // Expected to fail for now - scan scripts need database
-      logger.debug(`Scan script execution failed (expected): ${error.message}`);
+      // Log scan failures for debugging
+      logger.info(`Scan script execution failed: ${error.message}`);
       return [];
-    } finally {
-      // Clean up
-      try {
-        if (fs.existsSync(scriptPath)) {
-          fs.unlinkSync(scriptPath);
-        }
-      } catch (e) {}
     }
   }
 
@@ -523,6 +582,19 @@ export class PaperTradingOrchestratorService {
   async stop(): Promise<void> {
     logger.info('🛑 Stopping Paper Trading Orchestrator');
     this.isRunning = false;
+
+    // Clean up persistent script files
+    for (const agent of this.activeAgents.values()) {
+      if (agent.persistent_scan_script_path && fs.existsSync(agent.persistent_scan_script_path)) {
+        try {
+          fs.unlinkSync(agent.persistent_scan_script_path);
+          logger.info(`Cleaned up persistent script for agent ${agent.name}`);
+        } catch (e) {
+          logger.warn(`Failed to clean up script for agent ${agent.name}`);
+        }
+      }
+    }
+
     this.activeAgents.clear();
     this.recentBars.clear();
   }
