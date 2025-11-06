@@ -111,11 +111,24 @@ export class PaperTradingOrchestratorService {
         continue;
       }
 
-      // Extract tickers from scan script (simplified - assumes tickers are hardcoded)
-      const tickers = this.extractTickersFromScript(agent.latest_scan_script);
+      // Get tickers from WATCHLIST_TICKERS env var (primary source)
+      // Fall back to extracting from scan script if env var not set
+      let tickers: string[] = [];
+
+      const watchlistEnv = process.env.WATCHLIST_TICKERS;
+      if (watchlistEnv) {
+        tickers = watchlistEnv.split(',').map(t => t.trim()).filter(t => t.length > 0);
+        logger.info(`📋 Agent ${agent.name} using ${tickers.length} tickers from WATCHLIST_TICKERS`);
+      } else {
+        tickers = this.extractTickersFromScript(agent.latest_scan_script);
+        if (tickers.length > 0) {
+          logger.info(`📋 Agent ${agent.name} extracted ${tickers.length} tickers from scan script`);
+        }
+      }
 
       if (tickers.length === 0) {
-        logger.warn(`No tickers found for agent ${agent.name}, skipping`);
+        logger.warn(`⚠️  No tickers found for agent ${agent.name}, skipping`);
+        logger.warn(`   Set WATCHLIST_TICKERS in .env or hardcode tickers in scan script`);
         continue;
       }
 
