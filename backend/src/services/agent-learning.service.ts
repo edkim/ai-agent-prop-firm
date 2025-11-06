@@ -109,11 +109,47 @@ export class AgentLearningService {
         templatesResults: backtestResults.templateResults?.length || 0
       });
 
-      // Step 4: Agent analyzes results (skip if no successful backtests)
+      // Step 4: Agent analyzes results
       logger.info('Step 4: Analyzing results');
       let analysis: ExpertAnalysis;
 
-      if (backtestResults.totalTrades === 0) {
+      if (scanResults.length === 0) {
+        // Special case: Scanner found 0 signals - analyze scanner filters
+        logger.warn('No signals found - analyzing scanner for filter adjustments');
+
+        // Get previous iteration to provide context
+        const prevIteration = await this.getPreviousIteration(agentId, iterationNumber);
+        const previousSignals = prevIteration?.signals_found;
+
+        // Get agent knowledge for context
+        const knowledgeItems = await this.knowledgeExtraction.getAgentKnowledge(agentId);
+        const knowledgeContext = knowledgeItems.length > 0
+          ? knowledgeItems.map((k: any) => `- ${k.insight}`).join('\n')
+          : 'No prior knowledge yet';
+
+        // Call Claude to analyze the scanner and suggest filter adjustments
+        const zeroSignalAnalysis = await this.claudeService.analyzeZeroSignalScanner({
+          agentPersonality: agent.instructions || 'You are a trading agent learning to identify profitable patterns.',
+          scannerScript: strategy.scanScript,
+          agentKnowledge: knowledgeContext,
+          previousIterationSignals: previousSignals
+        });
+
+        // Convert to ExpertAnalysis format
+        analysis = {
+          summary: zeroSignalAnalysis.summary,
+          parameter_recommendations: zeroSignalAnalysis.parameter_recommendations || [],
+          strategic_insights: zeroSignalAnalysis.restrictive_filters_identified || [],
+          trade_quality_assessment: 'No signals to assess - scanner too restrictive',
+          risk_assessment: zeroSignalAnalysis.quality_assurance || 'Filters need adjustment',
+          market_condition_notes: zeroSignalAnalysis.expected_signal_increase || 'Unknown'
+        };
+
+        logger.info('Zero-signal analysis complete', {
+          restrictiveFilters: zeroSignalAnalysis.restrictive_filters_identified?.length || 0,
+          recommendations: zeroSignalAnalysis.parameter_recommendations?.length || 0
+        });
+      } else if (backtestResults.totalTrades === 0) {
         logger.warn('No trades generated - skipping detailed analysis');
         // Generate minimal analysis for failed execution
         analysis = {

@@ -1447,6 +1447,119 @@ Return ONLY the JSON object, no additional text.`;
   }
 
   /**
+   * Analyze scanner script that found 0 signals and suggest filter adjustments
+   */
+  async analyzeZeroSignalScanner(params: {
+    agentPersonality: string;
+    scannerScript: string;
+    agentKnowledge: string;
+    previousIterationSignals?: number;
+  }): Promise<any> {
+    console.log('🔍 Analyzing scanner script that found 0 signals...');
+
+    const systemPrompt = `You are an expert algorithmic trader analyzing scanner scripts. ${params.agentPersonality}
+
+Your task is to analyze a scanner script that found ZERO signals and provide specific, actionable recommendations to loosen filters appropriately.`;
+
+    const userPrompt = `This scanner script found 0 signals when scanning the market. This is too restrictive and prevents the agent from learning.
+
+**Scanner Script:**
+\`\`\`typescript
+${params.scannerScript}
+\`\`\`
+
+**Agent's Accumulated Knowledge:**
+${params.agentKnowledge || 'No prior knowledge yet'}
+
+${params.previousIterationSignals ? `**Previous Iteration:** Found ${params.previousIterationSignals} signals` : ''}
+
+**Your Task:**
+Analyze the scanner's filter criteria and suggest specific adjustments to increase signal frequency while maintaining quality.
+
+Common issues with restrictive scanners:
+- Deviation/threshold ranges too narrow (e.g., 1.5-4% → widen to 1.2-5%)
+- Volume requirements too high (e.g., 1.5x → reduce to 1.2x)
+- Minimum strength scores too high (e.g., 70 → reduce to 60)
+- Time windows too narrow (e.g., 10:00-12:00 → expand to 10:00-14:00)
+- Price ranges too tight (e.g., $50-$100 → expand to $20-$150)
+- Multiple AND conditions that are too restrictive
+
+Provide your analysis in this exact JSON structure:
+{
+  "summary": "Brief explanation of why the scanner found 0 signals",
+  "restrictive_filters_identified": [
+    "List each filter that is too restrictive and why"
+  ],
+  "parameter_recommendations": [
+    {
+      "parameter": "exact parameter name from code (e.g., 'deviation_percent_range', 'volume_ratio_min')",
+      "current_value": "current value in code (e.g., '1.5-4%', '1.3x')",
+      "suggested_value": "new value that loosens filter (e.g., '1.2-5%', '1.2x')",
+      "rationale": "Specific reason this will help (e.g., 'Widening from 1.5% to 1.2% captures 30% more valid signals based on market distribution')"
+    }
+  ],
+  "expected_signal_increase": "Estimated number of signals with these changes (e.g., '15-30 signals per scan')",
+  "quality_assurance": "How these changes maintain signal quality while increasing quantity"
+}
+
+Return ONLY the JSON object, no additional text.`;
+
+    try {
+      const client = this.getClient();
+      const response = await client.messages.create({
+        model: this.model,
+        max_tokens: this.maxTokens,
+        temperature: this.temperature,
+        system: systemPrompt,
+        messages: [
+          {
+            role: 'user',
+            content: userPrompt
+          }
+        ]
+      });
+
+      const textContent = response.content.find((block: any) => block.type === 'text');
+      if (!textContent) {
+        throw new Error('No text content in Claude response');
+      }
+
+      // Parse JSON response
+      const jsonMatch = textContent.text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.error('Failed to parse JSON from Claude response:', textContent.text);
+        throw new Error('Claude response was not valid JSON');
+      }
+
+      const analysis = JSON.parse(jsonMatch[0]);
+      console.log('✅ Zero-signal analysis complete');
+      console.log(`   Identified ${analysis.restrictive_filters_identified?.length || 0} restrictive filters`);
+      console.log(`   Generated ${analysis.parameter_recommendations?.length || 0} recommendations`);
+
+      return analysis;
+    } catch (error: any) {
+      console.error('❌ Failed to analyze zero-signal scanner:', error.message);
+      // Return fallback analysis
+      return {
+        summary: 'Scanner found 0 signals - filters are too restrictive',
+        restrictive_filters_identified: [
+          'Unable to analyze specific filters - manual review recommended'
+        ],
+        parameter_recommendations: [
+          {
+            parameter: 'filter_thresholds',
+            current_value: 'unknown',
+            suggested_value: 'loosen by 20-30%',
+            rationale: 'Gradually relax filters to find optimal balance between signal quantity and quality'
+          }
+        ],
+        expected_signal_increase: '10-50 signals',
+        quality_assurance: 'Incremental loosening maintains quality while increasing sample size'
+      };
+    }
+  }
+
+  /**
    * Generate custom execution script based on learnings from previous iterations
    */
   async generateExecutionScript(params: {
