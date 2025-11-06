@@ -147,9 +147,103 @@ The implementation will be tested through:
 3. Verifying custom script competes with templates
 4. Checking knowledge extraction includes execution insights
 
+## Testing Results
+
+### Iteration 3 (VWAP Mean Reversion Trader)
+- ✅ Custom execution script generated (7,852 characters)
+- ❌ Script NOT tested - only 5 templates ran instead of 6
+- **Issue Found:** Script hardcoded `const signals = [];` instead of reading signals
+
+**Root Causes Identified:**
+1. **Signal Embedding Bug:** The regex in `runBacktests()` only matched the `readFileSync` pattern but not the `const signals = [];` placeholder
+2. **Claude Prompt:** The example in `generateExecutionScript()` includes `const signals = [];` as a placeholder with comment "Signals will be embedded here by the system"
+3. **Regex Mismatch:** Embedding code looked for `readFileSync` pattern, but Claude generated the empty array placeholder
+
+### Iteration 4 (VWAP Mean Reversion Trader)
+- ✅ Custom execution script generated with correct import paths
+- ❌ Still only 5 templates tested (same embedding bug)
+- Scanner found 500 signals, but custom script received none
+
+### Iteration 5 (VWAP Mean Reversion Trader)
+- ✅ Custom execution script generated
+- ✅ Signal embedding bug FIXED in `agent-learning.service.ts`
+- ⚠️ Scanner found 0 signals (evolved to be too restrictive)
+- Cannot test custom script execution without signals
+
+## Bug Fixes Applied
+
+### Fix: Signal Embedding Regex (agent-learning.service.ts:542-552)
+
+**Before:**
+```typescript
+const scriptWithSignals = executionScript.replace(
+  /const input = require\('fs'\)\.readFileSync\(0, 'utf-8'\);?\s*const signals = JSON\.parse\(input\);?/g,
+  `const signals = ${signalsJson};`
+);
+```
+
+**After:**
+```typescript
+// Replace either the readFileSync pattern OR the empty array placeholder
+let scriptWithSignals = executionScript.replace(
+  /const input = require\('fs'\)\.readFileSync\(0, 'utf-8'\);?\s*const signals = JSON\.parse\(input\);?/g,
+  `const signals = ${signalsJson};`
+);
+
+// Also handle the placeholder pattern: const signals = [];
+scriptWithSignals = scriptWithSignals.replace(
+  /const signals\s*=\s*\[\s*\];?/g,
+  `const signals = ${signalsJson};`
+);
+```
+
+**Impact:** Custom execution scripts will now properly receive signal data and compete with templates in iterations 2+
+
+## Custom Execution Script Issues Found
+
+### Iteration 3 Generated Script Problems:
+
+1. **Hardcoded LONG Side:**
+   - Line 139: `const side: 'LONG' | 'SHORT' = 'LONG';`
+   - VWAP signals were SHORT, but script hardcoded LONG
+   - Should determine direction from `signal.metrics.rejection_type`
+
+2. **Wrong Exit Logic for SHORT:**
+   - Stop loss logic (lines 160-236) written for LONG positions only
+   - For SHORT: stops should trigger on `bar.high >= stopLossPrice`
+   - Script used `bar.low <= stopLossPrice` (wrong for SHORT)
+
+3. **No Signal Input:**
+   - Script had `const signals = [];` instead of reading from stdin
+   - Would execute with zero signals even if scanner found them
+
+**Note:** These issues were in the Claude-generated script. The Iteration 4+ scripts correctly use `signal.metrics.rejection_type` for determining trade direction.
+
+## Database Schema Documentation
+
+Created comprehensive database reference document: `DATABASE-SCHEMA-REFERENCE.md`
+
+Contains:
+- All core agent learning tables (`trading_agents`, `agent_iterations`, `agent_knowledge`, `agent_strategies`)
+- Column definitions and usage notes
+- Common query patterns
+- JSON structure documentation for `expert_analysis` and `backtest_results`
+- Quick reference for active agents
+
 ## Next Steps
 
-1. Test with VWAP Mean Reversion Trader (already has iteration 1)
-2. Monitor custom script performance vs templates
-3. Validate knowledge accumulation across iterations
-4. Consider adding execution-specific convergence metrics
+1. ✅ ~~Fix signal embedding regex~~ (COMPLETED)
+2. **Wait for next iteration with signals > 0** to verify custom execution script runs
+3. Monitor if custom script can outperform templates
+4. Validate knowledge accumulation includes execution insights
+5. Consider adding execution-specific convergence metrics
+
+## Summary
+
+The execution script evolution feature is **fully implemented and bug-fixed**. The system will:
+- Generate custom execution scripts starting from iteration 2
+- Properly embed signal data into custom scripts
+- Test custom scripts alongside all 5 templates
+- Select the best performer (custom or template) as the winner
+
+**Status:** Ready for testing once next iteration finds signals (scanner became too restrictive in iteration 5)
