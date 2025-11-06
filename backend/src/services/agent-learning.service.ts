@@ -538,8 +538,16 @@ export class AgentLearningService {
         // Embed signals data into the custom script
         // The custom script expects to read from stdin, but we'll embed the data directly
         const signalsJson = JSON.stringify(filteredResults, null, 2);
-        const scriptWithSignals = executionScript.replace(
+
+        // Replace either the readFileSync pattern OR the empty array placeholder
+        let scriptWithSignals = executionScript.replace(
           /const input = require\('fs'\)\.readFileSync\(0, 'utf-8'\);?\s*const signals = JSON\.parse\(input\);?/g,
+          `const signals = ${signalsJson};`
+        );
+
+        // Also handle the placeholder pattern: const signals = [];
+        scriptWithSignals = scriptWithSignals.replace(
+          /const signals\s*=\s*\[\s*\];?/g,
           `const signals = ${signalsJson};`
         );
 
