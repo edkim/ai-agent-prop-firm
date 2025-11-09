@@ -40,6 +40,7 @@ backend/backtest-*.ts
 backend/scripts-output/
 backend/claude-generated-scripts/
 backend/generated-scripts/
+backend/paper-trading-agent-*.ts
 
 # Temporary files
 /tmp/
