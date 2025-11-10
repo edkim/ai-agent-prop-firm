@@ -56,6 +56,11 @@ export class AgentKnowledgeExtractionService {
       knowledgeItems.push(this.mapMissingContextToKnowledge(missing, agent));
     }
 
+    // 5. Extract from execution analysis -> PARAMETER_PREF and PATTERN_RULE
+    if (analysis.execution_analysis) {
+      knowledgeItems.push(...this.mapExecutionAnalysisToKnowledge(analysis.execution_analysis, agent));
+    }
+
     // Convert to AgentKnowledge records
     const knowledge: AgentKnowledge[] = knowledgeItems.map(item => ({
       id: uuidv4(),
@@ -332,6 +337,90 @@ export class AgentKnowledgeExtractionService {
       },
       confidence: 0.60 // Lower confidence until implemented and tested
     };
+  }
+
+  /**
+   * Map execution analysis to knowledge
+   */
+  private mapExecutionAnalysisToKnowledge(executionAnalysis: any, agent: TradingAgent): KnowledgeItem[] {
+    const items: KnowledgeItem[] = [];
+
+    // Extract insights from template comparison
+    if (executionAnalysis.template_comparison) {
+      items.push({
+        knowledge_type: 'PARAMETER_PREF',
+        pattern_type: agent.pattern_focus[0] || undefined,
+        insight: `Exit strategy preference: ${executionAnalysis.template_comparison}`,
+        supporting_data: {
+          analysis_type: 'template_comparison',
+          details: executionAnalysis.template_comparison
+        },
+        confidence: 0.85
+      });
+    }
+
+    // Extract insights from stop loss effectiveness
+    if (executionAnalysis.stop_loss_effectiveness) {
+      items.push({
+        knowledge_type: 'PARAMETER_PREF',
+        pattern_type: agent.pattern_focus[0] || undefined,
+        insight: `Stop loss assessment: ${executionAnalysis.stop_loss_effectiveness}`,
+        supporting_data: {
+          analysis_type: 'stop_loss_effectiveness',
+          assessment: executionAnalysis.stop_loss_effectiveness
+        },
+        confidence: 0.80
+      });
+    }
+
+    // Extract insights from take profit effectiveness
+    if (executionAnalysis.take_profit_effectiveness) {
+      items.push({
+        knowledge_type: 'PARAMETER_PREF',
+        pattern_type: agent.pattern_focus[0] || undefined,
+        insight: `Take profit assessment: ${executionAnalysis.take_profit_effectiveness}`,
+        supporting_data: {
+          analysis_type: 'take_profit_effectiveness',
+          assessment: executionAnalysis.take_profit_effectiveness
+        },
+        confidence: 0.80
+      });
+    }
+
+    // Extract timing issues as pattern rules
+    if (executionAnalysis.exit_timing_issues && executionAnalysis.exit_timing_issues.length > 0) {
+      for (const issue of executionAnalysis.exit_timing_issues) {
+        items.push({
+          knowledge_type: 'PATTERN_RULE',
+          pattern_type: agent.pattern_focus[0] || undefined,
+          insight: `Exit timing issue: ${issue}`,
+          supporting_data: {
+            analysis_type: 'exit_timing_issue',
+            issue: issue,
+            negative_rule: true
+          },
+          confidence: 0.75
+        });
+      }
+    }
+
+    // Extract suggested improvements as insights
+    if (executionAnalysis.suggested_improvements && executionAnalysis.suggested_improvements.length > 0) {
+      for (const improvement of executionAnalysis.suggested_improvements) {
+        items.push({
+          knowledge_type: 'INSIGHT',
+          pattern_type: agent.pattern_focus[0] || undefined,
+          insight: `Execution improvement: ${improvement}`,
+          supporting_data: {
+            analysis_type: 'execution_improvement',
+            suggestion: improvement
+          },
+          confidence: 0.70
+        });
+      }
+    }
+
+    return items;
   }
 
   /**

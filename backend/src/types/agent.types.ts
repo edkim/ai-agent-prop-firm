@@ -151,7 +151,7 @@ export interface AgentIteration {
 }
 
 export interface Refinement {
-  type: 'scan_filter' | 'parameter_adjustment' | 'exit_rule' | 'missing_data';
+  type: 'scan_filter' | 'parameter_adjustment' | 'exit_rule' | 'missing_data' | 'execution_timing' | 'exit_strategy' | 'position_sizing';
   description: string;
   reasoning: string;
   projected_improvement?: string;
@@ -164,11 +164,20 @@ export interface ExpertAnalysis {
   failure_points: FailurePoint[];
   missing_context: MissingContext[];
   parameter_recommendations: ParameterRecommendation[];
+  execution_analysis?: ExecutionAnalysis; // Analysis of exit strategy performance
   projected_performance: {
     current: { winRate: number; sharpe: number };
     withRefinements: { winRate: number; sharpe: number };
     confidence: number;
   };
+}
+
+export interface ExecutionAnalysis {
+  template_comparison: string; // Which templates worked best and why
+  exit_timing_issues: string[]; // Problems with exit timing
+  stop_loss_effectiveness: string; // Assessment of stop loss placement
+  take_profit_effectiveness: string; // Assessment of take profit targets
+  suggested_improvements: string[]; // Specific execution improvements
 }
 
 export interface AnalysisElement {
