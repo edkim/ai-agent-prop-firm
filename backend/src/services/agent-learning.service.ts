@@ -95,6 +95,30 @@ export class AgentLearningService {
         tickers: [...new Set(scanResults.map((s: any) => s.ticker))]
       });
 
+      // Step 2.5: For iteration 2+, regenerate execution script with actual signals
+      if (iterationNumber > 1 && scanResults.length > 0 && !strategy.executionScript) {
+        logger.info('Step 2.5: Generating execution script with actual scanner signals');
+        const previousIteration = this.getPreviousIteration(agent.id, iterationNumber);
+        const knowledgeSummary = this.summarizeKnowledge(await this.getAgentKnowledge(agent.id));
+
+        if (previousIteration && previousIteration.backtest_results && previousIteration.expert_analysis) {
+          const agentPersonality = `${agent.trading_style} trader with ${agent.risk_tolerance} risk tolerance, focusing on ${agent.pattern_focus.join(', ')}.`;
+
+          const executionResult = await this.claude.generateExecutionScript({
+            agentPersonality,
+            winningTemplate: previousIteration.winning_template || 'time_based',
+            templatePerformances: previousIteration.backtest_results.templateResults || [],
+            executionAnalysis: previousIteration.expert_analysis.execution_analysis || {},
+            agentKnowledge: knowledgeSummary,
+            scannerContext: strategy.rationale,
+            actualScannerSignals: scanResults.slice(0, 5)  // Pass first 5 signals as samples
+          });
+
+          strategy.executionScript = executionResult.script;
+          logger.info('✅ Execution script regenerated with actual signals');
+        }
+      }
+
       if (scanResults.length === 0) {
         logger.warn('No signals found - iteration will continue with empty results');
       }

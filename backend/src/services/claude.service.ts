@@ -1560,6 +1560,52 @@ Return ONLY the JSON object, no additional text.`;
   }
 
   /**
+   * Infer Signal interface structure from actual scanner output
+   */
+  private inferSignalInterface(sampleSignal: any): string {
+    if (!sampleSignal || !sampleSignal.metrics) {
+      // Fallback to flexible interface if no sample provided
+      return `interface Signal {
+  ticker: string;
+  signal_date: string;
+  signal_time: string;
+  pattern_strength: number;
+  metrics?: { [key: string]: any };  // Flexible metrics
+}`;
+    }
+
+    // Infer types from actual metrics
+    const metricsFields = Object.keys(sampleSignal.metrics)
+      .map(key => {
+        const value = sampleSignal.metrics[key];
+        let type: string;
+
+        if (typeof value === 'number') {
+          type = 'number';
+        } else if (typeof value === 'string') {
+          type = 'string';
+        } else if (typeof value === 'boolean') {
+          type = 'boolean';
+        } else {
+          type = 'any';
+        }
+
+        return `    ${key}: ${type};`;
+      })
+      .join('\n');
+
+    return `interface Signal {
+  ticker: string;
+  signal_date: string;      // YYYY-MM-DD format
+  signal_time: string;      // HH:MM format
+  pattern_strength: number; // 0-100
+  metrics: {
+${metricsFields}
+  };
+}`;
+  }
+
+  /**
    * Generate custom execution script based on learnings from previous iterations
    */
   async generateExecutionScript(params: {
@@ -1569,8 +1615,13 @@ Return ONLY the JSON object, no additional text.`;
     executionAnalysis: any;
     agentKnowledge: string;
     scannerContext: string;
+    actualScannerSignals?: any[];  // NEW: Sample signals from actual scanner output
   }): Promise<{ script: string; rationale: string }> {
     console.log('🎯 Generating custom execution script with Claude...');
+
+    // Infer signal interface from actual scanner output
+    const sampleSignal = params.actualScannerSignals?.[0];
+    const signalInterface = this.inferSignalInterface(sampleSignal);
 
     const systemPrompt = `You are an expert algorithmic trader specializing in execution strategy optimization. ${params.agentPersonality}
 
@@ -1603,24 +1654,30 @@ Generate a custom TypeScript execution script that:
 IMPORTANT: The script will be saved to backend/generated-scripts/success/[date]/[id]-custom-execution.ts
 Use CORRECT import paths: '../../src/database/db' (not './src/database/db')
 
-The Signal interface from the scanner looks like this:
+**CRITICAL - Signal Interface from YOUR Scanner:**
+The ACTUAL Signal interface from the scanner output is:
 \`\`\`typescript
-interface Signal {
-  ticker: string;
-  signal_date: string;      // YYYY-MM-DD format
-  signal_time: string;      // HH:MM format
-  pattern_strength: number; // 0-100
-  metrics: {
-    price: number;
-    vwap: number;
-    deviation_percent: number;
-    volume_ratio: number;
-    wick_ratio: number;
-    rejection_type: 'bullish' | 'bearish';
-    candle_body_percent: number;
-  };
-}
+${signalInterface}
 \`\`\`
+
+${sampleSignal ? `
+**Example Signal from Scanner:**
+\`\`\`json
+${JSON.stringify(sampleSignal, null, 2)}
+\`\`\`
+
+IMPORTANT: Use these EXACT field names from the scanner. Do NOT assume fields like 'rejection_type' or 'wick_ratio' exist unless shown above.
+
+**How to Determine Trade Direction:**
+Analyze the signal metrics and scanner context to infer trade direction:
+- For breakout patterns: Usually LONG (buying momentum)
+- For rejection patterns: Check if 'rejection_type' field exists
+- For mean reversion: Analyze price vs reference level (VWAP, moving average)
+- Default: Use price action context (e.g., if price > recent average, consider LONG)
+` : `
+NOTE: No sample signals provided. Use flexible metric access:
+\`const someMetric = signal.metrics?.field_name || defaultValue;\`
+`}
 
 The script should follow this structure:
 
@@ -1632,21 +1689,7 @@ import dotenv from 'dotenv';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-interface Signal {
-  ticker: string;
-  signal_date: string;
-  signal_time: string;
-  pattern_strength: number;
-  metrics: {
-    price: number;
-    vwap: number;
-    deviation_percent: number;
-    volume_ratio: number;
-    wick_ratio: number;
-    rejection_type: 'bullish' | 'bearish';
-    candle_body_percent: number;
-  };
-}
+${signalInterface}
 
 interface Trade {
   date: string;
@@ -1687,8 +1730,9 @@ async function executeSignal(signal: Signal, db: Database): Promise<Trade | null
   const entryBar = bars[signalBarIndex + 1];
   const entryPrice = entryBar.open;
 
-  // Determine trade side based on rejection type
-  const side: 'LONG' | 'SHORT' = signal.metrics.rejection_type === 'bullish' ? 'LONG' : 'SHORT';
+  // Determine trade side based on pattern type and signal metrics
+  // Adapt this logic to your scanner's specific output!
+  const side: 'LONG' | 'SHORT' = 'LONG';  // Customize based on signal.metrics fields
 
   // Implementation with improved execution logic
   // Include: entry timing, stop loss, take profit, trailing stops, time-based exits
