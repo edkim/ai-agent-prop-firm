@@ -1,6 +1,6 @@
 # Database Schema Reference
 
-**Last Updated:** 2025-11-06
+**Last Updated:** 2025-11-10
 **Database:** `/Users/edwardkim/Code/ai-backtest/backtesting.db`
 
 ## Quick Stats
@@ -372,23 +372,21 @@ agent_alerts                paper_accounts
 agent_iterations            paper_orders
 agent_knowledge             paper_positions
 agent_strategies            paper_trades
-analysis_charts             pivot_points_cache
-backtest_sets               portfolio_backtests
-backtests                   portfolio_state
-batch_backtest_results      risk_metrics
-batch_backtest_runs         scan_history
-batch_strategy_performance  scan_results
-chart_thumbnails            strategies
-claude_analyses             strategy_backtest_scripts
-conversations               strategy_recommendations
-daily_metrics               support_resistance_levels
-earnings_events             trade_recommendations
-executed_trades             trades
-live_signals                tradestation_orders
-market_regime               trading_agents
-news_events                 universe
-ohlcv_data                  universe_stocks
-paper_account_snapshots
+analysis_charts             portfolio_backtests
+backtest_sets               portfolio_state
+backtests                   risk_metrics
+batch_backtest_results      scan_history
+batch_backtest_runs         scan_results
+batch_strategy_performance  strategies
+chart_thumbnails            strategy_backtest_scripts
+claude_analyses             strategy_recommendations
+daily_metrics               trade_recommendations
+earnings_events             trades
+executed_trades             trading_agents
+live_signals                universe
+market_regime               universe_stocks
+news_events
+ohlcv_data
 ```
 
 ---

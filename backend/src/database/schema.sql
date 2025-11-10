@@ -87,16 +87,6 @@ CREATE TABLE IF NOT EXISTS earnings_events (
 CREATE INDEX IF NOT EXISTS idx_earnings_ticker_date ON earnings_events(ticker, report_date);
 CREATE INDEX IF NOT EXISTS idx_earnings_timestamp ON earnings_events(ticker, report_timestamp);
 
--- Conversations Table (for Phase 2 - AI integration)
-CREATE TABLE IF NOT EXISTS conversations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    strategy_id INTEGER,
-    messages TEXT NOT NULL, -- JSON array of conversation messages
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (strategy_id) REFERENCES strategies(id) ON DELETE SET NULL
-);
-
 -- Scanner System Tables
 
 -- Universe Definitions Table
@@ -817,40 +807,6 @@ CREATE TABLE IF NOT EXISTS agent_strategies (
 CREATE INDEX IF NOT EXISTS idx_agent_strategies_agent ON agent_strategies(agent_id);
 CREATE INDEX IF NOT EXISTS idx_agent_strategies_current ON agent_strategies(agent_id, is_current_version);
 CREATE INDEX IF NOT EXISTS idx_agent_strategies_performance ON agent_strategies(backtest_sharpe DESC);
-
--- Support/Resistance Levels (market context for agents)
-CREATE TABLE IF NOT EXISTS support_resistance_levels (
-  id TEXT PRIMARY KEY,
-  ticker TEXT NOT NULL,
-  level_type TEXT NOT NULL, -- 'SUPPORT', 'RESISTANCE', 'PIVOT'
-  price REAL NOT NULL,
-  strength INTEGER, -- 0-100 based on touches and volume
-  first_touch_date TEXT,
-  last_touch_date TEXT,
-  touch_count INTEGER DEFAULT 1,
-  calculation_method TEXT, -- 'PIVOT', 'SWING', 'FIBONACCI', 'HORIZONTAL'
-  timeframe TEXT, -- 'daily', 'weekly', 'monthly'
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_sr_levels_ticker ON support_resistance_levels(ticker, level_type);
-CREATE INDEX IF NOT EXISTS idx_sr_levels_price ON support_resistance_levels(ticker, price);
-CREATE INDEX IF NOT EXISTS idx_sr_levels_strength ON support_resistance_levels(strength DESC);
-
--- Pivot Points Cache (for quick lookups)
-CREATE TABLE IF NOT EXISTS pivot_points_cache (
-  ticker TEXT NOT NULL,
-  date TEXT NOT NULL,
-  timeframe TEXT NOT NULL, -- 'daily', 'weekly', 'monthly'
-  pivot REAL NOT NULL,
-  r1 REAL, r2 REAL, r3 REAL,
-  s1 REAL, s2 REAL, s3 REAL,
-  created_at TEXT NOT NULL,
-  PRIMARY KEY (ticker, date, timeframe)
-);
-
-CREATE INDEX IF NOT EXISTS idx_pivot_cache_ticker_date ON pivot_points_cache(ticker, date);
 
 -- News Events (catalyst tracking)
 CREATE TABLE IF NOT EXISTS news_events (
