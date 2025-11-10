@@ -1364,9 +1364,17 @@ ${JSON.stringify(params.backtestResults, null, 2)}
 
 **Scan Results Count:** ${params.scanResultsCount}
 
+${params.backtestResults.templateResults ? `
+**IMPORTANT: Multiple execution templates were tested on the same signals:**
+${params.backtestResults.templateResults.map((t: any) =>
+  `- ${t.templateDisplayName}: ${(t.winRate * 100).toFixed(0)}% win rate, ${t.sharpeRatio.toFixed(2)} Sharpe, ${t.totalReturn.toFixed(1)}% return`
+).join('\n')}
+
+Analyze which execution approach works best for this pattern and why.` : ''}
+
 Provide expert analysis in this exact JSON structure:
 {
-  "summary": "Brief overview of performance",
+  "summary": "Brief overview of performance including execution strategy effectiveness",
   "working_elements": ["List of things that worked well"],
   "failure_points": ["List of things that failed and why"],
   "missing_context": ["List of additional data or context needed"],
@@ -1378,6 +1386,13 @@ Provide expert analysis in this exact JSON structure:
       "rationale": "why this change would help"
     }
   ],
+  "execution_analysis": {
+    "template_comparison": "Analysis of which exit templates worked best and why",
+    "exit_timing_issues": ["Specific issues with exit timing observed in trades"],
+    "stop_loss_effectiveness": "Assessment of stop loss placement and whether stops are too tight/wide",
+    "take_profit_effectiveness": "Assessment of profit targets and whether they're achievable",
+    "suggested_improvements": ["Specific actionable improvements to execution logic"]
+  },
   "projected_performance": {
     "current": { "winRate": ${params.backtestResults.winRate || 0}, "sharpe": ${params.backtestResults.sharpeRatio || 0} },
     "withRefinements": { "winRate": 0.XX, "sharpe": X.XX },
@@ -1428,6 +1443,342 @@ Return ONLY the JSON object, no additional text.`;
           confidence: 0
         }
       };
+    }
+  }
+
+  /**
+   * Analyze scanner script that found 0 signals and suggest filter adjustments
+   */
+  async analyzeZeroSignalScanner(params: {
+    agentPersonality: string;
+    scannerScript: string;
+    agentKnowledge: string;
+    previousIterationSignals?: number;
+  }): Promise<any> {
+    console.log('🔍 Analyzing scanner script that found 0 signals...');
+
+    const systemPrompt = `You are an expert algorithmic trader analyzing scanner scripts. ${params.agentPersonality}
+
+Your task is to analyze a scanner script that found ZERO signals and provide specific, actionable recommendations to loosen filters appropriately.`;
+
+    const userPrompt = `This scanner script found 0 signals when scanning the market. This is too restrictive and prevents the agent from learning.
+
+**Scanner Script:**
+\`\`\`typescript
+${params.scannerScript}
+\`\`\`
+
+**Agent's Accumulated Knowledge:**
+${params.agentKnowledge || 'No prior knowledge yet'}
+
+${params.previousIterationSignals ? `**Previous Iteration:** Found ${params.previousIterationSignals} signals` : ''}
+
+**Your Task:**
+Analyze the scanner's filter criteria and suggest specific adjustments to increase signal frequency while maintaining quality.
+
+Common issues with restrictive scanners:
+- Deviation/threshold ranges too narrow (e.g., 1.5-4% → widen to 1.2-5%)
+- Volume requirements too high (e.g., 1.5x → reduce to 1.2x)
+- Minimum strength scores too high (e.g., 70 → reduce to 60)
+- Time windows too narrow (e.g., 10:00-12:00 → expand to 10:00-14:00)
+- Price ranges too tight (e.g., $50-$100 → expand to $20-$150)
+- Multiple AND conditions that are too restrictive
+
+Provide your analysis in this exact JSON structure:
+{
+  "summary": "Brief explanation of why the scanner found 0 signals",
+  "restrictive_filters_identified": [
+    "List each filter that is too restrictive and why"
+  ],
+  "parameter_recommendations": [
+    {
+      "parameter": "exact parameter name from code (e.g., 'deviation_percent_range', 'volume_ratio_min')",
+      "current_value": "current value in code (e.g., '1.5-4%', '1.3x')",
+      "suggested_value": "new value that loosens filter (e.g., '1.2-5%', '1.2x')",
+      "rationale": "Specific reason this will help (e.g., 'Widening from 1.5% to 1.2% captures 30% more valid signals based on market distribution')"
+    }
+  ],
+  "expected_signal_increase": "Estimated number of signals with these changes (e.g., '15-30 signals per scan')",
+  "quality_assurance": "How these changes maintain signal quality while increasing quantity"
+}
+
+Return ONLY the JSON object, no additional text.`;
+
+    try {
+      const client = this.getClient();
+      const response = await client.messages.create({
+        model: this.model,
+        max_tokens: this.maxTokens,
+        temperature: this.temperature,
+        system: systemPrompt,
+        messages: [
+          {
+            role: 'user',
+            content: userPrompt
+          }
+        ]
+      });
+
+      const textContent = response.content.find((block: any) => block.type === 'text');
+      if (!textContent) {
+        throw new Error('No text content in Claude response');
+      }
+
+      // Parse JSON response
+      const jsonMatch = textContent.text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.error('Failed to parse JSON from Claude response:', textContent.text);
+        throw new Error('Claude response was not valid JSON');
+      }
+
+      const analysis = JSON.parse(jsonMatch[0]);
+      console.log('✅ Zero-signal analysis complete');
+      console.log(`   Identified ${analysis.restrictive_filters_identified?.length || 0} restrictive filters`);
+      console.log(`   Generated ${analysis.parameter_recommendations?.length || 0} recommendations`);
+
+      return analysis;
+    } catch (error: any) {
+      console.error('❌ Failed to analyze zero-signal scanner:', error.message);
+      // Return fallback analysis
+      return {
+        summary: 'Scanner found 0 signals - filters are too restrictive',
+        restrictive_filters_identified: [
+          'Unable to analyze specific filters - manual review recommended'
+        ],
+        parameter_recommendations: [
+          {
+            parameter: 'filter_thresholds',
+            current_value: 'unknown',
+            suggested_value: 'loosen by 20-30%',
+            rationale: 'Gradually relax filters to find optimal balance between signal quantity and quality'
+          }
+        ],
+        expected_signal_increase: '10-50 signals',
+        quality_assurance: 'Incremental loosening maintains quality while increasing sample size'
+      };
+    }
+  }
+
+  /**
+   * Generate custom execution script based on learnings from previous iterations
+   */
+  async generateExecutionScript(params: {
+    agentPersonality: string;
+    winningTemplate: string;
+    templatePerformances: any[];
+    executionAnalysis: any;
+    agentKnowledge: string;
+    scannerContext: string;
+  }): Promise<{ script: string; rationale: string }> {
+    console.log('🎯 Generating custom execution script with Claude...');
+
+    const systemPrompt = `You are an expert algorithmic trader specializing in execution strategy optimization. ${params.agentPersonality}
+
+Your task is to generate a custom execution script that improves upon previous template performance by incorporating learned insights.`;
+
+    const userPrompt = `Based on previous iteration results, generate an improved custom execution script.
+
+**Previous Winning Template:** ${params.winningTemplate}
+
+**Template Performance Comparison:**
+${params.templatePerformances.map((t: any) => `
+- ${t.templateDisplayName}: ${(t.winRate * 100).toFixed(0)}% win rate, ${t.sharpeRatio.toFixed(2)} Sharpe, ${t.profitFactor?.toFixed(2)} PF
+  Total Return: ${t.totalReturn.toFixed(1)}%`).join('\n')}
+
+**Execution Analysis from Previous Iteration:**
+${JSON.stringify(params.executionAnalysis, null, 2)}
+
+**Agent's Accumulated Knowledge:**
+${params.agentKnowledge}
+
+**Scanner Context:**
+${params.scannerContext}
+
+Generate a custom TypeScript execution script that:
+1. Builds upon the winning template's strengths
+2. Addresses the execution issues identified in the analysis
+3. Incorporates patterns learned from all template performances
+4. Adapts to the specific pattern characteristics from the scanner
+
+IMPORTANT: The script will be saved to backend/generated-scripts/success/[date]/[id]-custom-execution.ts
+Use CORRECT import paths: '../../src/database/db' (not './src/database/db')
+
+The Signal interface from the scanner looks like this:
+\`\`\`typescript
+interface Signal {
+  ticker: string;
+  signal_date: string;      // YYYY-MM-DD format
+  signal_time: string;      // HH:MM format
+  pattern_strength: number; // 0-100
+  metrics: {
+    price: number;
+    vwap: number;
+    deviation_percent: number;
+    volume_ratio: number;
+    wick_ratio: number;
+    rejection_type: 'bullish' | 'bearish';
+    candle_body_percent: number;
+  };
+}
+\`\`\`
+
+The script should follow this structure:
+
+\`\`\`typescript
+import { Database } from 'better-sqlite3';
+import { getDatabase } from '../../src/database/db';
+import path from 'path';
+import dotenv from 'dotenv';
+
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
+interface Signal {
+  ticker: string;
+  signal_date: string;
+  signal_time: string;
+  pattern_strength: number;
+  metrics: {
+    price: number;
+    vwap: number;
+    deviation_percent: number;
+    volume_ratio: number;
+    wick_ratio: number;
+    rejection_type: 'bullish' | 'bearish';
+    candle_body_percent: number;
+  };
+}
+
+interface Trade {
+  date: string;
+  ticker: string;
+  side: 'LONG' | 'SHORT';
+  entry_time: string;
+  entry_price: number;
+  exit_time: string;
+  exit_price: number;
+  pnl: number;
+  pnl_percent: number;
+  exit_reason: string;
+  highest_price?: number;
+  lowest_price?: number;
+}
+
+async function executeSignal(signal: Signal, db: Database): Promise<Trade | null> {
+  // Get intraday 5-minute bars for the signal date
+  const dateStart = new Date(\`\${signal.signal_date}T00:00:00Z\`).getTime();
+  const nextDate = new Date(signal.signal_date);
+  nextDate.setDate(nextDate.getDate() + 1);
+  const dateEnd = nextDate.getTime();
+
+  const bars = db.prepare(\`
+    SELECT timestamp, open, high, low, close, volume, time_of_day as timeOfDay
+    FROM ohlcv_data
+    WHERE ticker = ? AND timeframe = '5min'
+      AND timestamp >= ? AND timestamp < ?
+    ORDER BY timestamp ASC
+  \`).all(signal.ticker, dateStart, dateEnd) as any[];
+
+  if (bars.length === 0) return null;
+
+  // Find the signal bar and entry bar (next bar after signal)
+  const signalBarIndex = bars.findIndex((b: any) => b.timeOfDay >= signal.signal_time);
+  if (signalBarIndex === -1 || signalBarIndex >= bars.length - 1) return null;
+
+  const entryBar = bars[signalBarIndex + 1];
+  const entryPrice = entryBar.open;
+
+  // Determine trade side based on rejection type
+  const side: 'LONG' | 'SHORT' = signal.metrics.rejection_type === 'bullish' ? 'LONG' : 'SHORT';
+
+  // Implementation with improved execution logic
+  // Include: entry timing, stop loss, take profit, trailing stops, time-based exits
+  // ... (add your custom logic here based on learnings)
+
+  // Example return (customize based on your exit logic):
+  return {
+    date: signal.signal_date,
+    ticker: signal.ticker,
+    side,
+    entry_time: entryBar.timeOfDay,
+    entry_price: entryPrice,
+    exit_time: bars[bars.length - 1].timeOfDay,
+    exit_price: bars[bars.length - 1].close,
+    pnl: side === 'LONG' ?
+      (bars[bars.length - 1].close - entryPrice) :
+      (entryPrice - bars[bars.length - 1].close),
+    pnl_percent: side === 'LONG' ?
+      ((bars[bars.length - 1].close - entryPrice) / entryPrice) * 100 :
+      ((entryPrice - bars[bars.length - 1].close) / entryPrice) * 100,
+    exit_reason: 'time_exit',
+    highest_price: Math.max(...bars.slice(signalBarIndex + 1).map((b: any) => b.high)),
+    lowest_price: Math.min(...bars.slice(signalBarIndex + 1).map((b: any) => b.low))
+  };
+}
+
+async function executeSignals(signals: Signal[]): Promise<Trade[]> {
+  const db = getDatabase();
+  const trades: Trade[] = [];
+
+  for (const signal of signals) {
+    const trade = await executeSignal(signal, db);
+    if (trade) trades.push(trade);
+  }
+
+  return trades;
+}
+
+// Signals will be embedded here by the system (replaces stdin reading)
+const signals = [];
+
+executeSignals(signals).then(trades => {
+  console.log(JSON.stringify(trades, null, 2));
+  process.exit(0);
+}).catch(error => {
+  console.error('Execution error:', error);
+  process.exit(1);
+});
+\`\`\`
+
+Provide your response in this JSON format:
+{
+  "script": "// Full TypeScript execution script code here",
+  "rationale": "Explanation of key improvements made and why they address previous issues"
+}
+
+Return ONLY the JSON object, no additional text.`;
+
+    try {
+      const client = this.getClient();
+      const response = await client.messages.create({
+        model: this.model,
+        max_tokens: this.maxTokens,
+        temperature: this.temperature,
+        system: systemPrompt,
+        messages: [
+          {
+            role: 'user',
+            content: userPrompt
+          }
+        ]
+      });
+
+      const content = response.content[0];
+      if (content.type === 'text') {
+        // Extract JSON from response
+        const jsonMatch = content.text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const result = JSON.parse(jsonMatch[0]);
+          console.log('✅ Generated custom execution script');
+          console.log('📝 Rationale:', result.rationale.substring(0, 200) + '...');
+          return result;
+        }
+        throw new Error('No JSON found in Claude response');
+      }
+
+      throw new Error('Unexpected response format from Claude');
+    } catch (error: any) {
+      console.error('Error generating execution script:', error);
+      throw new Error(`Claude API error: ${error.message}`);
     }
   }
 }

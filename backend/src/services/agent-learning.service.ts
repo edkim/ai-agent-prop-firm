@@ -109,11 +109,47 @@ export class AgentLearningService {
         templatesResults: backtestResults.templateResults?.length || 0
       });
 
-      // Step 4: Agent analyzes results (skip if no successful backtests)
+      // Step 4: Agent analyzes results
       logger.info('Step 4: Analyzing results');
       let analysis: ExpertAnalysis;
 
-      if (backtestResults.totalTrades === 0) {
+      if (scanResults.length === 0) {
+        // Special case: Scanner found 0 signals - analyze scanner filters
+        logger.warn('No signals found - analyzing scanner for filter adjustments');
+
+        // Get previous iteration to provide context
+        const prevIteration = await this.getPreviousIteration(agentId, iterationNumber);
+        const previousSignals = prevIteration?.signals_found;
+
+        // Get agent knowledge for context
+        const knowledgeItems = await this.knowledgeExtraction.getAgentKnowledge(agentId);
+        const knowledgeContext = knowledgeItems.length > 0
+          ? knowledgeItems.map((k: any) => `- ${k.insight}`).join('\n')
+          : 'No prior knowledge yet';
+
+        // Call Claude to analyze the scanner and suggest filter adjustments
+        const zeroSignalAnalysis = await this.claudeService.analyzeZeroSignalScanner({
+          agentPersonality: agent.instructions || 'You are a trading agent learning to identify profitable patterns.',
+          scannerScript: strategy.scanScript,
+          agentKnowledge: knowledgeContext,
+          previousIterationSignals: previousSignals
+        });
+
+        // Convert to ExpertAnalysis format
+        analysis = {
+          summary: zeroSignalAnalysis.summary,
+          parameter_recommendations: zeroSignalAnalysis.parameter_recommendations || [],
+          strategic_insights: zeroSignalAnalysis.restrictive_filters_identified || [],
+          trade_quality_assessment: 'No signals to assess - scanner too restrictive',
+          risk_assessment: zeroSignalAnalysis.quality_assurance || 'Filters need adjustment',
+          market_condition_notes: zeroSignalAnalysis.expected_signal_increase || 'Unknown'
+        };
+
+        logger.info('Zero-signal analysis complete', {
+          restrictiveFilters: zeroSignalAnalysis.restrictive_filters_identified?.length || 0,
+          recommendations: zeroSignalAnalysis.parameter_recommendations?.length || 0
+        });
+      } else if (backtestResults.totalTrades === 0) {
         logger.warn('No trades generated - skipping detailed analysis');
         // Generate minimal analysis for failed execution
         analysis = {
@@ -210,6 +246,36 @@ export class AgentLearningService {
   }
 
   /**
+   * Get the previous iteration for an agent
+   */
+  private getPreviousIteration(agentId: string, currentIterationNumber: number): any | null {
+    const db = getDatabase();
+    const previousIteration = db.prepare(`
+      SELECT * FROM agent_iterations
+      WHERE agent_id = ? AND iteration_number = ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).get(agentId, currentIterationNumber - 1) as any;
+
+    if (!previousIteration) {
+      return null;
+    }
+
+    // Parse JSON fields
+    if (previousIteration.backtest_results) {
+      previousIteration.backtest_results = JSON.parse(previousIteration.backtest_results);
+    }
+    if (previousIteration.expert_analysis) {
+      previousIteration.expert_analysis = JSON.parse(previousIteration.expert_analysis);
+    }
+    if (previousIteration.refinements_suggested) {
+      previousIteration.refinements_suggested = JSON.parse(previousIteration.refinements_suggested);
+    }
+
+    return previousIteration;
+  }
+
+  /**
    * Generate strategy scripts for this agent using Claude
    */
   private async generateStrategy(
@@ -271,21 +337,53 @@ export class AgentLearningService {
       }
     });
 
-    // Step 2: Execution templates (no longer generated via Claude)
-    // We now use the execution template library which tests all 5 templates
-    // This saves ~4000 tokens per iteration and ensures consistent backtesting
-    console.log(`   Skipping execution script generation - using template library`);
+    // Step 2: Execution script generation
+    let executionScript = '';
+    let executionTokenUsage: any = undefined;
+    let executionRationale = '';
+
+    if (iterationNumber === 1) {
+      // First iteration: use template library to test all 5 templates
+      console.log(`   Iteration 1: Using template library to test all 5 execution templates`);
+      executionRationale = 'Testing all 5 execution templates to find the best fit for this pattern.';
+    } else {
+      // Subsequent iterations: generate custom execution script based on learnings
+      console.log(`   Iteration ${iterationNumber}: Generating custom execution script based on learnings...`);
+
+      const previousIteration = this.getPreviousIteration(agent.id, iterationNumber);
+
+      if (previousIteration && previousIteration.backtest_results && previousIteration.expert_analysis) {
+        const agentPersonality = `${agent.trading_style} trader with ${agent.risk_tolerance} risk tolerance, focusing on ${agent.pattern_focus.join(', ')}.`;
+
+        const executionResult = await this.claude.generateExecutionScript({
+          agentPersonality,
+          winningTemplate: previousIteration.winning_template || 'time_based',
+          templatePerformances: previousIteration.backtest_results.templateResults || [],
+          executionAnalysis: previousIteration.expert_analysis.execution_analysis || {},
+          agentKnowledge: knowledgeSummary,
+          scannerContext: scannerResult.explanation
+        });
+
+        executionScript = executionResult.script;
+        executionRationale = executionResult.rationale;
+        // Note: executionTokenUsage would need to be captured from the Claude API call
+        console.log(`   ✅ Custom execution script generated`);
+      } else {
+        console.log(`   ⚠️  No previous iteration found, falling back to template library`);
+        executionRationale = 'No previous iteration data available, using template library.';
+      }
+    }
 
     const rationale = iterationNumber === 1
-      ? `Initial strategy: ${scannerResult.explanation}. Using execution template library for backtesting.`
-      : `Iteration ${iterationNumber}: Applied learnings to refine scanner. Using execution template library for backtesting.`;
+      ? `Initial strategy: ${scannerResult.explanation}. ${executionRationale}`
+      : `Iteration ${iterationNumber}: Applied learnings to refine scanner. ${executionRationale}`;
 
     return {
       scanScript: scannerResult.script,
-      executionScript: '',  // No longer needed - using template library
+      executionScript,  // Empty for iteration 1, custom script for iteration 2+
       rationale,
       scannerTokenUsage: scannerResult.tokenUsage,
-      executionTokenUsage: undefined  // No tokens used for execution
+      executionTokenUsage
     };
   }
 
@@ -453,6 +551,87 @@ export class AgentLearningService {
         avgWin: this.calculateAvgWin(allTrades),
         avgLoss: this.calculateAvgLoss(allTrades)
       });
+    }
+
+    // Test custom execution script if provided (for iterations 2+)
+    if (executionScript && executionScript.trim() !== '') {
+      console.log(`\n   📊 Testing custom execution script`);
+
+      const allTrades: any[] = [];
+      let successfulBacktests = 0;
+
+      // Execute custom script for all signals
+      const scriptId = uuidv4();
+      const scriptPath = path.join(__dirname, '../../generated-scripts/success', new Date().toISOString().split('T')[0], `${scriptId}-custom-execution.ts`);
+
+      // Ensure directory exists
+      const dir = path.dirname(scriptPath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      try {
+        // Embed signals data into the custom script
+        // The custom script expects to read from stdin, but we'll embed the data directly
+        const signalsJson = JSON.stringify(filteredResults, null, 2);
+
+        // Replace either the readFileSync pattern OR the empty array placeholder
+        let scriptWithSignals = executionScript.replace(
+          /const input = require\('fs'\)\.readFileSync\(0, 'utf-8'\);?\s*const signals = JSON\.parse\(input\);?/g,
+          `const signals = ${signalsJson};`
+        );
+
+        // Also handle the placeholder pattern: const signals = [];
+        scriptWithSignals = scriptWithSignals.replace(
+          /const signals\s*=\s*\[\s*\];?/g,
+          `const signals = ${signalsJson};`
+        );
+
+        // Save modified script to file
+        fs.writeFileSync(scriptPath, scriptWithSignals);
+
+        // Execute with 120 second timeout
+        const result = await this.scriptExecution.executeScript(scriptPath, 120000, tokenUsage);
+
+        if (result.success && result.data) {
+          // Parse results - handle both array and object formats
+          let trades: any[] = [];
+          if (Array.isArray(result.data)) {
+            trades = result.data;
+          } else if (result.data.trades) {
+            trades = result.data.trades;
+          }
+
+          allTrades.push(...trades);
+          successfulBacktests = 1;
+          console.log(`      ✅ Custom execution completed: ${trades.length} trades`);
+        } else {
+          console.log(`      ⚠️  Custom execution failed: ${result.error || 'Unknown error'}`);
+        }
+      } catch (error: any) {
+        console.error(`      Error executing custom script: ${error.message}`);
+      }
+
+      if (allTrades.length > 0) {
+        // Calculate performance metrics
+        const aggregated = this.aggregateBacktestResults(allTrades);
+        const profitFactor = this.calculateProfitFactor(allTrades);
+
+        templateResults.push({
+          template: 'custom',
+          templateDisplayName: 'Custom Execution (Claude-Generated)',
+          trades: allTrades,
+          totalTrades: allTrades.length,
+          winRate: aggregated.winRate,
+          sharpeRatio: aggregated.sharpeRatio,
+          totalReturn: aggregated.totalReturn,
+          profitFactor: profitFactor,
+          avgWin: this.calculateAvgWin(allTrades),
+          avgLoss: this.calculateAvgLoss(allTrades)
+        });
+
+        console.log(`      Custom execution: PF ${profitFactor.toFixed(2)}, WR ${(aggregated.winRate * 100).toFixed(1)}%, Trades ${allTrades.length}`);
+      }
     }
 
     // Sort by profit factor (best first)
