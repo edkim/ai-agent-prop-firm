@@ -224,7 +224,7 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
                     : 'border-transparent text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Backtest Trades ({selectedIteration.backtest_results?.trades?.length || 0})
+                Backtest Trades ({selectedIteration.backtest_results?.trades?.filter((t: any) => !t.noTrade).length || 0})
               </button>
             </div>
 
@@ -329,42 +329,50 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
               {activeTab === 'trades' && (
                 <div className="space-y-4">
                   {selectedIteration.backtest_results?.trades && selectedIteration.backtest_results.trades.length > 0 ? (
-                    <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Ticker
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Side
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Entry
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Exit
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Qty
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                P&L
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                P&L %
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Bars
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Exit Reason
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {selectedIteration.backtest_results.trades.map((trade: any, idx: number) => {
+                    (() => {
+                      // Filter out noTrade entries
+                      const executedTrades = selectedIteration.backtest_results.trades.filter((trade: any) => !trade.noTrade);
+                      const skippedTrades = selectedIteration.backtest_results.trades.filter((trade: any) => trade.noTrade);
+
+                      return (
+                        <>
+                          {executedTrades.length > 0 && (
+                            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                              <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                  <thead className="bg-gray-50">
+                                    <tr>
+                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Ticker
+                                      </th>
+                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Side
+                                      </th>
+                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Entry
+                                      </th>
+                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Exit
+                                      </th>
+                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Qty
+                                      </th>
+                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        P&L
+                                      </th>
+                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        P&L %
+                                      </th>
+                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Bars
+                                      </th>
+                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Exit Reason
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="bg-white divide-y divide-gray-200">
+                                    {executedTrades.map((trade: any, idx: number) => {
                               // Handle both camelCase and snake_case field names
                               const entryPrice = trade.entryPrice || trade.entry_price;
                               const exitPrice = trade.exitPrice || trade.exit_price;
@@ -450,11 +458,48 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
                                   </td>
                                 </tr>
                               );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          )}
+
+                          {skippedTrades.length > 0 && (
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                              <h4 className="text-sm font-medium text-yellow-900 mb-2">
+                                ⚠️ Skipped Signals ({skippedTrades.length})
+                              </h4>
+                              <p className="text-xs text-yellow-800 mb-2">
+                                These signals were found but couldn't be executed due to insufficient data:
+                              </p>
+                              <div className="space-y-1">
+                                {skippedTrades.slice(0, 10).map((trade: any, idx: number) => (
+                                  <div key={idx} className="text-xs text-yellow-700">
+                                    <span className="font-medium">{trade.ticker}</span> on {trade.date}: {trade.noTradeReason}
+                                  </div>
+                                ))}
+                                {skippedTrades.length > 10 && (
+                                  <div className="text-xs text-yellow-700 italic">
+                                    ... and {skippedTrades.length - 10} more
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {executedTrades.length === 0 && (
+                            <div className="text-center py-12">
+                              <div className="text-4xl mb-3">📊</div>
+                              <h3 className="text-lg font-medium text-gray-900 mb-2">No Executed Trades</h3>
+                              <p className="text-gray-600">
+                                This iteration found {selectedIteration.signals_found} signals but {skippedTrades.length > 0 ? 'none could be executed due to insufficient data' : 'no trades were executed'}
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()
                   ) : (
                     <div className="text-center py-12">
                       <div className="text-4xl mb-3">📊</div>
