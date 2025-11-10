@@ -100,7 +100,8 @@ export class AgentLearningService {
       if (iterationNumber > 1 && scanResults.length > 0) {
         logger.info('Step 2.5: Regenerating execution script with actual scanner signals');
         const previousIteration = this.getPreviousIteration(agent.id, iterationNumber);
-        const knowledgeSummary = this.summarizeKnowledge(await this.getAgentKnowledge(agent.id));
+        const knowledge = await this.getAgentKnowledge(agent.id);
+        const knowledgeSummary = this.formatKnowledgeSummary(knowledge, agent);
 
         if (previousIteration && previousIteration.backtest_results && previousIteration.expert_analysis) {
           const agentPersonality = `${agent.trading_style} trader with ${agent.risk_tolerance} risk tolerance, focusing on ${agent.pattern_focus.join(', ')}.`;
