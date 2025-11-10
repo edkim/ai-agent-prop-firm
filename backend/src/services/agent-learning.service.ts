@@ -497,7 +497,10 @@ export class AgentLearningService {
     // Test each template
     const templateResults: any[] = [];
 
-    for (const templateName of DEFAULT_TEMPLATES) {
+    // TEMPORARILY DISABLED: Skip template execution to test custom execution only
+    // for (const templateName of DEFAULT_TEMPLATES) {
+    if (false) {  // Disabled template loop
+      const templateName = '';
       const template = executionTemplates[templateName];
       console.log(`   \n   📊 Testing template: ${template.name}`);
 
@@ -613,6 +616,37 @@ export class AgentLearningService {
           `const signals = ${signalsJson};`
         );
 
+        // Fix import paths: Claude generates ../../src/database/db but script is nested 3 levels deep
+        // generated-scripts/success/YYYY-MM-DD/ -> need ../../../src/database/db
+        scriptWithSignals = scriptWithSignals.replace(
+          /from ['"]\.\.\/\.\.\/src\//g,
+          `from '../../../src/`
+        );
+
+        // Add database initialization if missing
+        // Look for import of getDatabase and add initializeDatabase import if not present
+        if (!scriptWithSignals.includes('initializeDatabase')) {
+          scriptWithSignals = scriptWithSignals.replace(
+            /import \{ getDatabase \} from ['"]\.\.\/\.\.\/\.\.\/src\/database\/db['"]/,
+            `import { initializeDatabase, getDatabase } from '../../../src/database/db'`
+          );
+        }
+
+        // Add database initialization call before executeSignals if missing
+        // Look for the pattern where executeSignals is called
+        if (!scriptWithSignals.includes('initializeDatabase(')) {
+          scriptWithSignals = scriptWithSignals.replace(
+            /async function executeSignals\(signals: Signal\[\]\): Promise<Trade\[\]> \{[\s\S]*?const db = getDatabase\(\);/,
+            (match) => {
+              // Add initialization call before getDatabase
+              return match.replace(
+                'const db = getDatabase();',
+                `const dbPath = process.env.DATABASE_PATH || './backtesting.db';\n  initializeDatabase(dbPath);\n  const db = getDatabase();`
+              );
+            }
+          );
+        }
+
         // Save modified script to file
         fs.writeFileSync(scriptPath, scriptWithSignals);
 
@@ -664,6 +698,24 @@ export class AgentLearningService {
     templateResults.sort((a, b) => b.profitFactor - a.profitFactor);
 
     console.log(`\n   📈 Template Performance Summary:`);
+    if (templateResults.length === 0) {
+      console.log(`   No template results (templates may be disabled)`);
+
+      // No templates ran, return default/empty results
+      return {
+        totalTrades: customTrades?.length || 0,
+        winRate: customTrades && customTrades.length > 0 ?
+          customTrades.filter((t: any) => t.pnl > 0).length / customTrades.length : 0,
+        sharpeRatio: 0,
+        totalReturn: customTrades?.reduce((sum: number, t: any) => sum + t.pnl, 0) || 0,
+        trades: customTrades || [],
+        profitFactor: 0,
+        templateResults: [],
+        winningTemplate: 'custom',
+        recommendation: 'Templates disabled - using custom execution script only'
+      };
+    }
+
     templateResults.forEach((r, idx) => {
       console.log(`   ${idx + 1}. ${r.templateDisplayName}: ` +
         `PF ${r.profitFactor.toFixed(2)}, ` +
