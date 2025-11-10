@@ -16,6 +16,7 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
   const [iterations, setIterations] = useState<AgentIteration[]>([]);
   const [selectedIteration, setSelectedIteration] = useState<AgentIteration | null>(null);
   const [activeTab, setActiveTab] = useState<IterationTab>('summary');
+  const [selectedStrategy, setSelectedStrategy] = useState<string>('custom');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [manualGuidance, setManualGuidance] = useState('');
@@ -25,6 +26,16 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
   useEffect(() => {
     loadIterations();
   }, [agentId]);
+
+  useEffect(() => {
+    // Auto-select best performing strategy when iteration changes
+    if (selectedIteration?.backtest_results?.templateResults && selectedIteration.backtest_results.templateResults.length > 0) {
+      const sortedTemplates = [...selectedIteration.backtest_results.templateResults].sort(
+        (a: any, b: any) => (b.profitFactor || 0) - (a.profitFactor || 0)
+      );
+      setSelectedStrategy(sortedTemplates[0].template);
+    }
+  }, [selectedIteration]);
 
   const loadIterations = async () => {
     try {
@@ -224,7 +235,11 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
                     : 'border-transparent text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Backtest Trades ({selectedIteration.backtest_results?.trades?.filter((t: any) => !t.noTrade).length || 0})
+                Trades
+                {selectedIteration.backtest_results?.templateResults && selectedIteration.backtest_results.templateResults.length > 0
+                  ? ` (${selectedIteration.backtest_results.templateResults.length} strategies)`
+                  : ` (${selectedIteration.backtest_results?.trades?.filter((t: any) => !t.noTrade).length || 0})`
+                }
               </button>
             </div>
 
@@ -270,6 +285,96 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                       <h4 className="text-sm font-medium text-blue-900 mb-2">🎯 Manual Guidance</h4>
                       <p className="text-sm text-blue-800 whitespace-pre-wrap">{selectedIteration.manual_guidance}</p>
+                    </div>
+                  )}
+
+                  {/* Template Comparison */}
+                  {selectedIteration.backtest_results?.templateResults && selectedIteration.backtest_results.templateResults.length > 0 && (
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h4 className="text-sm font-medium text-gray-900 mb-3">🎯 Execution Strategy Comparison</h4>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-white">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Strategy
+                              </th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Trades
+                              </th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Win Rate
+                              </th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Total Return
+                              </th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Profit Factor
+                              </th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Sharpe Ratio
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {selectedIteration.backtest_results.templateResults
+                              .sort((a: any, b: any) => (b.profitFactor || 0) - (a.profitFactor || 0))
+                              .map((template: any, idx: number) => {
+                                const isCustom = template.template === 'custom';
+                                const isBest = idx === 0;
+                                return (
+                                  <tr
+                                    key={template.template}
+                                    className={`${isBest ? 'bg-green-50' : ''} hover:bg-gray-50 cursor-pointer`}
+                                    onClick={() => {
+                                      setSelectedStrategy(template.template);
+                                      setActiveTab('trades');
+                                    }}
+                                  >
+                                    <td className="px-4 py-3 text-sm">
+                                      <div className="flex items-center gap-2">
+                                        {isBest && <span className="text-green-600">🏆</span>}
+                                        <span className={`font-medium ${isCustom ? 'text-blue-600' : 'text-gray-900'}`}>
+                                          {template.templateDisplayName || template.template}
+                                        </span>
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-gray-900">
+                                      {template.totalTrades}
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                      <span className={`font-medium ${
+                                        (template.winRate * 100) >= 50 ? 'text-green-600' : 'text-red-600'
+                                      }`}>
+                                        {(template.winRate * 100).toFixed(1)}%
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                      <span className={`font-medium ${
+                                        template.totalReturn >= 0 ? 'text-green-600' : 'text-red-600'
+                                      }`}>
+                                        {template.totalReturn >= 0 ? '+' : ''}${template.totalReturn.toFixed(2)}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm">
+                                      <span className={`font-medium ${
+                                        template.profitFactor >= 1 ? 'text-green-600' : 'text-red-600'
+                                      }`}>
+                                        {template.profitFactor?.toFixed(2) || '-'}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-sm text-gray-900">
+                                      {template.sharpeRatio?.toFixed(2) || '-'}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                          </tbody>
+                        </table>
+                      </div>
+                      <p className="mt-2 text-xs text-gray-500">
+                        Click on a strategy to view its trades. 🏆 indicates the best performing strategy by profit factor.
+                      </p>
                     </div>
                   )}
 
@@ -328,16 +433,65 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
               {/* Trades Tab */}
               {activeTab === 'trades' && (
                 <div className="space-y-4">
-                  {selectedIteration.backtest_results?.trades && selectedIteration.backtest_results.trades.length > 0 ? (
-                    (() => {
+                  {/* Strategy Selector */}
+                  {selectedIteration.backtest_results?.templateResults && selectedIteration.backtest_results.templateResults.length > 0 && (
+                    <div className="bg-white border border-gray-200 rounded-lg p-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Select Execution Strategy:
+                      </label>
+                      <select
+                        value={selectedStrategy}
+                        onChange={(e) => setSelectedStrategy(e.target.value)}
+                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        {selectedIteration.backtest_results.templateResults
+                          .sort((a: any, b: any) => (b.profitFactor || 0) - (a.profitFactor || 0))
+                          .map((template: any, idx: number) => (
+                            <option key={template.template} value={template.template}>
+                              {idx === 0 ? '🏆 ' : ''}{template.templateDisplayName || template.template}
+                              {' '}
+                              (WR: {(template.winRate * 100).toFixed(1)}%, PF: {template.profitFactor?.toFixed(2) || '-'})
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {(() => {
+                    // Get trades for selected strategy
+                    let trades: any[] = [];
+                    let strategyName = 'Custom Execution';
+
+                    if (selectedIteration.backtest_results?.templateResults) {
+                      const selectedTemplate = selectedIteration.backtest_results.templateResults.find(
+                        (t: any) => t.template === selectedStrategy
+                      );
+
+                      if (selectedTemplate) {
+                        trades = selectedTemplate.trades || [];
+                        strategyName = selectedTemplate.templateDisplayName || selectedTemplate.template;
+                      }
+                    }
+
+                    // Fallback to default trades if no template selected or found
+                    if (trades.length === 0 && selectedIteration.backtest_results?.trades) {
+                      trades = selectedIteration.backtest_results.trades;
+                    }
+
+                    if (trades && trades.length > 0) {
                       // Filter out noTrade entries
-                      const executedTrades = selectedIteration.backtest_results.trades.filter((trade: any) => !trade.noTrade);
-                      const skippedTrades = selectedIteration.backtest_results.trades.filter((trade: any) => trade.noTrade);
+                      const executedTrades = trades.filter((trade: any) => !trade.noTrade);
+                      const skippedTrades = trades.filter((trade: any) => trade.noTrade);
 
                       return (
                         <>
                           {executedTrades.length > 0 && (
                             <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                                <h4 className="text-sm font-medium text-gray-900">
+                                  {strategyName} - {executedTrades.length} Trades
+                                </h4>
+                              </div>
                               <div className="overflow-x-auto">
                                 <table className="min-w-full divide-y divide-gray-200">
                                   <thead className="bg-gray-50">
@@ -499,16 +653,18 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
                           )}
                         </>
                       );
-                    })()
-                  ) : (
-                    <div className="text-center py-12">
-                      <div className="text-4xl mb-3">📊</div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Trades</h3>
-                      <p className="text-gray-600">
-                        This iteration found {selectedIteration.signals_found} signals but no trades were executed
-                      </p>
-                    </div>
-                  )}
+                    } else {
+                      return (
+                        <div className="text-center py-12">
+                          <div className="text-4xl mb-3">📊</div>
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">No Trades</h3>
+                          <p className="text-gray-600">
+                            This iteration found {selectedIteration.signals_found} signals but no trades were executed for {strategyName}
+                          </p>
+                        </div>
+                      );
+                    }
+                  })()}
                 </div>
               )}
             </div>
