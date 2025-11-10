@@ -1562,7 +1562,7 @@ Return ONLY the JSON object, no additional text.`;
   /**
    * Infer Signal interface structure from actual scanner output
    */
-  private inferSignalInterface(sampleSignal: any): string {
+  private inferSignalInterface(sampleSignal: any, scannerContext?: string): string {
     if (!sampleSignal || !sampleSignal.metrics) {
       // Fallback to flexible interface if no sample provided
       return `interface Signal {
@@ -1572,6 +1572,34 @@ Return ONLY the JSON object, no additional text.`;
   pattern_strength: number;
   metrics?: { [key: string]: any };  // Flexible metrics
 }`;
+    }
+
+    // Analyze metrics to infer trade direction
+    const metricKeys = Object.keys(sampleSignal.metrics).map(k => k.toLowerCase()).join(' ');
+    const contextLower = (scannerContext || '').toLowerCase();
+
+    let directionHint = '';
+    let directionReason = '';
+
+    // Analyze for LONG signals (bullish patterns)
+    if (metricKeys.includes('breakout') || contextLower.includes('breakout')) {
+      directionHint = 'LONG';
+      directionReason = 'Breakout patterns are bullish momentum - price breaking above resistance';
+    } else if (contextLower.includes('bullish') || contextLower.includes('long') || contextLower.includes('buy')) {
+      directionHint = 'LONG';
+      directionReason = 'Strategy explicitly indicates bullish/long direction';
+    } else if (metricKeys.includes('breakdown') || contextLower.includes('breakdown')) {
+      directionHint = 'SHORT';
+      directionReason = 'Breakdown patterns are bearish - price breaking below support';
+    } else if (contextLower.includes('bearish') || contextLower.includes('short') || contextLower.includes('sell')) {
+      directionHint = 'SHORT';
+      directionReason = 'Strategy explicitly indicates bearish/short direction';
+    } else if (metricKeys.includes('rejection_type') && sampleSignal.metrics.rejection_type === 'bearish') {
+      directionHint = 'SHORT';
+      directionReason = 'Bearish rejection pattern';
+    } else if (metricKeys.includes('rejection_type') && sampleSignal.metrics.rejection_type === 'bullish') {
+      directionHint = 'LONG';
+      directionReason = 'Bullish rejection pattern';
     }
 
     // Infer types from actual metrics
@@ -1602,7 +1630,11 @@ Return ONLY the JSON object, no additional text.`;
   metrics: {
 ${metricsFields}
   };
-}`;
+}${directionHint ? `
+
+// CRITICAL - INFERRED TRADE DIRECTION: ${directionHint}
+// Reason: ${directionReason}
+// You MUST use "${directionHint}" as the trade direction (side) in your execution logic.` : ''}`;
   }
 
   /**
@@ -1621,7 +1653,7 @@ ${metricsFields}
 
     // Infer signal interface from actual scanner output
     const sampleSignal = params.actualScannerSignals?.[0];
-    const signalInterface = this.inferSignalInterface(sampleSignal);
+    const signalInterface = this.inferSignalInterface(sampleSignal, params.scannerContext);
 
     const systemPrompt = `You are an expert algorithmic trader specializing in execution strategy optimization. ${params.agentPersonality}
 
