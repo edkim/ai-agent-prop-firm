@@ -96,8 +96,9 @@ export class AgentLearningService {
       });
 
       // Step 2.5: For iteration 2+, regenerate execution script with actual signals
-      if (iterationNumber > 1 && scanResults.length > 0 && !strategy.executionScript) {
-        logger.info('Step 2.5: Generating execution script with actual scanner signals');
+      // Always regenerate to ensure it uses the actual signal structure from scanner
+      if (iterationNumber > 1 && scanResults.length > 0) {
+        logger.info('Step 2.5: Regenerating execution script with actual scanner signals');
         const previousIteration = this.getPreviousIteration(agent.id, iterationNumber);
         const knowledgeSummary = this.summarizeKnowledge(await this.getAgentKnowledge(agent.id));
 
