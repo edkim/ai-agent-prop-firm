@@ -39,6 +39,11 @@ const DEFAULT_BACKTEST_CONFIG: AgentBacktestConfig = {
   backtest_timeout_ms: 120000,         // 2 minute timeout per backtest
 };
 
+// Template execution configuration
+// Set to false to skip template testing and use only custom execution scripts (faster iterations)
+// Set to true to test all templates and compare with custom execution (comprehensive testing)
+const ENABLE_TEMPLATE_EXECUTION = true;
+
 export class AgentLearningService {
   private agentMgmt: AgentManagementService;
   private claude: ClaudeService;
@@ -497,12 +502,11 @@ export class AgentLearningService {
     // Test each template
     const templateResults: any[] = [];
 
-    // TEMPORARILY DISABLED: Skip template execution to test custom execution only
-    // for (const templateName of DEFAULT_TEMPLATES) {
-    if (false) {  // Disabled template loop
-      const templateName = '';
-      const template = executionTemplates[templateName];
-      console.log(`   \n   📊 Testing template: ${template.name}`);
+    if (ENABLE_TEMPLATE_EXECUTION) {
+      console.log(`   \n   Testing ${DEFAULT_TEMPLATES.length} execution templates...`);
+      for (const templateName of DEFAULT_TEMPLATES) {
+        const template = executionTemplates[templateName];
+        console.log(`   \n   📊 Testing template: ${template.name}`);
 
       const allTrades: any[] = [];
       let successfulBacktests = 0;
@@ -699,7 +703,7 @@ export class AgentLearningService {
 
     console.log(`\n   📈 Template Performance Summary:`);
     if (templateResults.length === 0) {
-      console.log(`   No template results (templates may be disabled)`);
+      console.log(`   No template results (ENABLE_TEMPLATE_EXECUTION=${ENABLE_TEMPLATE_EXECUTION})`);
 
       // No templates ran, return default/empty results
       return {
