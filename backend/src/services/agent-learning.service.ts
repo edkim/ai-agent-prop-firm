@@ -585,6 +585,7 @@ export class AgentLearningService {
         avgLoss: this.calculateAvgLoss(allTrades)
       });
     }
+    }
 
     // Test custom execution script if provided (for iterations 2+)
     if (executionScript && executionScript.trim() !== '') {
