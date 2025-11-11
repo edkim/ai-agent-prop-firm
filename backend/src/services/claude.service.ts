@@ -1675,13 +1675,24 @@ ${params.scannerContext}
 Generate TypeScript code that will be inserted into the backtest execution loop to implement the strategy.
 
 The code will receive:
-- \`SCANNER_SIGNALS\`: Array of signals with ticker, date, time, direction, metrics
+- \`SCANNER_SIGNALS\`: Array of signals with fields: ticker, signal_date, signal_time, direction, metrics
 - \`results\`: Array to push TradeResult objects
-- Access to database via \`helpers.getIntradayData(db, ticker, date, timeframe)\`
+- Access to database via \`helpers.getIntradayData(db, ticker, signal_date, timeframe)\`
+
+**IMPORTANT**: Signal fields are \`signal_date\` and \`signal_time\` (NOT \`date\` and \`time\`)
+
+Example signal destructuring:
+\`\`\`typescript
+for (const signal of SCANNER_SIGNALS) {
+  const { ticker, signal_date, signal_time, direction, metrics } = signal;
+  const bars = await helpers.getIntradayData(db, ticker, signal_date, '5min');
+  // ... rest of logic
+}
+\`\`\`
 
 Generate ONLY the execution loop code (no imports, no function wrapper). The code should:
 1. Loop through each signal in SCANNER_SIGNALS
-2. Fetch intraday bars for that day
+2. Fetch intraday bars using signal_date (not date!)
 3. Find entry point based on strategy (e.g., "enter on pullback" → implement pullback logic)
 4. Track position with stop loss and profit targets matching risk tolerance
 5. Push TradeResult to results array
