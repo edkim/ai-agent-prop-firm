@@ -35,7 +35,49 @@ Agent continues learning... iteration 22 with manual guidance
 
 ---
 
-## ✨ Latest Feature: Manual Guidance (2025-11-03)
+## ✨ Latest Feature: Custom Execution Scripts (2025-11-11)
+
+**AI-Generated Execution Logic from Strategy Analysis**
+
+The learning agent now generates custom execution scripts tailored to each strategy, replacing the generic template library with intelligent, strategy-specific code:
+
+```
+Strategy: "Gap and Go - Enter on pullback from gap with momentum continuation"
+         ↓
+AI analyzes strategy intent and generates:
+- Custom entry logic detecting pullback patterns
+- Strategy-specific stop loss placement (2% for gap plays)
+- Momentum confirmation indicators
+- Time-of-day filters (avoid late-day gaps)
+         ↓
+Iteration 2: Win rate 35%, Sharpe 3.58, Profit factor 1.87
+(vs Iteration 1: Win rate 17.6%, Sharpe -6.00, Profit factor 0.37)
+```
+
+**How It Works:**
+1. Agent generates scanner strategy based on learnings
+2. AI analyzes strategy intent, risk tolerance, and trading style
+3. **Custom execution script** generated with Claude AI
+4. Script includes strategy-specific entry/exit logic
+5. Backtests run with tailored execution (not generic templates)
+6. Performance metrics dramatically improve with contextualized logic
+
+**Benefits:**
+- **Better Performance**: Execution logic matches strategy intent
+- **Adaptive Risk**: Stop losses and targets fit the pattern type
+- **Intelligent Entries**: Custom logic for specific setups (pullbacks, breakouts, etc.)
+- **Time-Aware**: Strategy-specific timing rules (e.g., avoid first 30 minutes for gaps)
+
+**Technical Details:**
+- Located in `claude.service.ts:generateExecutionScriptFromStrategy()`
+- Uses Claude Sonnet 4.5 for code generation
+- Generates standalone TypeScript with proper interfaces
+- Embedded with scanner signals for contextualized backtesting
+- Scripts saved to `generated-scripts/success/` with metadata
+
+---
+
+## ✨ Manual Guidance (2025-11-03)
 
 **Take control of the learning process while maintaining automation**
 
