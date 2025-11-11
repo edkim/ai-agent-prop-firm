@@ -42,6 +42,7 @@ export interface ScannerSignal {
   signal_date: string;
   signal_time: string;
   pattern_strength?: number;
+  direction?: 'LONG' | 'SHORT';
   metrics?: { [key: string]: any };
 }
 
