@@ -1710,8 +1710,8 @@ Generate ONLY the execution loop code (no imports, no function wrapper). The cod
 Generate executable TypeScript code that will produce superior results by being true to the strategy's intent.`;
 
     try {
-      const completion = await anthropic.messages.create({
-        model: CLAUDE_MODEL,
+      const completion = await this.getClient().messages.create({
+        model: this.model,
         max_tokens: 16000,
         system: systemPrompt,
         messages: [{
