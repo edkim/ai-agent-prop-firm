@@ -457,6 +457,7 @@ if (useSignalBasedExecution) {
 
     // Determine side from metrics or derive from price action
     // IMPORTANT: Don't assume specific metric names exist! Check before using.
+    // Pattern-based fallback: LONG for gap-ups/breakouts/bounces, SHORT for gap-downs/breakdowns/fades
     const side = metrics.direction || (entryBar.close > (metrics.vwap || bars[signalBarIndex].close) ? 'LONG' : 'SHORT');
 
     let position = {
@@ -825,6 +826,7 @@ interface ScanMatch {
   signal_date: string;  // Trading date (YYYY-MM-DD)
   signal_time: string;  // Time of detection (HH:MM)
   pattern_strength: number; // 0-100
+  direction: 'LONG' | 'SHORT';  // Trade direction
   metrics: any;
 }
 
@@ -908,6 +910,7 @@ async function runScan(): Promise<ScanMatch[]> {
             signal_date: date,
             signal_time: current.time_of_day,
             pattern_strength: 75, // Calculate based on criteria
+            direction: 'LONG', // Set based on pattern: 'LONG' for breakouts/bounces/gap-ups, 'SHORT' for breakdowns/fades/gap-downs
             metrics: {
               vwap: current.vwap,
               price: current.close,
@@ -1635,6 +1638,112 @@ ${metricsFields}
 // CRITICAL - INFERRED TRADE DIRECTION: ${directionHint}
 // Reason: ${directionReason}
 // You MUST use "${directionHint}" as the trade direction (side) in your execution logic.` : ''}`;
+  }
+
+  /**
+   * Generate custom execution script from agent's strategy (for iteration 1)
+   */
+  async generateExecutionScriptFromStrategy(params: {
+    agentInstructions: string;
+    agentPersonality: string;
+    patternFocus: string[];
+    tradingStyle: string;
+    riskTolerance: string;
+    marketConditions: string[];
+    scannerContext: string;
+  }): Promise<{ script: string; rationale: string; tokenUsage: any }> {
+    console.log('🎯 Generating strategy-aligned execution script with Claude...');
+
+    const systemPrompt = `You are an expert algorithmic trader specializing in execution strategy design. ${params.agentPersonality}
+
+Your task is to create a custom execution script that implements the agent's trading strategy as described in their instructions.`;
+
+    const userPrompt = `Generate a custom execution script that implements this trading strategy:
+
+**Agent Instructions:**
+${params.agentInstructions}
+
+**Pattern Focus:** ${params.patternFocus.join(', ')}
+**Trading Style:** ${params.tradingStyle}
+**Risk Tolerance:** ${params.riskTolerance}
+**Market Conditions:** ${params.marketConditions.join(', ')}
+
+**Scanner Context:**
+${params.scannerContext}
+
+**YOUR TASK:**
+Generate TypeScript code that will be inserted into the backtest execution loop to implement the strategy.
+
+The code will receive:
+- \`SCANNER_SIGNALS\`: Array of signals with ticker, date, time, direction, metrics
+- \`results\`: Array to push TradeResult objects
+- Access to database via \`helpers.getIntradayData(db, ticker, date, timeframe)\`
+
+Generate ONLY the execution loop code (no imports, no function wrapper). The code should:
+1. Loop through each signal in SCANNER_SIGNALS
+2. Fetch intraday bars for that day
+3. Find entry point based on strategy (e.g., "enter on pullback" → implement pullback logic)
+4. Track position with stop loss and profit targets matching risk tolerance
+5. Push TradeResult to results array
+
+**CRITICAL REQUIREMENTS:**
+
+1. **Align with Strategy**: The execution logic should directly implement the strategy described in the agent instructions
+   - If instructions say "enter on first pullback", implement pullback detection
+   - If instructions say "ride momentum continuation", use trailing stops not fixed targets
+   - If instructions mention specific conditions, code them explicitly
+
+2. **Match Risk Profile**:
+   - Aggressive: Wider stops (2-4%), let winners run with trailing stops
+   - Moderate: Balanced stops (1.5-2.5%), take partial profits
+   - Conservative: Tight stops (0.5-1.5%), quick profit taking
+
+3. **Match Trading Style**:
+   - Day trader: Exit before market close (15:55), tighter time-based stops
+   - Swing trader: Can hold overnight, wider stops for volatility
+   - Scalper: Very tight stops, quick profit targets
+
+4. **Direction Handling**: ALWAYS read direction from signal.direction field (LONG/SHORT)
+
+5. **Output Format**: Return ONLY the execution code block that will be inserted between the loop and results output
+
+Generate executable TypeScript code that will produce superior results by being true to the strategy's intent.`;
+
+    try {
+      const completion = await anthropic.messages.create({
+        model: CLAUDE_MODEL,
+        max_tokens: 16000,
+        system: systemPrompt,
+        messages: [{
+          role: 'user',
+          content: userPrompt
+        }]
+      });
+
+      const responseText = completion.content[0].type === 'text'
+        ? completion.content[0].text
+        : '';
+
+      // Extract code block
+      const codeBlockMatch = responseText.match(/```(?:typescript|ts)?\n([\s\S]*?)```/);
+      const script = codeBlockMatch ? codeBlockMatch[1].trim() : responseText.trim();
+
+      // Extract rationale (text before first code block)
+      const rationaleMatch = responseText.match(/([\s\S]*?)```/);
+      const rationale = rationaleMatch ? rationaleMatch[1].trim() : 'Strategy-aligned custom execution script';
+
+      const tokenUsage = {
+        inputTokens: completion.usage?.input_tokens || 0,
+        outputTokens: completion.usage?.output_tokens || 0
+      };
+
+      console.log(`   ✅ Generated execution script (${tokenUsage.inputTokens} in, ${tokenUsage.outputTokens} out)`);
+
+      return { script, rationale, tokenUsage };
+    } catch (error: any) {
+      console.error('❌ Error generating execution script:', error.message);
+      throw new Error(`Failed to generate execution script: ${error.message}`);
+    }
   }
 
   /**
