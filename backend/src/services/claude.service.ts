@@ -1651,7 +1651,7 @@ ${metricsFields}
     riskTolerance: string;
     marketConditions: string[];
     scannerContext: string;
-  }): Promise<{ script: string; rationale: string; tokenUsage: any }> {
+  }): Promise<{ script: string; rationale: string; tokenUsage: any; prompt: string }> {
     console.log('🎯 Generating strategy-aligned execution script with Claude...');
 
     const systemPrompt = `You are an expert algorithmic trader specializing in execution strategy design. ${params.agentPersonality}
@@ -1750,7 +1750,7 @@ Generate executable TypeScript code that will produce superior results by being 
 
       console.log(`   ✅ Generated execution script (${tokenUsage.inputTokens} in, ${tokenUsage.outputTokens} out)`);
 
-      return { script, rationale, tokenUsage };
+      return { script, rationale, tokenUsage, prompt: userPrompt };
     } catch (error: any) {
       console.error('❌ Error generating execution script:', error.message);
       throw new Error(`Failed to generate execution script: ${error.message}`);
@@ -1768,7 +1768,7 @@ Generate executable TypeScript code that will produce superior results by being 
     agentKnowledge: string;
     scannerContext: string;
     actualScannerSignals?: any[];  // NEW: Sample signals from actual scanner output
-  }): Promise<{ script: string; rationale: string }> {
+  }): Promise<{ script: string; rationale: string; prompt: string }> {
     console.log('🎯 Generating custom execution script with Claude...');
 
     // Infer signal interface from actual scanner output
@@ -1966,7 +1966,7 @@ Return ONLY the JSON object, no additional text.`;
           const result = JSON.parse(jsonMatch[0]);
           console.log('✅ Generated custom execution script');
           console.log('📝 Rationale:', result.rationale.substring(0, 200) + '...');
-          return result;
+          return { ...result, prompt: userPrompt };
         }
         throw new Error('No JSON found in Claude response');
       }
