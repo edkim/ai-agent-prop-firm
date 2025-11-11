@@ -238,4 +238,17 @@ export const learningAgentApi = {
     const response = await apiClient.get<{ success: boolean; knowledge: AgentKnowledge[] }>(url);
     return response.data.knowledge;
   },
+
+  /**
+   * Get script files and prompts for an iteration
+   */
+  async getIterationScripts(agentId: string, iterationId: string): Promise<{
+    scannerScript: string | null;
+    executionScript: string | null;
+    scannerPrompt: string | null;
+    executionPrompt: string | null;
+  }> {
+    const response = await apiClient.get(`/${agentId}/iterations/${iterationId}/scripts`);
+    return response.data;
+  },
 };

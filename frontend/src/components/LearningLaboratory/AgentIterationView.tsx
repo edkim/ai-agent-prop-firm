@@ -5,12 +5,20 @@
 
 import { useState, useEffect } from 'react';
 import { learningAgentApi, type AgentIteration } from '../../services/learningAgentApi';
+import ScriptViewerModal from './ScriptViewerModal';
 
 interface AgentIterationViewProps {
   agentId: string;
 }
 
 type IterationTab = 'summary' | 'analysis' | 'trades';
+
+interface ScriptModal {
+  isOpen: boolean;
+  title: string;
+  content: string | null;
+  language?: 'typescript' | 'markdown';
+}
 
 export default function AgentIterationView({ agentId }: AgentIterationViewProps) {
   const [iterations, setIterations] = useState<AgentIteration[]>([]);
@@ -22,6 +30,7 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
   const [manualGuidance, setManualGuidance] = useState('');
   const [showGuidanceInput, setShowGuidanceInput] = useState(false);
   const [startingIteration, setStartingIteration] = useState(false);
+  const [scriptModal, setScriptModal] = useState<ScriptModal>({ isOpen: false, title: '', content: null });
 
   useEffect(() => {
     loadIterations();
@@ -72,6 +81,48 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
       setError(err.message || 'Failed to start iteration');
     } finally {
       setStartingIteration(false);
+    }
+  };
+
+  const viewScript = async (
+    iterationId: string,
+    type: 'scanner-code' | 'execution-code' | 'scanner-prompt' | 'execution-prompt'
+  ) => {
+    try {
+      const scripts = await learningAgentApi.getIterationScripts(agentId, iterationId);
+
+      const modalConfig = {
+        'scanner-code': {
+          title: 'Scanner Script Code',
+          content: scripts.scannerScript,
+          language: 'typescript' as const,
+        },
+        'execution-code': {
+          title: 'Execution Script Code',
+          content: scripts.executionScript,
+          language: 'typescript' as const,
+        },
+        'scanner-prompt': {
+          title: 'Scanner Generation Prompt',
+          content: scripts.scannerPrompt,
+          language: 'markdown' as const,
+        },
+        'execution-prompt': {
+          title: 'Execution Generation Prompt',
+          content: scripts.executionPrompt,
+          language: 'markdown' as const,
+        },
+      };
+
+      setScriptModal({ isOpen: true, ...modalConfig[type] });
+    } catch (err: any) {
+      console.error('Failed to load scripts:', err);
+      setScriptModal({
+        isOpen: true,
+        title: 'Error Loading Script',
+        content: `Failed to load script: ${err.message}`,
+        language: 'typescript',
+      });
     }
   };
 
@@ -203,6 +254,38 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
               <p className="text-sm text-gray-600">
                 {new Date(selectedIteration.created_at).toLocaleString()}
               </p>
+            </div>
+
+            {/* Script Viewer Buttons */}
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => viewScript(selectedIteration.id, 'scanner-prompt')}
+                className="text-sm px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors flex items-center gap-1"
+              >
+                <span>💬</span>
+                Scanner Prompt
+              </button>
+              <button
+                onClick={() => viewScript(selectedIteration.id, 'scanner-code')}
+                className="text-sm px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors flex items-center gap-1"
+              >
+                <span>📄</span>
+                Scanner Code
+              </button>
+              <button
+                onClick={() => viewScript(selectedIteration.id, 'execution-prompt')}
+                className="text-sm px-3 py-1.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors flex items-center gap-1"
+              >
+                <span>💬</span>
+                Execution Prompt
+              </button>
+              <button
+                onClick={() => viewScript(selectedIteration.id, 'execution-code')}
+                className="text-sm px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors flex items-center gap-1"
+              >
+                <span>📄</span>
+                Execution Code
+              </button>
             </div>
 
             {/* Tabs */}
@@ -676,6 +759,15 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
         )}
       </div>
       </div>
+
+      {/* Script Viewer Modal */}
+      <ScriptViewerModal
+        isOpen={scriptModal.isOpen}
+        onClose={() => setScriptModal({ isOpen: false, title: '', content: null })}
+        title={scriptModal.title}
+        content={scriptModal.content}
+        language={scriptModal.language}
+      />
     </div>
   );
 }
