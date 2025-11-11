@@ -344,6 +344,45 @@ router.get('/:id/iterations/:iteration_id', async (req: Request, res: Response) 
 });
 
 /**
+ * GET /api/agents/:id/iterations/:iteration_id/scripts
+ * Get script files and generation prompts for an iteration
+ */
+router.get('/:id/iterations/:iteration_id/scripts', async (req: Request, res: Response) => {
+  try {
+    const db = getDatabase();
+    const agentId = req.params.id;
+    const iterationId = req.params.iteration_id;
+
+    const row: any = db.prepare(`
+      SELECT scan_script, execution_script, scanner_prompt, execution_prompt
+      FROM agent_iterations
+      WHERE agent_id = ? AND id = ?
+    `).get(agentId, iterationId);
+
+    if (!row) {
+      return res.status(404).json({
+        success: false,
+        error: 'Iteration not found',
+      });
+    }
+
+    res.json({
+      success: true,
+      scannerScript: row.scan_script || null,
+      executionScript: row.execution_script || null,
+      scannerPrompt: row.scanner_prompt || null,
+      executionPrompt: row.execution_prompt || null,
+    });
+  } catch (error: any) {
+    console.error('Error getting iteration scripts:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
  * POST /api/agents/:id/iterations/:iteration_id/apply-refinements
  * Apply refinements from an iteration
  */

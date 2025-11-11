@@ -42,7 +42,7 @@ const DEFAULT_BACKTEST_CONFIG: AgentBacktestConfig = {
 // Template execution configuration
 // Set to false to skip template testing and use only custom execution scripts (faster iterations)
 // Set to true to test all templates and compare with custom execution (comprehensive testing)
-const ENABLE_TEMPLATE_EXECUTION = true;
+const ENABLE_TEMPLATE_EXECUTION = false;
 
 export class AgentLearningService {
   private agentMgmt: AgentManagementService;
@@ -319,6 +319,8 @@ export class AgentLearningService {
     rationale: string;
     scannerTokenUsage?: any;
     executionTokenUsage?: any;
+    scannerPrompt?: string;
+    executionPrompt?: string;
   }> {
     // Get agent's accumulated knowledge
     const knowledge = await this.getAgentKnowledge(agent.id);
@@ -372,6 +374,7 @@ export class AgentLearningService {
     let executionScript = '';
     let executionTokenUsage: any = undefined;
     let executionRationale = '';
+    let executionResult: any = undefined;
 
     if (iterationNumber === 1) {
       // First iteration: generate custom execution script based on agent's strategy
@@ -379,7 +382,7 @@ export class AgentLearningService {
 
       const agentPersonality = `${agent.trading_style} trader with ${agent.risk_tolerance} risk tolerance, focusing on ${agent.pattern_focus.join(', ')}.`;
 
-      const executionResult = await this.claude.generateExecutionScriptFromStrategy({
+      executionResult = await this.claude.generateExecutionScriptFromStrategy({
         agentInstructions: agent.instructions,
         agentPersonality,
         patternFocus: agent.pattern_focus,
@@ -402,7 +405,7 @@ export class AgentLearningService {
       if (previousIteration && previousIteration.backtest_results && previousIteration.expert_analysis) {
         const agentPersonality = `${agent.trading_style} trader with ${agent.risk_tolerance} risk tolerance, focusing on ${agent.pattern_focus.join(', ')}.`;
 
-        const executionResult = await this.claude.generateExecutionScript({
+        executionResult = await this.claude.generateExecutionScript({
           agentPersonality,
           winningTemplate: previousIteration.winning_template || 'time_based',
           templatePerformances: previousIteration.backtest_results.templateResults || [],
@@ -430,7 +433,9 @@ export class AgentLearningService {
       executionScript,  // Empty for iteration 1, custom script for iteration 2+
       rationale,
       scannerTokenUsage: scannerResult.tokenUsage,
-      executionTokenUsage
+      executionTokenUsage,
+      scannerPrompt: scannerResult.prompt || scannerQuery,
+      executionPrompt: executionResult?.prompt || `Generated ${iterationNumber === 1 ? 'initial' : 'refined'} execution script`
     };
   }
 
@@ -517,6 +522,7 @@ export class AgentLearningService {
 
     // Test each template
     const templateResults: any[] = [];
+    let customTrades: any[] = []; // Track custom script trades
 
     if (ENABLE_TEMPLATE_EXECUTION) {
       console.log(`   \n   Testing ${DEFAULT_TEMPLATES.length} execution templates...`);
@@ -684,6 +690,7 @@ export class AgentLearningService {
           }
 
           allTrades.push(...trades);
+          customTrades = trades; // Store for empty template results fallback
           successfulBacktests = 1;
           console.log(`      ✅ Custom execution completed: ${trades.length} trades`);
         } else {
@@ -1005,6 +1012,8 @@ export class AgentLearningService {
       iteration_number: data.iterationNumber,
       scan_script: data.strategy.scanScript,
       execution_script: data.strategy.executionScript,
+      scanner_prompt: data.strategy.scannerPrompt || null,
+      execution_prompt: data.strategy.executionPrompt || null,
       version_notes: `Iteration ${data.iterationNumber}`,
       manual_guidance: data.manualGuidance || null,
       signals_found: data.scanResults.length,
@@ -1021,16 +1030,18 @@ export class AgentLearningService {
 
     db.prepare(`
       INSERT INTO agent_iterations (
-        id, agent_id, iteration_number, scan_script, execution_script,
+        id, agent_id, iteration_number, scan_script, execution_script, scanner_prompt, execution_prompt,
         version_notes, manual_guidance, signals_found, backtest_results, win_rate, sharpe_ratio,
         total_return, winning_template, expert_analysis, refinements_suggested, iteration_status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       iteration.id,
       iteration.agent_id,
       iteration.iteration_number,
       iteration.scan_script,
       iteration.execution_script,
+      iteration.scanner_prompt,
+      iteration.execution_prompt,
       iteration.version_notes,
       iteration.manual_guidance,
       iteration.signals_found,
