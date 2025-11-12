@@ -18,7 +18,7 @@ export type AlertSeverity = 'INFO' | 'WARNING' | 'CRITICAL';
 
 export interface Alert {
   id: string;
-  agent_id: string;
+  learning_agent_id: string;
   alert_type: AlertType;
   severity: AlertSeverity;
   message: string;
@@ -46,7 +46,7 @@ export class PerformanceMonitorService {
     const iteration = db.prepare(`
       SELECT *
       FROM agent_iterations
-      WHERE id = ? AND agent_id = ?
+      WHERE id = ? AND learning_agent_id = ?
     `).get(iterationId, agentId) as any;
 
     if (!iteration) {
@@ -57,7 +57,7 @@ export class PerformanceMonitorService {
     const recentIterations = db.prepare(`
       SELECT win_rate, sharpe_ratio, total_return, signals_found
       FROM agent_iterations
-      WHERE agent_id = ?
+      WHERE learning_agent_id = ?
       ORDER BY iteration_number DESC
       LIMIT 5
     `).all(agentId) as any[];
@@ -113,7 +113,7 @@ export class PerformanceMonitorService {
     if (winRateDrop > 0.15 || sharpeDrop > 0.20) {
       return {
         id: uuidv4(),
-        agent_id: agentId,
+        learning_agent_id: agentId,
         alert_type: 'PERFORMANCE_DEGRADATION',
         severity: 'WARNING',
         message: `Performance has degraded significantly from recent average`,
@@ -165,7 +165,7 @@ export class PerformanceMonitorService {
     if (winRateCV < 0.05 && sharpeCV < 0.05) {
       return {
         id: uuidv4(),
-        agent_id: agentId,
+        learning_agent_id: agentId,
         alert_type: 'CONVERGENCE',
         severity: 'INFO',
         message: 'Agent performance has converged - minimal improvement in recent iterations',
@@ -221,7 +221,7 @@ export class PerformanceMonitorService {
     if (achieved) {
       return {
         id: uuidv4(),
-        agent_id: agentId,
+        learning_agent_id: agentId,
         alert_type: 'MILESTONE',
         severity: 'INFO',
         message: achieved.message,
@@ -267,14 +267,14 @@ export class PerformanceMonitorService {
         AVG(total_return) as avg_return,
         SUM(signals_found) as total_signals
       FROM agent_iterations
-      WHERE agent_id = ?
+      WHERE learning_agent_id = ?
     `).get(agentId) as any;
 
     // Get recent performance (last 5 iterations)
     const recentIterations = db.prepare(`
       SELECT win_rate, sharpe_ratio, total_return
       FROM agent_iterations
-      WHERE agent_id = ?
+      WHERE learning_agent_id = ?
       ORDER BY iteration_number DESC
       LIMIT 5
     `).all(agentId) as any[];
@@ -296,7 +296,7 @@ export class PerformanceMonitorService {
     if (allCriteriaMet) {
       return {
         id: uuidv4(),
-        agent_id: agentId,
+        learning_agent_id: agentId,
         alert_type: 'GRADUATION_READY',
         severity: 'INFO',
         message: 'Agent is ready for graduation to paper trading',
@@ -327,25 +327,25 @@ export class PerformanceMonitorService {
     // Check if similar alert already exists and is unacknowledged
     const existing = db.prepare(`
       SELECT id
-      FROM agent_alerts
-      WHERE agent_id = ?
+      FROM learning_agent_alerts
+      WHERE learning_agent_id = ?
       AND alert_type = ?
       AND acknowledged = 0
       AND created_at > datetime('now', '-24 hours')
-    `).get(alert.agent_id, alert.alert_type);
+    `).get(alert.learning_agent_id, alert.alert_type);
 
     if (existing) {
-      console.log(`⚠ Skipping duplicate alert: ${alert.alert_type} for agent ${alert.agent_id}`);
+      console.log(`⚠ Skipping duplicate alert: ${alert.alert_type} for agent ${alert.learning_agent_id}`);
       return;
     }
 
     // Insert alert
     db.prepare(`
-      INSERT INTO agent_alerts (id, agent_id, alert_type, severity, message, details, acknowledged, created_at)
+      INSERT INTO learning_agent_alerts (id, learning_agent_id, alert_type, severity, message, details, acknowledged, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       alert.id,
-      alert.agent_id,
+      alert.learning_agent_id,
       alert.alert_type,
       alert.severity,
       alert.message,
@@ -354,11 +354,11 @@ export class PerformanceMonitorService {
       alert.created_at
     );
 
-    console.log(`🔔 Alert created: [${alert.severity}] ${alert.alert_type} for agent ${alert.agent_id}`);
+    console.log(`🔔 Alert created: [${alert.severity}] ${alert.alert_type} for agent ${alert.learning_agent_id}`);
 
     // Log to activity log
     await this.activityLog.log({
-      agent_id: alert.agent_id,
+      learning_agent_id: alert.learning_agent_id,
       activity_type: `ALERT_${alert.alert_type}`,
       description: alert.message,
       data: alert.details
@@ -372,8 +372,8 @@ export class PerformanceMonitorService {
     const db = getDatabase();
 
     const query = includeAcknowledged
-      ? `SELECT * FROM agent_alerts WHERE agent_id = ? ORDER BY created_at DESC`
-      : `SELECT * FROM agent_alerts WHERE agent_id = ? AND acknowledged = 0 ORDER BY created_at DESC`;
+      ? `SELECT * FROM learning_agent_alerts WHERE learning_agent_id = ? ORDER BY created_at DESC`
+      : `SELECT * FROM learning_agent_alerts WHERE learning_agent_id = ? AND acknowledged = 0 ORDER BY created_at DESC`;
 
     return db.prepare(query).all(agentId) as Alert[];
   }
@@ -386,7 +386,7 @@ export class PerformanceMonitorService {
 
     return db.prepare(`
       SELECT *
-      FROM agent_alerts
+      FROM learning_agent_alerts
       WHERE acknowledged = 0
       ORDER BY severity DESC, created_at DESC
     `).all() as Alert[];
@@ -399,7 +399,7 @@ export class PerformanceMonitorService {
     const db = getDatabase();
 
     db.prepare(`
-      UPDATE agent_alerts
+      UPDATE learning_agent_alerts
       SET acknowledged = 1
       WHERE id = ?
     `).run(alertId);
@@ -414,7 +414,7 @@ export class PerformanceMonitorService {
     const db = getDatabase();
 
     db.prepare(`
-      DELETE FROM agent_alerts
+      DELETE FROM learning_agent_alerts
       WHERE id = ?
     `).run(alertId);
 

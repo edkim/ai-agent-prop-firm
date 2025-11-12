@@ -1,11 +1,11 @@
 /**
- * Agent API Routes
+ * Learning Agent API Routes
  * Endpoints for multi-agent laboratory
  */
 
 import express, { Request, Response } from 'express';
-import { AgentManagementService } from '../../services/agent-management.service';
-import { AgentLearningService } from '../../services/agent-learning.service';
+import { LearningAgentManagementService } from '../../services/learning-agent-management.service';
+import { LearningIterationService } from '../../services/learning-iteration.service';
 import { SchedulerService } from '../../services/scheduler.service';
 import { RefinementApprovalService } from '../../services/refinement-approval.service';
 import { ContinuousLearningService } from '../../services/continuous-learning.service';
@@ -20,8 +20,8 @@ import {
 } from '../../types/agent.types';
 
 const router = express.Router();
-const agentMgmt = new AgentManagementService();
-const agentLearning = new AgentLearningService();
+const agentMgmt = new LearningAgentManagementService();
+const agentLearning = new LearningIterationService();
 const scheduler = SchedulerService.getInstance();
 const refinementApproval = new RefinementApprovalService();
 const continuousLearning = ContinuousLearningService.getInstance();
@@ -275,7 +275,7 @@ router.get('/:id/iterations', async (req: Request, res: Response) => {
 
     const rows = db.prepare(`
       SELECT * FROM agent_iterations
-      WHERE agent_id = ?
+      WHERE learning_agent_id = ?
       ORDER BY iteration_number DESC
     `).all(agentId);
 
@@ -312,7 +312,7 @@ router.get('/:id/iterations/:iteration_id', async (req: Request, res: Response) 
 
     const row: any = db.prepare(`
       SELECT * FROM agent_iterations
-      WHERE agent_id = ? AND id = ?
+      WHERE learning_agent_id = ? AND id = ?
     `).get(agentId, iterationId);
 
     if (!row) {
@@ -356,7 +356,7 @@ router.get('/:id/iterations/:iteration_id/scripts', async (req: Request, res: Re
     const row: any = db.prepare(`
       SELECT scan_script, execution_script, scanner_prompt, execution_prompt
       FROM agent_iterations
-      WHERE agent_id = ? AND id = ?
+      WHERE learning_agent_id = ? AND id = ?
     `).get(agentId, iterationId);
 
     if (!row) {
@@ -389,7 +389,7 @@ router.get('/:id/iterations/:iteration_id/scripts', async (req: Request, res: Re
 router.post('/:id/iterations/:iteration_id/apply-refinements', async (req: Request, res: Response) => {
   try {
     const request: ApplyRefinementsRequest = {
-      agent_id: req.params.id,
+      learning_agent_id: req.params.id,
       iteration_id: req.params.iteration_id,
       approved: req.body.approved,
     };
@@ -421,7 +421,7 @@ router.get('/:id/strategies', async (req: Request, res: Response) => {
 
     const strategies = db.prepare(`
       SELECT * FROM agent_strategies
-      WHERE agent_id = ?
+      WHERE learning_agent_id = ?
       ORDER BY created_at DESC
     `).all(agentId);
 
@@ -450,7 +450,7 @@ router.get('/:id/strategies/:version', async (req: Request, res: Response) => {
 
     const strategy = db.prepare(`
       SELECT * FROM agent_strategies
-      WHERE agent_id = ? AND version = ?
+      WHERE learning_agent_id = ? AND version = ?
     `).get(agentId, version);
 
     if (!strategy) {
@@ -490,7 +490,7 @@ router.get('/:id/knowledge', async (req: Request, res: Response) => {
     const knowledgeType = req.query.type as string | undefined;
     const patternType = req.query.pattern as string | undefined;
 
-    let query = `SELECT * FROM agent_knowledge WHERE agent_id = ?`;
+    let query = `SELECT * FROM agent_knowledge WHERE learning_agent_id = ?`;
     const params: any[] = [agentId];
 
     if (knowledgeType) {
@@ -551,7 +551,7 @@ router.post('/:id/auto-learn/enable', async (req: Request, res: Response) => {
 
     const db = getDatabase();
     db.prepare(`
-      UPDATE trading_agents
+      UPDATE learning_agents
       SET auto_learn_enabled = 1, learning_schedule = ?
       WHERE id = ?
     `).run(schedule, req.params.id);
@@ -581,7 +581,7 @@ router.post('/:id/auto-learn/disable', async (req: Request, res: Response) => {
   try {
     const db = getDatabase();
     db.prepare(`
-      UPDATE trading_agents
+      UPDATE learning_agents
       SET auto_learn_enabled = 0
       WHERE id = ?
     `).run(req.params.id);
@@ -618,7 +618,7 @@ router.put('/:id/schedule', async (req: Request, res: Response) => {
 
     const db = getDatabase();
     db.prepare(`
-      UPDATE trading_agents
+      UPDATE learning_agents
       SET learning_schedule = ?
       WHERE id = ?
     `).run(schedule, req.params.id);
@@ -652,7 +652,7 @@ router.post('/:id/auto-approve/enable', async (req: Request, res: Response) => {
   try {
     const db = getDatabase();
     db.prepare(`
-      UPDATE trading_agents
+      UPDATE learning_agents
       SET auto_approve_enabled = 1
       WHERE id = ?
     `).run(req.params.id);
@@ -678,7 +678,7 @@ router.post('/:id/auto-approve/disable', async (req: Request, res: Response) => 
   try {
     const db = getDatabase();
     db.prepare(`
-      UPDATE trading_agents
+      UPDATE learning_agents
       SET auto_approve_enabled = 0
       WHERE id = ?
     `).run(req.params.id);

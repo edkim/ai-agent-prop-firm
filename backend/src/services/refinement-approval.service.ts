@@ -4,7 +4,7 @@
  */
 
 import { getDatabase } from '../database/db';
-import { AgentLearningService } from './agent-learning.service';
+import { LearningIterationService } from './learning-iteration.service';
 import { AgentActivityLogService } from './agent-activity-log.service';
 
 export interface ApprovalThresholds {
@@ -27,11 +27,11 @@ export interface ApprovalResult {
 }
 
 export class RefinementApprovalService {
-  private learningService: AgentLearningService | null = null;
+  private learningService: LearningIterationService | null = null;
   private activityLog: AgentActivityLogService;
 
   constructor() {
-    // Don't instantiate AgentLearningService here to avoid circular dependency
+    // Don't instantiate LearningIterationService here to avoid circular dependency
     // It will be lazy-loaded when needed
     this.activityLog = new AgentActivityLogService();
   }
@@ -39,9 +39,9 @@ export class RefinementApprovalService {
   /**
    * Lazy-load the learning service to avoid circular dependency
    */
-  private getLearningService(): AgentLearningService {
+  private getLearningService(): LearningIterationService {
     if (!this.learningService) {
-      this.learningService = new AgentLearningService();
+      this.learningService = new LearningIterationService();
     }
     return this.learningService;
   }
@@ -81,7 +81,7 @@ export class RefinementApprovalService {
     const iteration = db.prepare(`
       SELECT *
       FROM agent_iterations
-      WHERE id = ? AND agent_id = ?
+      WHERE id = ? AND learning_agent_id = ?
     `).get(iterationId, agentId) as any;
 
     if (!iteration) {
@@ -95,14 +95,14 @@ export class RefinementApprovalService {
     if (result.approved) {
       try {
         await this.getLearningService().applyRefinements({
-          agent_id: agentId,
+          learning_agent_id: agentId,
           iteration_id: iterationId,
           selected_refinements: 'all', // Apply all suggested refinements
           version_notes: `Auto-approved: ${result.reason}`
         });
 
         await this.activityLog.log({
-          agent_id: agentId,
+          learning_agent_id: agentId,
           activity_type: 'REFINEMENT_AUTO_APPROVED',
           description: `Refinements automatically approved and applied. ${result.reason}`,
           data: JSON.stringify({
@@ -122,7 +122,7 @@ export class RefinementApprovalService {
         console.error(`Failed to apply auto-approved refinements:`, error.message);
 
         await this.activityLog.log({
-          agent_id: agentId,
+          learning_agent_id: agentId,
           activity_type: 'REFINEMENT_AUTO_APPROVAL_FAILED',
           description: `Failed to apply auto-approved refinements: ${error.message}`,
           data: JSON.stringify({ iteration_id: iterationId, error: error.message })
@@ -130,7 +130,7 @@ export class RefinementApprovalService {
       }
     } else {
       await this.activityLog.log({
-        agent_id: agentId,
+        learning_agent_id: agentId,
         activity_type: 'REFINEMENT_AUTO_REJECTED',
         description: `Refinements rejected by auto-approval. ${result.reason}`,
         data: JSON.stringify({
@@ -192,7 +192,7 @@ export class RefinementApprovalService {
       const currentStrategy = db.prepare(`
         SELECT backtest_win_rate, backtest_sharpe, backtest_total_return
         FROM agent_strategies
-        WHERE agent_id = ? AND is_current_version = 1
+        WHERE learning_agent_id = ? AND is_current_version = 1
       `).get(agentId) as any;
 
       if (currentStrategy) {
@@ -281,7 +281,7 @@ export class RefinementApprovalService {
     `).run(JSON.stringify(updated), agentId);
 
     await this.activityLog.log({
-      agent_id: agentId,
+      learning_agent_id: agentId,
       activity_type: 'APPROVAL_THRESHOLDS_UPDATED',
       description: 'Auto-approval thresholds updated',
       data: JSON.stringify({ old: currentThresholds, new: updated })

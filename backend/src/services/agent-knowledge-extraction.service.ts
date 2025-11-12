@@ -64,7 +64,7 @@ export class AgentKnowledgeExtractionService {
     // Convert to AgentKnowledge records
     const knowledge: AgentKnowledge[] = knowledgeItems.map(item => ({
       id: uuidv4(),
-      agent_id: agentId,
+      learning_agent_id: agentId,
       knowledge_type: item.knowledge_type,
       pattern_type: item.pattern_type,
       insight: item.insight,
@@ -116,13 +116,13 @@ export class AgentKnowledgeExtractionService {
         // Insert new knowledge
         db.prepare(`
           INSERT INTO agent_knowledge (
-            id, agent_id, knowledge_type, pattern_type, insight,
+            id, learning_agent_id, knowledge_type, pattern_type, insight,
             supporting_data, confidence, learned_from_iteration,
             times_validated, created_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).run(
           item.id,
-          item.agent_id,
+          item.learning_agent_id,
           item.knowledge_type,
           item.pattern_type || null,
           item.insight,
@@ -205,7 +205,7 @@ export class AgentKnowledgeExtractionService {
     const updated = db.prepare(`
       UPDATE agent_knowledge
       SET confidence = MIN(1.0, confidence * 1.1)
-      WHERE agent_id = ? AND times_validated >= 3
+      WHERE learning_agent_id = ? AND times_validated >= 3
     `).run(agentId);
 
     console.log(`   Marked ${updated.changes} knowledge items as mature`);
@@ -221,7 +221,7 @@ export class AgentKnowledgeExtractionService {
     const updated = db.prepare(`
       UPDATE agent_knowledge
       SET confidence = confidence * 0.85
-      WHERE agent_id = ?
+      WHERE learning_agent_id = ?
         AND times_validated < 2
         AND date(created_at) >= date('now', '-7 days')
     `).run(agentId);
@@ -250,7 +250,7 @@ export class AgentKnowledgeExtractionService {
       SET times_validated = times_validated + 1,
           last_validated = ?,
           confidence = MIN(1.0, confidence * 1.05)
-      WHERE agent_id = ? AND learned_from_iteration = ?
+      WHERE learning_agent_id = ? AND learned_from_iteration = ?
     `).run(new Date().toISOString(), agentId, iteration.iteration_number - 1);
 
     if (updated.changes > 0) {
@@ -437,7 +437,7 @@ export class AgentKnowledgeExtractionService {
 
     const existing = db.prepare(`
       SELECT * FROM agent_knowledge
-      WHERE agent_id = ?
+      WHERE learning_agent_id = ?
         AND knowledge_type = ?
         AND substr(insight, 1, 100) = ?
       LIMIT 1
@@ -446,7 +446,7 @@ export class AgentKnowledgeExtractionService {
     if (existing) {
       return {
         id: existing.id,
-        agent_id: existing.agent_id,
+        learning_agent_id: existing.learning_agent_id,
         knowledge_type: existing.knowledge_type as KnowledgeType,
         pattern_type: existing.pattern_type,
         insight: existing.insight,

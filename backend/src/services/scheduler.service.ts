@@ -5,7 +5,7 @@
 
 import cron from 'node-cron';
 import { getDatabase } from '../database/db';
-import { AgentLearningService } from './agent-learning.service';
+import { LearningIterationService } from './learning-iteration.service';
 import { AgentActivityLogService } from './agent-activity-log.service';
 
 interface ScheduledTask {
@@ -17,12 +17,12 @@ interface ScheduledTask {
 export class SchedulerService {
   private static instance: SchedulerService;
   private tasks: Map<string, ScheduledTask> = new Map();
-  private learningService: AgentLearningService;
+  private learningService: LearningIterationService;
   private activityLog: AgentActivityLogService;
   private isRunning: boolean = false;
 
   private constructor() {
-    this.learningService = new AgentLearningService();
+    this.learningService = new LearningIterationService();
     this.activityLog = new AgentActivityLogService();
   }
 
@@ -50,7 +50,7 @@ export class SchedulerService {
     // Load agents with auto_learn_enabled
     const agents = db.prepare(`
       SELECT id, name, learning_schedule
-      FROM trading_agents
+      FROM learning_agents
       WHERE auto_learn_enabled = 1
       AND active = 1
     `).all() as any[];
@@ -113,7 +113,7 @@ export class SchedulerService {
     await this.updateNextScheduledIteration(agentId);
 
     await this.activityLog.log({
-      agent_id: agentId,
+      learning_agent_id: agentId,
       activity_type: 'SCHEDULE_ENABLED',
       description: `Scheduled learning enabled with cron: ${schedule}`,
       data: JSON.stringify({ schedule })
@@ -144,7 +144,7 @@ export class SchedulerService {
       // Check if agent is still eligible
       const agent = db.prepare(`
         SELECT auto_learn_enabled, status
-        FROM trading_agents
+        FROM learning_agents
         WHERE id = ? AND active = 1
       `).get(agentId) as any;
 
@@ -161,7 +161,7 @@ export class SchedulerService {
       await this.updateNextScheduledIteration(agentId);
 
       await this.activityLog.log({
-        agent_id: agentId,
+        learning_agent_id: agentId,
         activity_type: 'SCHEDULED_ITERATION_COMPLETED',
         description: 'Scheduled learning iteration completed successfully'
       });
@@ -170,7 +170,7 @@ export class SchedulerService {
       console.error(`❌ Scheduled iteration failed for agent ${agentId}:`, error.message);
 
       await this.activityLog.log({
-        agent_id: agentId,
+        learning_agent_id: agentId,
         activity_type: 'SCHEDULED_ITERATION_FAILED',
         description: `Scheduled iteration failed: ${error.message}`,
         data: JSON.stringify({ error: error.message, stack: error.stack })
@@ -192,7 +192,7 @@ export class SchedulerService {
 
     const db = getDatabase();
     db.prepare(`
-      UPDATE trading_agents
+      UPDATE learning_agents
       SET next_scheduled_iteration = ?
       WHERE id = ?
     `).run(nextRun.toISOString(), agentId);

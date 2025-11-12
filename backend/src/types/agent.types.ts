@@ -104,7 +104,7 @@ export type KnowledgeType = 'INSIGHT' | 'PARAMETER_PREF' | 'PATTERN_RULE';
 
 export interface AgentKnowledge {
   id: string;
-  agent_id: string;
+  learning_agent_id: string;
   knowledge_type: KnowledgeType;
   pattern_type?: string; // e.g., 'vwap_bounce'
   insight: string; // Human-readable insight
@@ -124,7 +124,7 @@ export type IterationStatus = 'completed' | 'approved' | 'rejected' | 'improved_
 
 export interface AgentIteration {
   id: string;
-  agent_id: string;
+  learning_agent_id: string;
   iteration_number: number;
 
   // Strategy under test
@@ -212,7 +212,7 @@ export interface ParameterRecommendation {
 
 export interface AgentStrategy {
   id: string;
-  agent_id: string;
+  learning_agent_id: string;
   version: string; // "v1.0", "v1.1", "v2.0"
 
   // Strategy scripts
@@ -355,7 +355,7 @@ export interface CreateAgentResponse {
 }
 
 export interface StartIterationRequest {
-  agent_id: string;
+  learning_agent_id: string;
 }
 
 export interface IterationResult {
@@ -372,7 +372,7 @@ export interface IterationResult {
 }
 
 export interface ApplyRefinementsRequest {
-  agent_id: string;
+  learning_agent_id: string;
   iteration_id: string;
   approved: boolean;
 }

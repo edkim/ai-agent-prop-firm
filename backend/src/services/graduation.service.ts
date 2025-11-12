@@ -49,7 +49,7 @@ export class GraduationService {
     // Get agent status
     const agent = db.prepare(`
       SELECT status
-      FROM trading_agents
+      FROM learning_agents
       WHERE id = ?
     `).get(agentId) as any;
 
@@ -69,14 +69,14 @@ export class GraduationService {
         AVG(total_return) as avg_return,
         SUM(signals_found) as total_signals
       FROM agent_iterations
-      WHERE agent_id = ?
+      WHERE learning_agent_id = ?
     `).get(agentId) as any;
 
     // Get recent iterations for consistency check
     const recentIterations = db.prepare(`
       SELECT win_rate, sharpe_ratio
       FROM agent_iterations
-      WHERE agent_id = ?
+      WHERE learning_agent_id = ?
       ORDER BY iteration_number DESC
       LIMIT ?
     `).all(agentId, criteria.consistency_window) as any[];
@@ -127,7 +127,7 @@ export class GraduationService {
 
     const agent = db.prepare(`
       SELECT status
-      FROM trading_agents
+      FROM learning_agents
       WHERE id = ?
     `).get(agentId) as any;
 
@@ -152,7 +152,7 @@ export class GraduationService {
 
     // Update agent status
     db.prepare(`
-      UPDATE trading_agents
+      UPDATE learning_agents
       SET status = ?
       WHERE id = ?
     `).run(nextStatus, agentId);
@@ -177,7 +177,7 @@ export class GraduationService {
       const latestIteration = db.prepare(`
         SELECT winning_template
         FROM agent_iterations
-        WHERE agent_id = ?
+        WHERE learning_agent_id = ?
         ORDER BY iteration_number DESC
         LIMIT 1
       `).get(agentId) as { winning_template: string | null } | undefined;
@@ -193,7 +193,7 @@ export class GraduationService {
         };
 
         db.prepare(`
-          UPDATE trading_agents
+          UPDATE learning_agents
           SET exit_strategy_config = ?
           WHERE id = ?
         `).run(JSON.stringify(exitConfig), agentId);
@@ -205,7 +205,7 @@ export class GraduationService {
     }
 
     await this.activityLog.log({
-      agent_id: agentId,
+      learning_agent_id: agentId,
       activity_type: 'AGENT_GRADUATED',
       description: `Agent graduated from ${currentStatus} to ${nextStatus}${force ? ' (forced)' : ''}`,
       data: JSON.stringify({
@@ -226,7 +226,7 @@ export class GraduationService {
 
     const agent = db.prepare(`
       SELECT status
-      FROM trading_agents
+      FROM learning_agents
       WHERE id = ?
     `).get(agentId) as any;
 
@@ -242,7 +242,7 @@ export class GraduationService {
 
     // Update to learning status
     db.prepare(`
-      UPDATE trading_agents
+      UPDATE learning_agents
       SET status = 'learning'
       WHERE id = ?
     `).run(agentId);
@@ -250,7 +250,7 @@ export class GraduationService {
     console.log(`📉 Agent ${agentId} demoted from ${previousStatus} to learning`);
 
     await this.activityLog.log({
-      agent_id: agentId,
+      learning_agent_id: agentId,
       activity_type: 'AGENT_DEMOTED',
       description: `Agent demoted from ${previousStatus} to learning. Reason: ${reason}`,
       data: JSON.stringify({
