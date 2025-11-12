@@ -141,6 +141,13 @@ export class AgentLearningService {
         templatesResults: backtestResults.templateResults?.length || 0
       });
 
+      // Update strategy with signal-embedded execution script for database storage
+      // This ensures the database stores the actual executed code, not the template with empty signals
+      if (backtestResults.embeddedExecutionScript) {
+        strategy.executionScript = backtestResults.embeddedExecutionScript;
+        logger.info('Updated strategy with signal-embedded execution script');
+      }
+
       // Step 4: Agent analyzes results
       logger.info('Step 4: Analyzing results');
       let analysis: ExpertAnalysis;
@@ -499,7 +506,8 @@ export class AgentLearningService {
         sharpeRatio: 0,
         totalReturn: 0,
         trades: [],
-        templateResults: []
+        templateResults: [],
+        embeddedExecutionScript: null  // No signals to embed
       };
     }
 
@@ -610,6 +618,9 @@ export class AgentLearningService {
     }
     }
 
+    // Track the embedded script for database storage
+    let embeddedExecutionScript: string | null = null;
+
     // Test custom execution script if provided (for iterations 2+)
     if (executionScript && executionScript.trim() !== '') {
       console.log(`\n   📊 Testing custom execution script`);
@@ -644,6 +655,9 @@ export class AgentLearningService {
           /const signals\s*=\s*\[\s*\];?/g,
           `const signals = ${signalsJson};`
         );
+
+        // Store the embedded version for database storage
+        embeddedExecutionScript = scriptWithSignals;
 
         // Fix import paths: Claude generates ../../src/database/db but script is nested 3 levels deep
         // generated-scripts/success/YYYY-MM-DD/ -> need ../../../src/database/db
@@ -742,7 +756,8 @@ export class AgentLearningService {
         profitFactor: 0,
         templateResults: [],
         winningTemplate: 'custom',
-        recommendation: 'Templates disabled - using custom execution script only'
+        recommendation: 'Templates disabled - using custom execution script only',
+        embeddedExecutionScript: embeddedExecutionScript  // Include the signal-embedded script
       };
     }
 
@@ -769,7 +784,8 @@ export class AgentLearningService {
       profitFactor: winner.profitFactor,
       templateResults: templateResults,  // All template results for analysis
       winningTemplate: winner.template,
-      recommendation: `${winner.templateDisplayName} template performed best with profit factor ${winner.profitFactor.toFixed(2)}`
+      recommendation: `${winner.templateDisplayName} template performed best with profit factor ${winner.profitFactor.toFixed(2)}`,
+      embeddedExecutionScript: embeddedExecutionScript  // Include the signal-embedded script
     };
   }
 
