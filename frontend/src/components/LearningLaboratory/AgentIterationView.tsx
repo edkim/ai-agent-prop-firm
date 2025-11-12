@@ -585,10 +585,10 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Side
                                       </th>
-                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Entry
                                       </th>
-                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Exit
                                       </th>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -599,9 +599,6 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
                                       </th>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         P&L %
-                                      </th>
-                                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Bars
                                       </th>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Exit Reason
@@ -616,9 +613,10 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
                               const pnl = trade.pnl;
                               const pnlPercent = trade.pnlPercent !== undefined ? trade.pnlPercent : trade.pnl_percent;
                               const exitReason = trade.exitReason || trade.exit_reason;
+                              const side = trade.side || trade.direction;
 
                               // Calculate quantity from PnL and price difference if not provided
-                              let quantity = trade.quantity;
+                              let quantity = trade.quantity || trade.shares;
                               if (!quantity && pnl !== undefined && entryPrice && exitPrice) {
                                 const priceDiff = Math.abs(exitPrice - entryPrice);
                                 if (priceDiff > 0) {
@@ -633,11 +631,14 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
                               const bars = trade.bars;
 
                               // Construct timestamps from date + time fields if needed
-                              const entryTimestamp = trade.entryTimestamp || (trade.date && trade.entry_time)
-                                ? `${trade.date}T${trade.entry_time || '00:00'}:00Z`
+                              const tradeDate = trade.date || trade.signal_date;
+                              const entryTime = trade.entry_time;
+                              const exitTime = trade.exit_time;
+                              const entryTimestamp = trade.entryTimestamp || (tradeDate && entryTime)
+                                ? `${tradeDate}T${entryTime || '00:00'}:00Z`
                                 : null;
-                              const exitTimestamp = trade.exitTimestamp || (trade.date && trade.exit_time)
-                                ? `${trade.date}T${trade.exit_time || '00:00'}:00Z`
+                              const exitTimestamp = trade.exitTimestamp || (tradeDate && exitTime)
+                                ? `${tradeDate}T${exitTime || '00:00'}:00Z`
                                 : null;
 
                               return (
@@ -647,26 +648,26 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
                                   </td>
                                   <td className="px-4 py-3 text-sm">
                                     <span className={`px-2 py-1 text-xs rounded ${
-                                      trade.side === 'LONG' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                      side === 'LONG' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                                     }`}>
-                                      {trade.side}
+                                      {side}
                                     </span>
                                   </td>
-                                  <td className="px-4 py-3 text-sm text-gray-900">
+                                  <td className="px-6 py-3 text-sm text-gray-900">
                                     <div>${entryPrice?.toFixed(2)}</div>
-                                    {entryTimestamp && (
+                                    {tradeDate && entryTime && (
                                       <div className="text-xs text-gray-500">
-                                        {new Date(entryTimestamp).toLocaleDateString()} {trade.entry_time || ''}
+                                        {tradeDate} {entryTime}
                                       </div>
                                     )}
                                   </td>
-                                  <td className="px-4 py-3 text-sm text-gray-900">
+                                  <td className="px-6 py-3 text-sm text-gray-900">
                                     {exitPrice ? (
                                       <>
                                         <div>${exitPrice.toFixed(2)}</div>
-                                        {exitTimestamp && (
+                                        {tradeDate && exitTime && (
                                           <div className="text-xs text-gray-500">
-                                            {new Date(exitTimestamp).toLocaleDateString()} {trade.exit_time || ''}
+                                            {tradeDate} {exitTime}
                                           </div>
                                         )}
                                       </>
@@ -686,9 +687,6 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
                                     pnlPercent >= 0 ? 'text-green-600' : 'text-red-600'
                                   }`}>
                                     {pnlPercent >= 0 ? '+' : ''}{pnlPercent?.toFixed(2)}%
-                                  </td>
-                                  <td className="px-4 py-3 text-sm text-gray-900">
-                                    {bars || '-'}
                                   </td>
                                   <td className="px-4 py-3 text-sm text-gray-600">
                                     {exitReason?.replace(/_/g, ' ') || '-'}
