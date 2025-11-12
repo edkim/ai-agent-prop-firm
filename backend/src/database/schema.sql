@@ -515,7 +515,7 @@ CREATE TABLE IF NOT EXISTS live_signals (
     status TEXT DEFAULT 'DETECTED', -- DETECTED, ANALYZING, EXECUTED, REJECTED, EXPIRED
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE
+    FOREIGN KEY (learning_agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_live_signals_status ON live_signals(status);
@@ -541,7 +541,7 @@ CREATE TABLE IF NOT EXISTS trade_recommendations (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (signal_id) REFERENCES live_signals(id) ON DELETE CASCADE,
-    FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE
+    FOREIGN KEY (learning_agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_trade_recommendations_status ON trade_recommendations(status);
@@ -590,7 +590,7 @@ CREATE TABLE IF NOT EXISTS executed_trades (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE,
+    FOREIGN KEY (learning_agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE,
     FOREIGN KEY (recommendation_id) REFERENCES trade_recommendations(id) ON DELETE SET NULL
 );
 
@@ -620,7 +620,7 @@ CREATE TABLE IF NOT EXISTS portfolio_state (
     -- Last update
     last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE
+    FOREIGN KEY (learning_agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE
 );
 
 -- Risk Metrics (historical tracking)
@@ -658,7 +658,7 @@ CREATE TABLE IF NOT EXISTS risk_metrics (
     
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE,
+    FOREIGN KEY (learning_agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE,
     UNIQUE(agent_id, metric_date)
 );
 
@@ -695,7 +695,7 @@ CREATE TABLE IF NOT EXISTS tradestation_orders (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE,
+    FOREIGN KEY (learning_agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE,
     FOREIGN KEY (trade_id) REFERENCES executed_trades(id) ON DELETE SET NULL
 );
 
@@ -713,7 +713,7 @@ CREATE TABLE IF NOT EXISTS learning_agent_activity_log (
     data TEXT, -- JSON: additional context
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE
+    FOREIGN KEY (learning_agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_agent_activity_agent_time ON learning_agent_activity_log(learning_agent_id, timestamp DESC);
@@ -739,7 +739,7 @@ CREATE TABLE IF NOT EXISTS agent_knowledge (
   times_validated INTEGER DEFAULT 0, -- How many times confirmed
   last_validated TEXT, -- Last validation date
   created_at TEXT NOT NULL,
-  FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE
+  FOREIGN KEY (learning_agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_agent_knowledge_agent ON agent_knowledge(learning_agent_id);
@@ -776,7 +776,7 @@ CREATE TABLE IF NOT EXISTS agent_iterations (
   git_commit_hash TEXT, -- Git commit hash when iteration was created
 
   created_at TEXT NOT NULL,
-  FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE
+  FOREIGN KEY (learning_agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_agent_iterations_agent ON agent_iterations(learning_agent_id, iteration_number);
@@ -803,7 +803,7 @@ CREATE TABLE IF NOT EXISTS agent_strategies (
   changes_from_parent TEXT, -- Description of what changed
 
   created_at TEXT NOT NULL,
-  FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE,
+  FOREIGN KEY (learning_agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE,
   UNIQUE(agent_id, version)
 );
 
