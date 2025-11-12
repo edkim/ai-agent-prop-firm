@@ -270,8 +270,8 @@ router.get('/:id/iterations/preview', async (req: Request, res: Response) => {
 router.post('/:id/iterations/start', async (req: Request, res: Response) => {
   try {
     const agentId = req.params.id;
-    const { manualGuidance } = req.body;
-    const result = await agentLearning.runIteration(agentId, manualGuidance);
+    const { manualGuidance, overrideScannerPrompt } = req.body;
+    const result = await agentLearning.runIteration(agentId, manualGuidance, overrideScannerPrompt);
 
     res.json({
       success: true,

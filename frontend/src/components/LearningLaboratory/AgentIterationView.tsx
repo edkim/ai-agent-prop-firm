@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { learningAgentApi, type AgentIteration } from '../../services/learningAgentApi';
 import ScriptViewerModal from './ScriptViewerModal';
+import ScannerPromptModal from './ScannerPromptModal';
 
 interface AgentIterationViewProps {
   agentId: string;
@@ -31,6 +32,7 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
   const [showGuidanceInput, setShowGuidanceInput] = useState(false);
   const [startingIteration, setStartingIteration] = useState(false);
   const [scriptModal, setScriptModal] = useState<ScriptModal>({ isOpen: false, title: '', content: null });
+  const [showPromptModal, setShowPromptModal] = useState(false);
 
   useEffect(() => {
     loadIterations();
@@ -63,12 +65,18 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
     }
   };
 
-  const handleStartIteration = async () => {
+  const handleStartIteration = () => {
+    // Show preview modal instead of directly starting
+    setShowPromptModal(true);
+  };
+
+  const handlePromptConfirm = async (overridePrompt: string | null) => {
     try {
       setStartingIteration(true);
+      setShowPromptModal(false);
       setError(null);
       const guidance = manualGuidance.trim() || undefined;
-      await learningAgentApi.startIteration(agentId, guidance);
+      await learningAgentApi.startIteration(agentId, guidance, overridePrompt || undefined);
 
       // Clear manual guidance and hide input
       setManualGuidance('');
@@ -82,6 +90,10 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
     } finally {
       setStartingIteration(false);
     }
+  };
+
+  const handlePromptCancel = () => {
+    setShowPromptModal(false);
   };
 
   const viewScript = async (
@@ -766,6 +778,16 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
         content={scriptModal.content}
         language={scriptModal.language}
       />
+
+      {/* Scanner Prompt Preview/Edit Modal */}
+      {showPromptModal && (
+        <ScannerPromptModal
+          agentId={agentId}
+          manualGuidance={manualGuidance || undefined}
+          onConfirm={handlePromptConfirm}
+          onCancel={handlePromptCancel}
+        />
+      )}
     </div>
   );
 }

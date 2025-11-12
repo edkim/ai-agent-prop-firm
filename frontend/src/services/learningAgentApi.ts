@@ -123,6 +123,22 @@ export interface ApplyRefinementsResponse {
   message: string;
 }
 
+export interface IterationPreview {
+  scannerPrompt: string;
+  learningsApplied: {
+    iteration: number;
+    insight: string;
+    confidence: number;
+  }[];
+  executionGuidance: string;
+  estimatedComplexity: 'simple' | 'moderate' | 'complex';
+}
+
+export interface PreviewIterationResponse {
+  success: boolean;
+  preview: IterationPreview;
+}
+
 // ===== API Methods =====
 
 export const learningAgentApi = {
@@ -170,11 +186,20 @@ export const learningAgentApi = {
   // ===== Learning Iterations =====
 
   /**
+   * Preview the next iteration without starting it
+   */
+  async previewIteration(agentId: string): Promise<IterationPreview> {
+    const response = await apiClient.get<PreviewIterationResponse>(`/${agentId}/iterations/preview`);
+    return response.data.preview;
+  },
+
+  /**
    * Start a new learning iteration for an agent
    */
-  async startIteration(agentId: string, manualGuidance?: string): Promise<StartIterationResponse> {
+  async startIteration(agentId: string, manualGuidance?: string, overrideScannerPrompt?: string): Promise<StartIterationResponse> {
     const response = await apiClient.post<StartIterationResponse>(`/${agentId}/iterations/start`, {
       manualGuidance,
+      overrideScannerPrompt,
     });
     return response.data;
   },

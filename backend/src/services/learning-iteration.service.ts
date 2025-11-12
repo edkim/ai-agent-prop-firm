@@ -71,7 +71,7 @@ export class LearningIterationService {
   /**
    * Run a complete learning iteration for an agent
    */
-  async runIteration(agentId: string, manualGuidance?: string): Promise<IterationResult> {
+  async runIteration(agentId: string, manualGuidance?: string, overrideScannerPrompt?: string): Promise<IterationResult> {
     const agent = await this.agentMgmt.getAgent(agentId);
     if (!agent) {
       throw new Error(`Agent not found: ${agentId}`);
@@ -82,15 +82,20 @@ export class LearningIterationService {
 
     // Create iteration-specific logger
     const logger = createIterationLogger(agentId, iterationNumber);
-    logger.info('Starting learning iteration', { agentName: agent.name, hasManualGuidance: !!manualGuidance });
+    logger.info('Starting learning iteration', {
+      agentName: agent.name,
+      hasManualGuidance: !!manualGuidance,
+      hasOverridePrompt: !!overrideScannerPrompt
+    });
 
     try {
       // Step 1: Generate strategy (scan + execution)
       logger.info('Step 1: Generating strategy');
-      const strategy = await this.generateStrategy(agent, iterationNumber, manualGuidance);
+      const strategy = await this.generateStrategy(agent, iterationNumber, manualGuidance, overrideScannerPrompt);
       logger.info('Strategy generated', {
         scannerTokens: strategy.scannerTokenUsage?.total_tokens,
-        executionTokens: strategy.executionTokenUsage?.total_tokens
+        executionTokens: strategy.executionTokenUsage?.total_tokens,
+        customPrompt: !!overrideScannerPrompt
       });
 
       // Step 2: Execute scan
@@ -320,7 +325,8 @@ export class LearningIterationService {
   private async generateStrategy(
     agent: TradingAgent,
     iterationNumber: number,
-    manualGuidance?: string
+    manualGuidance?: string,
+    overrideScannerPrompt?: string
   ): Promise<{
     scanScript: string;
     executionScript: string;
@@ -339,44 +345,63 @@ export class LearningIterationService {
     if (manualGuidance) {
       console.log(`   Manual guidance provided: ${manualGuidance.substring(0, 100)}...`);
     }
+    if (overrideScannerPrompt) {
+      console.log(`   Custom scanner prompt provided by user`);
+    }
 
     // Step 1: Generate scanner script
-    // ALWAYS prioritize custom instructions if they exist (for specialized strategies)
-    // Otherwise use generic pattern focus (with learnings on iteration 2+)
+    let scannerResult: any;
     let scannerQuery: string;
 
-    if (agent.instructions && agent.instructions.trim() !== '') {
-      // Specialized strategy with custom instructions - always use them
-      scannerQuery = agent.instructions;
-
-      // On iteration 2+, append learnings to refine the custom strategy
-      if (iterationNumber > 1 && knowledgeSummary && knowledgeSummary.trim() !== '') {
-        scannerQuery += `\n\nINCORPORATE THESE LEARNINGS: ${knowledgeSummary}`;
-      }
+    if (overrideScannerPrompt) {
+      // User provided a custom scanner prompt - use it directly
+      console.log(`   Using user-provided scanner prompt...`);
+      scannerQuery = overrideScannerPrompt;
+      scannerResult = await this.claude.generateScannerScript({
+        query: scannerQuery,
+        universe: agent.universe || 'Tech Sector',
+        dateRange: {
+          start: this.getDateDaysAgo(20),
+          end: this.getDateDaysAgo(1)
+        }
+      });
     } else {
-      // Generic agent - use pattern focus
-      if (iterationNumber === 1) {
-        scannerQuery = `Find ${agent.pattern_focus.join(' or ')} patterns in ${agent.market_conditions.join(' or ')} market conditions. Trading style: ${agent.trading_style}, risk tolerance: ${agent.risk_tolerance}.`;
+      // Generate scanner query automatically
+      // ALWAYS prioritize custom instructions if they exist (for specialized strategies)
+      // Otherwise use generic pattern focus (with learnings on iteration 2+)
+      if (agent.instructions && agent.instructions.trim() !== '') {
+        // Specialized strategy with custom instructions - always use them
+        scannerQuery = agent.instructions;
+
+        // On iteration 2+, append learnings to refine the custom strategy
+        if (iterationNumber > 1 && knowledgeSummary && knowledgeSummary.trim() !== '') {
+          scannerQuery += `\n\nINCORPORATE THESE LEARNINGS: ${knowledgeSummary}`;
+        }
       } else {
-        scannerQuery = `Find ${agent.pattern_focus.join(' or ')} patterns incorporating these learnings: ${knowledgeSummary}`;
+        // Generic agent - use pattern focus
+        if (iterationNumber === 1) {
+          scannerQuery = `Find ${agent.pattern_focus.join(' or ')} patterns in ${agent.market_conditions.join(' or ')} market conditions. Trading style: ${agent.trading_style}, risk tolerance: ${agent.risk_tolerance}.`;
+        } else {
+          scannerQuery = `Find ${agent.pattern_focus.join(' or ')} patterns incorporating these learnings: ${knowledgeSummary}`;
+        }
       }
-    }
 
-    // Add manual guidance if provided - this takes priority over automated learnings
-    if (manualGuidance && manualGuidance.trim() !== '') {
-      scannerQuery += `\n\n🎯 MANUAL GUIDANCE FROM USER (PRIORITY):\n${manualGuidance.trim()}\n\nIMPORTANT: The user has provided specific guidance above. Incorporate this guidance into your strategy generation. This takes priority over automated refinements.`;
-    }
-
-    console.log(`   Generating scanner with Claude...`);
-    console.log(`   Scanner query: ${scannerQuery.substring(0, 100)}...`);
-    const scannerResult = await this.claude.generateScannerScript({
-      query: scannerQuery,
-      universe: agent.universe || 'Tech Sector', // Use agent's universe or default to Tech Sector
-      dateRange: {
-        start: this.getDateDaysAgo(20),
-        end: this.getDateDaysAgo(1)
+      // Add manual guidance if provided - this takes priority over automated learnings
+      if (manualGuidance && manualGuidance.trim() !== '') {
+        scannerQuery += `\n\n🎯 MANUAL GUIDANCE FROM USER (PRIORITY):\n${manualGuidance.trim()}\n\nIMPORTANT: The user has provided specific guidance above. Incorporate this guidance into your strategy generation. This takes priority over automated refinements.`;
       }
-    });
+
+      console.log(`   Generating scanner with Claude...`);
+      console.log(`   Scanner query: ${scannerQuery.substring(0, 100)}...`);
+      scannerResult = await this.claude.generateScannerScript({
+        query: scannerQuery,
+        universe: agent.universe || 'Tech Sector', // Use agent's universe or default to Tech Sector
+        dateRange: {
+          start: this.getDateDaysAgo(20),
+          end: this.getDateDaysAgo(1)
+        }
+      });
+    }
 
     // Step 2: Execution script generation
     let executionScript = '';
@@ -1212,13 +1237,13 @@ export class LearningIterationService {
    */
   async previewNextIteration(agentId: string): Promise<{
     scannerPrompt: string;
-    nextIterationNumber: number;
-    agentInstructions: string;
-    learningsApplied?: Array<{
+    learningsApplied: Array<{
       iteration: number;
       insight: string;
       confidence: number;
     }>;
+    executionGuidance: string;
+    estimatedComplexity: 'simple' | 'moderate' | 'complex';
   }> {
     const agent = await this.agentMgmt.getAgent(agentId);
     if (!agent) {
@@ -1230,29 +1255,40 @@ export class LearningIterationService {
     // Build scanner prompt using the same logic as generateStrategy()
     let scannerQuery: string;
     let learningsApplied: Array<{ iteration: number; insight: string; confidence: number }> = [];
+    let executionGuidance = '';
+    let estimatedComplexity: 'simple' | 'moderate' | 'complex' = 'simple';
 
     if (nextIterationNumber === 1) {
       // Iteration 1: Use agent's instructions or pattern focus
       if (agent.instructions && agent.instructions.trim() !== '') {
         scannerQuery = agent.instructions;
+        estimatedComplexity = agent.instructions.length > 300 ? 'moderate' : 'simple';
       } else {
         scannerQuery = `Find ${agent.pattern_focus.join(' or ')} patterns in ${agent.market_conditions.join(' or ')} market conditions. Trading style: ${agent.trading_style}, risk tolerance: ${agent.risk_tolerance}.`;
+        estimatedComplexity = 'simple';
       }
+      executionGuidance = `Initial iteration will generate a custom execution script based on the agent's trading style (${agent.trading_style}) and risk tolerance (${agent.risk_tolerance}).`;
     } else {
       // Iteration 2+: Get learnings from previous iterations
       const db = getDatabase();
       const previousIterations = db.prepare(`
-        SELECT iteration_number, expert_analysis, win_rate, total_return
+        SELECT iteration_number, expert_analysis, win_rate, total_return, winning_template
         FROM agent_iterations
-        WHERE agent_id = ?
+        WHERE learning_agent_id = ?
         ORDER BY iteration_number DESC
         LIMIT 3
       `).all(agentId) as any[];
 
       // Extract key insights from previous iterations
       const insights: string[] = [];
+      let winningTemplate = 'time_based';
+
       for (const iter of previousIterations) {
         try {
+          if (iter.winning_template) {
+            winningTemplate = iter.winning_template;
+          }
+
           if (iter.expert_analysis) {
             const analysis = typeof iter.expert_analysis === 'string'
               ? JSON.parse(iter.expert_analysis)
@@ -1284,6 +1320,7 @@ export class LearningIterationService {
       }
 
       const knowledgeSummary = insights.join('\n');
+      estimatedComplexity = learningsApplied.length > 3 ? 'complex' : learningsApplied.length > 1 ? 'moderate' : 'simple';
 
       if (agent.instructions && agent.instructions.trim() !== '') {
         // Specialized strategy with custom instructions
@@ -1297,13 +1334,15 @@ export class LearningIterationService {
         // Generic agent - use pattern focus with learnings
         scannerQuery = `Find ${agent.pattern_focus.join(' or ')} patterns incorporating these learnings:\n${knowledgeSummary}`;
       }
+
+      executionGuidance = `Will refine execution script based on ${learningsApplied.length} previous iteration(s). Currently using '${winningTemplate}' template as the winning approach.`;
     }
 
     return {
       scannerPrompt: scannerQuery,
-      nextIterationNumber,
-      agentInstructions: agent.instructions,
-      learningsApplied: learningsApplied.length > 0 ? learningsApplied : undefined
+      learningsApplied,
+      executionGuidance,
+      estimatedComplexity
     };
   }
 }
