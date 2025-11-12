@@ -502,12 +502,12 @@ CREATE TABLE IF NOT EXISTS learning_agents (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_agents_active ON trading_agents(active);
+CREATE INDEX IF NOT EXISTS idx_agents_active ON learning_agents(active);
 
 -- Live Pattern Detections
 CREATE TABLE IF NOT EXISTS live_signals (
     id TEXT PRIMARY KEY,
-    agent_id TEXT,
+    learning_agent_id TEXT,
     ticker TEXT NOT NULL,
     pattern_type TEXT NOT NULL, -- 'breakout-volume-surge', 'gap-and-go', etc.
     detection_time DATETIME NOT NULL,
@@ -520,13 +520,13 @@ CREATE TABLE IF NOT EXISTS live_signals (
 
 CREATE INDEX IF NOT EXISTS idx_live_signals_status ON live_signals(status);
 CREATE INDEX IF NOT EXISTS idx_live_signals_ticker ON live_signals(ticker, detection_time);
-CREATE INDEX IF NOT EXISTS idx_live_signals_agent ON live_signals(agent_id, status);
+CREATE INDEX IF NOT EXISTS idx_live_signals_agent ON live_signals(learning_agent_id, status);
 
 -- AI Trade Recommendations
 CREATE TABLE IF NOT EXISTS trade_recommendations (
     id TEXT PRIMARY KEY,
     signal_id TEXT,
-    agent_id TEXT NOT NULL,
+    learning_agent_id TEXT NOT NULL,
     ticker TEXT NOT NULL,
     side TEXT NOT NULL, -- 'LONG', 'SHORT'
     entry_price REAL,
@@ -545,13 +545,13 @@ CREATE TABLE IF NOT EXISTS trade_recommendations (
 );
 
 CREATE INDEX IF NOT EXISTS idx_trade_recommendations_status ON trade_recommendations(status);
-CREATE INDEX IF NOT EXISTS idx_trade_recommendations_agent ON trade_recommendations(agent_id, status);
+CREATE INDEX IF NOT EXISTS idx_trade_recommendations_agent ON trade_recommendations(learning_agent_id, status);
 CREATE INDEX IF NOT EXISTS idx_trade_recommendations_created ON trade_recommendations(created_at DESC);
 
 -- Executed Trades (Live/Paper)
 CREATE TABLE IF NOT EXISTS executed_trades (
     id TEXT PRIMARY KEY,
-    agent_id TEXT NOT NULL,
+    learning_agent_id TEXT NOT NULL,
     recommendation_id TEXT,
     ticker TEXT NOT NULL,
     side TEXT NOT NULL, -- 'LONG', 'SHORT'
@@ -594,14 +594,14 @@ CREATE TABLE IF NOT EXISTS executed_trades (
     FOREIGN KEY (recommendation_id) REFERENCES trade_recommendations(id) ON DELETE SET NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_executed_trades_agent ON executed_trades(agent_id, status);
+CREATE INDEX IF NOT EXISTS idx_executed_trades_agent ON executed_trades(learning_agent_id, status);
 CREATE INDEX IF NOT EXISTS idx_executed_trades_ticker ON executed_trades(ticker, entry_time);
 CREATE INDEX IF NOT EXISTS idx_executed_trades_status ON executed_trades(status);
 CREATE INDEX IF NOT EXISTS idx_executed_trades_entry_time ON executed_trades(entry_time DESC);
 
 -- Portfolio State (per agent)
 CREATE TABLE IF NOT EXISTS portfolio_state (
-    agent_id TEXT PRIMARY KEY,
+    learning_agent_id TEXT PRIMARY KEY,
     account_id TEXT NOT NULL,
     
     -- Equity
@@ -626,7 +626,7 @@ CREATE TABLE IF NOT EXISTS portfolio_state (
 -- Risk Metrics (historical tracking)
 CREATE TABLE IF NOT EXISTS risk_metrics (
     id TEXT PRIMARY KEY,
-    agent_id TEXT NOT NULL,
+    learning_agent_id TEXT NOT NULL,
     metric_date DATE NOT NULL,
     
     -- Exposure metrics
@@ -659,15 +659,15 @@ CREATE TABLE IF NOT EXISTS risk_metrics (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     
     FOREIGN KEY (learning_agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE,
-    UNIQUE(agent_id, metric_date)
+    UNIQUE(learning_agent_id, metric_date)
 );
 
-CREATE INDEX IF NOT EXISTS idx_risk_metrics_agent_date ON risk_metrics(agent_id, metric_date DESC);
+CREATE INDEX IF NOT EXISTS idx_risk_metrics_agent_date ON risk_metrics(learning_agent_id, metric_date DESC);
 
 -- TradeStation Orders (audit trail)
 CREATE TABLE IF NOT EXISTS tradestation_orders (
     id TEXT PRIMARY KEY,
-    agent_id TEXT NOT NULL,
+    learning_agent_id TEXT NOT NULL,
     trade_id TEXT, -- Links to executed_trades
     
     -- Order details
@@ -699,7 +699,7 @@ CREATE TABLE IF NOT EXISTS tradestation_orders (
     FOREIGN KEY (trade_id) REFERENCES executed_trades(id) ON DELETE SET NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_tradestation_orders_agent ON tradestation_orders(agent_id);
+CREATE INDEX IF NOT EXISTS idx_tradestation_orders_agent ON tradestation_orders(learning_agent_id);
 CREATE INDEX IF NOT EXISTS idx_tradestation_orders_status ON tradestation_orders(status);
 CREATE INDEX IF NOT EXISTS idx_tradestation_orders_trade ON tradestation_orders(trade_id);
 
@@ -717,14 +717,14 @@ CREATE TABLE IF NOT EXISTS learning_agent_activity_log (
 );
 
 CREATE INDEX IF NOT EXISTS idx_agent_activity_agent_time ON learning_agent_activity_log(learning_agent_id, timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_agent_activity_type ON agent_activity_log(activity_type, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_agent_activity_type ON learning_agent_activity_log(activity_type, timestamp DESC);
 
 -- =====================================================
 -- MULTI-AGENT LABORATORY: Learning and Evolution System
 -- =====================================================
 
--- Learning Agents (extends trading_agents with learning capabilities)
--- Note: Reuses trading_agents table above, but adds learning-specific columns
+-- Learning Agents table defined above (lines 470-503)
+-- This section contains supporting tables for the learning laboratory
 
 -- Agent Knowledge Base (each agent's independent learning)
 CREATE TABLE IF NOT EXISTS agent_knowledge (
@@ -804,7 +804,7 @@ CREATE TABLE IF NOT EXISTS agent_strategies (
 
   created_at TEXT NOT NULL,
   FOREIGN KEY (learning_agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE,
-  UNIQUE(agent_id, version)
+  UNIQUE(learning_agent_id, version)
 );
 
 CREATE INDEX IF NOT EXISTS idx_agent_strategies_agent ON agent_strategies(learning_agent_id);
