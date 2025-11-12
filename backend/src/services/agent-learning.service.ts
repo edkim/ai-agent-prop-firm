@@ -32,9 +32,9 @@ import { createIterationLogger } from '../utils/logger';
 
 // Default backtest configuration
 const DEFAULT_BACKTEST_CONFIG: AgentBacktestConfig = {
-  max_signals_per_iteration: 20,      // Cap at 20 signals (20 signals × 3 templates = 60 scripts)
+  max_signals_per_iteration: 200,     // Cap at 200 signals for statistical significance
   max_signals_per_ticker_date: 2,     // Max 2 signals per ticker per day
-  max_signals_per_date: 20,            // Max 20 signals per unique date
+  max_signals_per_date: 200,           // Max 200 signals per unique date
   min_pattern_strength: 0,             // Minimum quality score (0 = accept all)
   backtest_timeout_ms: 120000,         // 2 minute timeout per backtest
 };
