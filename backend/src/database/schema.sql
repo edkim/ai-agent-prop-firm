@@ -755,6 +755,8 @@ CREATE TABLE IF NOT EXISTS agent_iterations (
   -- Strategy under test
   scan_script TEXT NOT NULL, -- Generated scan TypeScript
   execution_script TEXT NOT NULL, -- Generated execution TypeScript
+  scanner_prompt TEXT, -- Prompt used to generate scan_script
+  execution_prompt TEXT, -- Prompt used to generate execution_script
   version_notes TEXT, -- "Testing tighter stops", "Added volume filter"
   manual_guidance TEXT, -- Optional manual guidance from user for this iteration
 
