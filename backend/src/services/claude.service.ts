@@ -1699,24 +1699,44 @@ Generate ONLY the execution loop code (no imports, no function wrapper). The cod
 
 **CRITICAL REQUIREMENTS:**
 
-1. **Align with Strategy**: The execution logic should directly implement the strategy described in the agent instructions
+1. **PREVENT LOOKAHEAD BIAS WITH 5-MINUTE BARS** (MOST IMPORTANT):
+   - Data is 5-minute OHLC bars - you CANNOT enter and exit on the same bar
+   - Entry bar index MUST be tracked: \`const entryBarIndex = signalBarIndex + 1;\`
+   - Earliest exit is the bar AFTER entry: \`const minExitBarIndex = entryBarIndex + 1;\`
+   - Before ANY exit check, verify: \`if (currentBarIndex <= entryBarIndex) continue;\`
+   - Entry prices: Use \`entryBar.open\` (next bar after signal)
+   - Exit prices: Use current bar's \`close\` (not high/low from entry bar)
+   - Stop checks: Can use current bar's high/low, but must be on bars AFTER entry bar
+
+   **Example Implementation Pattern:**
+   \`\`\`typescript
+   const entryBarIndex = signalBarIndex + 1;
+   const entryBar = bars[entryBarIndex];
+
+   for (let i = entryBarIndex + 1; i < bars.length; i++) {  // Start AFTER entry bar
+     const bar = bars[i];
+     // Exit logic here - can now safely check stops and targets
+   }
+   \`\`\`
+
+2. **Align with Strategy**: The execution logic should directly implement the strategy described in the agent instructions
    - If instructions say "enter on first pullback", implement pullback detection
    - If instructions say "ride momentum continuation", use trailing stops not fixed targets
    - If instructions mention specific conditions, code them explicitly
 
-2. **Match Risk Profile**:
+3. **Match Risk Profile**:
    - Aggressive: Wider stops (2-4%), let winners run with trailing stops
    - Moderate: Balanced stops (1.5-2.5%), take partial profits
    - Conservative: Tight stops (0.5-1.5%), quick profit taking
 
-3. **Match Trading Style**:
+4. **Match Trading Style**:
    - Day trader: Exit before market close (15:55), tighter time-based stops
    - Swing trader: Can hold overnight, wider stops for volatility
    - Scalper: Very tight stops, quick profit targets
 
-4. **Direction Handling**: ALWAYS read direction from signal.direction field (LONG/SHORT)
+5. **Direction Handling**: ALWAYS read direction from signal.direction field (LONG/SHORT)
 
-5. **Output Format**: Return ONLY the execution code block that will be inserted between the loop and results output
+6. **Output Format**: Return ONLY the execution code block that will be inserted between the loop and results output
 
 Generate executable TypeScript code that will produce superior results by being true to the strategy's intent.`;
 
@@ -1830,6 +1850,52 @@ Analyze the signal metrics and scanner context to infer trade direction:
 NOTE: No sample signals provided. Use flexible metric access:
 \`const someMetric = signal.metrics?.field_name || defaultValue;\`
 `}
+
+**CRITICAL REQUIREMENTS - PREVENT LOOKAHEAD BIAS:**
+
+⚠️ **YOU MUST PREVENT SAME-BAR ENTRY/EXIT TO AVOID LOOKAHEAD BIAS:**
+
+The data consists of 5-minute OHLC bars. You CANNOT know the high or low of a bar until it closes.
+Therefore, you MUST NOT enter and exit on the same bar.
+
+**Required Implementation:**
+1. Entry bar: \`const entryBarIndex = signalBarIndex + 1;\`
+2. Entry price: Use \`entryBar.open\` (the open of the bar AFTER the signal)
+3. Exit loop: Start from \`entryBarIndex + 1\` (the bar AFTER entry)
+   \`\`\`typescript
+   for (let i = entryBarIndex + 1; i < bars.length; i++) {
+     const bar = bars[i];
+     // NOW you can check stops and targets using bar.high, bar.low, bar.close
+   }
+   \`\`\`
+4. Exit prices: Use current bar's close (or realistic fill: bar.low for stop on LONG, bar.high for stop on SHORT)
+
+**WRONG (Lookahead Bias):**
+\`\`\`typescript
+// ❌ DON'T DO THIS - entering at low and exiting at high on same bar
+for (let i = signalBarIndex + 1; i < bars.length; i++) {
+  const bar = bars[i];
+  if (!position) {
+    position = { entry: bar.open, ...};
+  }
+  // Checking exit on same bar as entry = LOOKAHEAD BIAS
+  if (position && bar.high >= target) { /* exit */ }
+}
+\`\`\`
+
+**CORRECT (No Lookahead Bias):**
+\`\`\`typescript
+// ✅ CORRECT - enter on bar N, exit earliest on bar N+1
+const entryBarIndex = signalBarIndex + 1;
+const entryBar = bars[entryBarIndex];
+const position = { entry: entryBar.open, ... };
+
+for (let i = entryBarIndex + 1; i < bars.length; i++) {  // Start AFTER entry
+  const bar = bars[i];
+  // Now safe to check exits
+  if (bar.high >= target) { /* exit */ }
+}
+\`\`\`
 
 The script should follow this structure:
 
