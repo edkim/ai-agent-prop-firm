@@ -1,6 +1,6 @@
 /**
- * Agent Management Service
- * Handles creation, configuration, and CRUD operations for trading agents
+ * Learning Agent Management Service
+ * Handles creation, configuration, and CRUD operations for learning laboratory agents
  */
 
 import { v4 as uuidv4 } from 'uuid';
@@ -18,7 +18,7 @@ import {
 } from '../types/agent.types';
 import { ClaudeService } from './claude.service';
 
-export class AgentManagementService {
+export class LearningAgentManagementService {
   private claudeService: ClaudeService;
 
   constructor() {
@@ -59,7 +59,7 @@ export class AgentManagementService {
 
     // Step 4: Insert into database
     const insertStmt = db.prepare(`
-      INSERT INTO trading_agents (
+      INSERT INTO learning_agents (
         id, name, instructions, system_prompt, risk_tolerance, trading_style,
         pattern_focus, market_conditions, risk_config, status, active,
         timeframe, created_at, updated_at
@@ -204,7 +204,7 @@ Provide actionable insights based on YOUR experience and personality.`;
    */
   async getAgent(id: string): Promise<TradingAgent | null> {
     const db = getDatabase();
-    const row = db.prepare('SELECT * FROM trading_agents WHERE id = ?').get(id) as TradingAgentRow | undefined;
+    const row = db.prepare('SELECT * FROM learning_agents WHERE id = ?').get(id) as TradingAgentRow | undefined;
 
     if (!row) {
       return null;
@@ -219,8 +219,8 @@ Provide actionable insights based on YOUR experience and personality.`;
   async listAgents(activeOnly: boolean = true): Promise<TradingAgent[]> {
     const db = getDatabase();
     const query = activeOnly
-      ? 'SELECT * FROM trading_agents WHERE active = 1 ORDER BY created_at DESC'
-      : 'SELECT * FROM trading_agents ORDER BY created_at DESC';
+      ? 'SELECT * FROM learning_agents WHERE active = 1 ORDER BY created_at DESC'
+      : 'SELECT * FROM learning_agents ORDER BY created_at DESC';
 
     const rows = db.prepare(query).all() as TradingAgentRow[];
     return rows.map(row => this.rowToAgent(row));
@@ -265,7 +265,7 @@ Provide actionable insights based on YOUR experience and personality.`;
     values.push(new Date().toISOString());
     values.push(id);
 
-    const updateQuery = `UPDATE trading_agents SET ${updateFields.join(', ')} WHERE id = ?`;
+    const updateQuery = `UPDATE learning_agents SET ${updateFields.join(', ')} WHERE id = ?`;
     db.prepare(updateQuery).run(...values);
 
     console.log(`✅ Updated agent: ${id}`);
@@ -278,7 +278,7 @@ Provide actionable insights based on YOUR experience and personality.`;
    */
   async deleteAgent(id: string): Promise<void> {
     const db = getDatabase();
-    db.prepare('DELETE FROM trading_agents WHERE id = ?').run(id);
+    db.prepare('DELETE FROM learning_agents WHERE id = ?').run(id);
     console.log(`✅ Deleted agent: ${id}`);
   }
 

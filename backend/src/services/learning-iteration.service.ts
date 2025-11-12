@@ -1,5 +1,5 @@
 /**
- * Agent Learning Service
+ * Learning Iteration Service
  * Orchestrates the learning loop: scan generation → execution → analysis → refinement
  */
 
@@ -18,7 +18,7 @@ import {
   ApplyRefinementsResponse,
   AgentBacktestConfig,
 } from '../types/agent.types';
-import { AgentManagementService } from './agent-management.service';
+import { LearningAgentManagementService } from './learning-agent-management.service';
 import { ClaudeService } from './claude.service';
 import { ScannerService } from './scanner.service';
 import { BacktestService } from './backtest.service';
@@ -44,8 +44,8 @@ const DEFAULT_BACKTEST_CONFIG: AgentBacktestConfig = {
 // Set to true to test all templates and compare with custom execution (comprehensive testing)
 const ENABLE_TEMPLATE_EXECUTION = false;
 
-export class AgentLearningService {
-  private agentMgmt: AgentManagementService;
+export class LearningIterationService {
+  private agentMgmt: LearningAgentManagementService;
   private claude: ClaudeService;
   private knowledgeExtraction: AgentKnowledgeExtractionService;
   private scanner: ScannerService;
@@ -56,7 +56,7 @@ export class AgentLearningService {
   private templateRenderer: TemplateRendererService;
 
   constructor() {
-    this.agentMgmt = new AgentManagementService();
+    this.agentMgmt = new LearningAgentManagementService();
     this.claude = new ClaudeService();
     this.scanner = new ScannerService();
     this.backtest = new BacktestService();
@@ -283,7 +283,7 @@ export class AgentLearningService {
     const db = getDatabase();
     const previousIteration = db.prepare(`
       SELECT * FROM agent_iterations
-      WHERE agent_id = ? AND iteration_number = ?
+      WHERE learning_agent_id = ? AND iteration_number = ?
       ORDER BY created_at DESC
       LIMIT 1
     `).get(agentId, currentIterationNumber - 1) as any;
@@ -952,7 +952,7 @@ export class AgentLearningService {
     // Parse refinements and generate new strategy version
     const refinements = JSON.parse(iteration.refinements_suggested);
     const newVersion = await this.generateRefinedStrategy(
-      request.agent_id,
+      request.learning_agent_id,
       iteration,
       refinements
     );
@@ -980,7 +980,7 @@ export class AgentLearningService {
     const result = db.prepare(`
       SELECT MAX(iteration_number) as max_iteration
       FROM agent_iterations
-      WHERE agent_id = ?
+      WHERE learning_agent_id = ?
     `).get(agentId) as { max_iteration: number | null };
 
     return (result.max_iteration || 0) + 1;
@@ -990,7 +990,7 @@ export class AgentLearningService {
     const db = getDatabase();
     return db.prepare(`
       SELECT * FROM agent_knowledge
-      WHERE agent_id = ?
+      WHERE learning_agent_id = ?
       ORDER BY confidence DESC, created_at DESC
     `).all(agentId);
   }
@@ -1008,7 +1008,7 @@ export class AgentLearningService {
 
     const iteration: AgentIteration = {
       id,
-      agent_id: data.agentId,
+      learning_agent_id: data.agentId,
       iteration_number: data.iterationNumber,
       scan_script: data.strategy.scanScript,
       execution_script: data.strategy.executionScript,
@@ -1030,13 +1030,13 @@ export class AgentLearningService {
 
     db.prepare(`
       INSERT INTO agent_iterations (
-        id, agent_id, iteration_number, scan_script, execution_script, scanner_prompt, execution_prompt,
+        id, learning_agent_id, iteration_number, scan_script, execution_script, scanner_prompt, execution_prompt,
         version_notes, manual_guidance, signals_found, backtest_results, win_rate, sharpe_ratio,
         total_return, winning_template, expert_analysis, refinements_suggested, iteration_status, created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       iteration.id,
-      iteration.agent_id,
+      iteration.learning_agent_id,
       iteration.iteration_number,
       iteration.scan_script,
       iteration.execution_script,
@@ -1068,14 +1068,14 @@ export class AgentLearningService {
     const db = getDatabase();
     const currentVersion = db.prepare(`
       SELECT version FROM agent_strategies
-      WHERE agent_id = ? AND is_current_version = 1
+      WHERE learning_agent_id = ? AND is_current_version = 1
     `).get(agentId) as { version: string } | undefined;
 
     const newVersion = this.incrementVersion(currentVersion?.version || 'v0.0');
 
     return {
       id: uuidv4(),
-      agent_id: agentId,
+      learning_agent_id: agentId,
       version: newVersion,
       scan_script: iteration.scan_script,
       execution_script: iteration.execution_script,
@@ -1096,19 +1096,19 @@ export class AgentLearningService {
     db.prepare(`
       UPDATE agent_strategies
       SET is_current_version = 0
-      WHERE agent_id = ? AND is_current_version = 1
-    `).run(strategy.agent_id);
+      WHERE learning_agent_id = ? AND is_current_version = 1
+    `).run(strategy.learning_agent_id);
 
     // Insert new version
     db.prepare(`
       INSERT INTO agent_strategies (
-        id, agent_id, version, scan_script, execution_script,
+        id, learning_agent_id, version, scan_script, execution_script,
         backtest_sharpe, backtest_win_rate, backtest_total_return,
         is_current_version, parent_version, changes_from_parent, created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       strategy.id,
-      strategy.agent_id,
+      strategy.learning_agent_id,
       strategy.version,
       strategy.scan_script,
       strategy.execution_script,

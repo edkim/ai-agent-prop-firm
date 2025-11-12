@@ -4,18 +4,18 @@
  */
 
 import { getDatabase } from '../database/db';
-import { AgentLearningService } from './agent-learning.service';
+import { LearningIterationService } from './learning-iteration.service';
 import { AgentActivityLogService } from './agent-activity-log.service';
 
 export class ContinuousLearningService {
   private static instance: ContinuousLearningService;
-  private learningService: AgentLearningService;
+  private learningService: LearningIterationService;
   private activityLog: AgentActivityLogService;
   private activeLoops: Map<string, NodeJS.Timeout> = new Map();
   private iterationCounts: Map<string, { count: number; date: string }> = new Map();
 
   private constructor() {
-    this.learningService = new AgentLearningService();
+    this.learningService = new LearningIterationService();
     this.activityLog = new AgentActivityLogService();
   }
 
@@ -41,7 +41,7 @@ export class ContinuousLearningService {
 
     // Enable in database
     db.prepare(`
-      UPDATE trading_agents
+      UPDATE learning_agents
       SET continuous_learning_enabled = 1
       WHERE id = ?
     `).run(agentId);
@@ -50,7 +50,7 @@ export class ContinuousLearningService {
     await this.runContinuousLoop(agentId);
 
     await this.activityLog.log({
-      agent_id: agentId,
+      learning_agent_id: agentId,
       activity_type: 'CONTINUOUS_LEARNING_STARTED',
       description: 'Continuous learning loop started'
     });
@@ -69,13 +69,13 @@ export class ContinuousLearningService {
 
     const db = getDatabase();
     db.prepare(`
-      UPDATE trading_agents
+      UPDATE learning_agents
       SET continuous_learning_enabled = 0
       WHERE id = ?
     `).run(agentId);
 
     this.activityLog.log({
-      agent_id: agentId,
+      learning_agent_id: agentId,
       activity_type: 'CONTINUOUS_LEARNING_STOPPED',
       description: 'Continuous learning loop stopped'
     });
@@ -96,7 +96,7 @@ export class ContinuousLearningService {
           min_iteration_gap_minutes,
           convergence_threshold,
           status
-        FROM trading_agents
+        FROM learning_agents
         WHERE id = ?
       `).get(agentId) as any;
 
@@ -127,7 +127,7 @@ export class ContinuousLearningService {
         this.stopContinuousLearning(agentId);
 
         await this.activityLog.log({
-          agent_id: agentId,
+          learning_agent_id: agentId,
           activity_type: 'CONVERGENCE_DETECTED',
           description: 'Agent has converged. Continuous learning stopped.'
         });
@@ -152,7 +152,7 @@ export class ContinuousLearningService {
       console.error(`❌ Continuous learning iteration failed for agent ${agentId}:`, error.message);
 
       await this.activityLog.log({
-        agent_id: agentId,
+        learning_agent_id: agentId,
         activity_type: 'CONTINUOUS_LEARNING_ERROR',
         description: `Continuous learning iteration failed: ${error.message}`,
         data: JSON.stringify({ error: error.message, stack: error.stack })
@@ -160,7 +160,7 @@ export class ContinuousLearningService {
 
       // Retry after gap period (with error backoff)
       const db = getDatabase();
-      const agent = db.prepare(`SELECT min_iteration_gap_minutes FROM trading_agents WHERE id = ?`).get(agentId) as any;
+      const agent = db.prepare(`SELECT min_iteration_gap_minutes FROM learning_agents WHERE id = ?`).get(agentId) as any;
       const retryGapMs = (agent?.min_iteration_gap_minutes || 60) * 60 * 1000 * 2; // 2x gap on error
 
       const timeout = setTimeout(() => this.runContinuousLoop(agentId), retryGapMs);
@@ -210,7 +210,7 @@ export class ContinuousLearningService {
     const iterations = db.prepare(`
       SELECT win_rate, sharpe_ratio, total_return
       FROM agent_iterations
-      WHERE agent_id = ?
+      WHERE learning_agent_id = ?
       ORDER BY iteration_number DESC
       LIMIT 3
     `).all(agentId) as any[];

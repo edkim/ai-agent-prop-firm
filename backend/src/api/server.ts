@@ -23,8 +23,8 @@ import backtestSetsRoutes from './routes/backtest-sets';
 import chartsRoutes from './routes/charts';
 import claudeAnalysisRoutes from './routes/claude-analysis';
 import batchBacktestRoutes from './routes/batch-backtest';
-import tradingAgentRoutes from './routes/trading-agent';
-import learningAgentRoutes from './routes/agents'; // Learning laboratory agents
+import liveTradingAgentRoutes from './routes/live-trading-agents';
+import learningAgentRoutes from './routes/learning-agents'; // Learning laboratory agents
 import paperTradingRoutes from './routes/paper-trading';
 
 const app: Express = express();
@@ -57,7 +57,7 @@ app.use('/api/backtest-sets', backtestSetsRoutes);
 app.use('/api/charts', chartsRoutes);
 app.use('/api/analysis', claudeAnalysisRoutes);
 app.use('/api/batch-backtest', batchBacktestRoutes);
-app.use('/api/agents', tradingAgentRoutes); // Live trading agents
+app.use('/api/agents', liveTradingAgentRoutes); // Live trading agents (production)
 app.use('/api/learning-agents', learningAgentRoutes); // Learning laboratory agents
 app.use('/api/paper-trading', paperTradingRoutes); // Paper trading
 
