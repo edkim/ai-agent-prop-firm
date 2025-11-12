@@ -766,6 +766,7 @@ CREATE TABLE IF NOT EXISTS agent_iterations (
   win_rate REAL,
   sharpe_ratio REAL,
   total_return REAL,
+  winning_template TEXT, -- Which execution template performed best
 
   -- Claude's analysis
   expert_analysis TEXT, -- Full expert analysis from Claude
