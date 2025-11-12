@@ -329,7 +329,7 @@ async function runBacktest() {
     // YOUR STRATEGY LOGIC HERE
   }
 
-  console.log(JSON.stringify(results, null, 2));
+  console.log(JSON.stringify(results));  // Compact JSON to avoid stdout truncation
 }
 
 runBacktest().catch(console.error);
@@ -939,7 +939,7 @@ runScan().then(results => {
   console.error(\`📊 Outputting top \${topResults.length} patterns\`);
 
   // Output ONLY JSON to stdout for parsing
-  console.log(JSON.stringify(topResults, null, 2));
+  console.log(JSON.stringify(topResults));  // Compact JSON to avoid stdout truncation
 }).catch(console.error);
 
 ### Example 2: DAILY Scanner (for multi-day patterns)
@@ -1004,7 +1004,7 @@ runScan().then(results => {
   console.error(\`📊 Outputting top \${topResults.length} patterns\`);
 
   // Output ONLY JSON to stdout for parsing
-  console.log(JSON.stringify(topResults, null, 2));
+  console.log(JSON.stringify(topResults));  // Compact JSON to avoid stdout truncation
 }).catch(console.error);
 
 ## VALIDATION CHECKLIST - Read this BEFORE writing your script!
@@ -1061,7 +1061,7 @@ runScan().then(results => {
   console.error(\`📊 Outputting top \${topResults.length} patterns\`);
 
   // Output ONLY JSON to stdout for parsing
-  console.log(JSON.stringify(topResults, null, 2));
+  console.log(JSON.stringify(topResults));  // Compact JSON to avoid stdout truncation
 }).catch(console.error);
 
 **Why this is critical:**
@@ -2069,7 +2069,7 @@ async function executeSignals(signals: Signal[]): Promise<Trade[]> {
 const signals = [];
 
 executeSignals(signals).then(trades => {
-  console.log(JSON.stringify(trades, null, 2));
+  console.log(JSON.stringify(trades));  // Compact JSON to avoid 64KB stdout truncation
   process.exit(0);
 }).catch(error => {
   console.error('Execution error:', error);
