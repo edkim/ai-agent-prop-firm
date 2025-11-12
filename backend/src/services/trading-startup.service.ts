@@ -7,7 +7,7 @@ import { RealtimeDataService } from './realtime-data.service';
 import { RealtimeScannerService } from './realtime-scanner.service';
 import { ExecutionEngineService } from './execution-engine.service';
 import { PositionMonitorService } from './position-monitor.service';
-import tradingAgentService from './trading-agent.service';
+import tradingAgentService from './live-trading-agent.service';
 import logger from './logger.service';
 
 export class TradingStartupService {

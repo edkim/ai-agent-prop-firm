@@ -19,25 +19,34 @@ CREATE TABLE agent_iterations_new (
   id TEXT PRIMARY KEY,
   learning_agent_id TEXT NOT NULL,
   iteration_number INTEGER NOT NULL,
-  scanner_prompt TEXT,
-  execution_prompt TEXT,
-  scanner_script TEXT,
-  execution_script TEXT,
+  -- Strategy under test
+  scan_script TEXT NOT NULL,
+  execution_script TEXT NOT NULL,
+  version_notes TEXT,
+  manual_guidance TEXT,
+  -- Results
   signals_found INTEGER,
   backtest_results TEXT,
+  win_rate REAL,
+  sharpe_ratio REAL,
+  total_return REAL,
+  -- Claude's analysis
   expert_analysis TEXT,
-  refinements TEXT,
-  status TEXT CHECK(status IN ('running', 'completed', 'failed')) DEFAULT 'running',
-  error_message TEXT,
-  created_at TEXT DEFAULT (datetime('now')),
-  completed_at TEXT,
+  refinements_suggested TEXT,
+  -- Status
+  iteration_status TEXT DEFAULT 'completed',
+  -- Git tracking
   git_commit_hash TEXT,
+  created_at TEXT NOT NULL,
   FOREIGN KEY (learning_agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE
 );
 
 INSERT INTO agent_iterations_new SELECT * FROM agent_iterations;
 DROP TABLE agent_iterations;
 ALTER TABLE agent_iterations_new RENAME TO agent_iterations;
+
+CREATE INDEX IF NOT EXISTS idx_agent_iterations_agent ON agent_iterations(learning_agent_id, iteration_number);
+CREATE INDEX IF NOT EXISTS idx_agent_iterations_status ON agent_iterations(iteration_status);
 
 -- agent_knowledge: Rename agent_id to learning_agent_id
 CREATE TABLE agent_knowledge_new (

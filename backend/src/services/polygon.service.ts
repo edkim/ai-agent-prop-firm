@@ -101,12 +101,14 @@ export class PolygonService {
   }
 
   /**
-   * Extract time of day in HH:MM:SS format
+   * Extract time of day in HH:MM:SS format (US Eastern Time - handles DST automatically)
    */
   private extractTimeOfDay(date: Date): string {
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    const seconds = date.getSeconds().toString().padStart(2, '0');
+    // Convert UTC timestamp to US Eastern Time (automatically handles DST)
+    const etTime = new Date(date.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const hours = etTime.getHours().toString().padStart(2, '0');
+    const minutes = etTime.getMinutes().toString().padStart(2, '0');
+    const seconds = etTime.getSeconds().toString().padStart(2, '0');
     return `${hours}:${minutes}:${seconds}`;
   }
 

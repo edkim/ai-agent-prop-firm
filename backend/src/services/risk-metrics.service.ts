@@ -5,7 +5,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { getDatabase } from '../database/db';
-import tradingAgentService from './trading-agent.service';
+import tradingAgentService from './live-trading-agent.service';
 import { RiskMetrics, ExecutedTrade } from '../types/trading-agent.types';
 
 interface DailyReturn {

@@ -329,7 +329,7 @@ async function runBacktest() {
     // YOUR STRATEGY LOGIC HERE
   }
 
-  console.log(JSON.stringify(results, null, 2));
+  console.log(JSON.stringify(results));  // Compact JSON to avoid stdout truncation
 }
 
 runBacktest().catch(console.error);
@@ -711,7 +711,7 @@ Your task is to generate a complete, runnable TypeScript scanner that queries th
 - timeframe: '5min', '1min', '15min', '1h', '1d' (TEXT)
 - open, high, low, close: Price values (REAL)
 - volume: Share volume (REAL)
-- time_of_day: Time in 'HH:MM' format, e.g., '09:30', '14:15' (TEXT)
+- time_of_day: Time in 'HH:MM' format **in UTC timezone**, e.g., '13:30' UTC (09:30 ET), '18:15' UTC (14:15 ET) (TEXT)
 
 **Query Example:**
 \`\`\`sql
@@ -724,7 +724,8 @@ WHERE ticker = 'AAPL'
 ORDER BY timestamp ASC
 
 **Important:**
-- Market hours: 09:30 - 16:00 ET
+- Market hours: 09:30 - 16:00 ET (stored in database as 13:30 - 20:00 UTC in time_of_day field)
+- **CRITICAL**: time_of_day is in UTC timezone - use UTC times in signal_time field
 - Intraday data available for ~60+ tech sector stocks
 - Always filter by timeframe = '5min' for intraday analysis
 
@@ -824,7 +825,7 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 interface ScanMatch {
   ticker: string;
   signal_date: string;  // Trading date (YYYY-MM-DD)
-  signal_time: string;  // Time of detection (HH:MM)
+  signal_time: string;  // Time of detection (HH:MM) **in UTC timezone** - MUST match time_of_day from database
   pattern_strength: number; // 0-100
   direction: 'LONG' | 'SHORT';  // Trade direction
   metrics: any;
@@ -938,7 +939,7 @@ runScan().then(results => {
   console.error(\`📊 Outputting top \${topResults.length} patterns\`);
 
   // Output ONLY JSON to stdout for parsing
-  console.log(JSON.stringify(topResults, null, 2));
+  console.log(JSON.stringify(topResults));  // Compact JSON to avoid stdout truncation
 }).catch(console.error);
 
 ### Example 2: DAILY Scanner (for multi-day patterns)
@@ -1003,7 +1004,7 @@ runScan().then(results => {
   console.error(\`📊 Outputting top \${topResults.length} patterns\`);
 
   // Output ONLY JSON to stdout for parsing
-  console.log(JSON.stringify(topResults, null, 2));
+  console.log(JSON.stringify(topResults));  // Compact JSON to avoid stdout truncation
 }).catch(console.error);
 
 ## VALIDATION CHECKLIST - Read this BEFORE writing your script!
@@ -1060,7 +1061,7 @@ runScan().then(results => {
   console.error(\`📊 Outputting top \${topResults.length} patterns\`);
 
   // Output ONLY JSON to stdout for parsing
-  console.log(JSON.stringify(topResults, null, 2));
+  console.log(JSON.stringify(topResults));  // Compact JSON to avoid stdout truncation
 }).catch(console.error);
 
 **Why this is critical:**
@@ -1699,24 +1700,78 @@ Generate ONLY the execution loop code (no imports, no function wrapper). The cod
 
 **CRITICAL REQUIREMENTS:**
 
-1. **Align with Strategy**: The execution logic should directly implement the strategy described in the agent instructions
+0. **DO NOT FILTER OR REJECT SIGNALS** (MOST IMPORTANT):
+   ⚠️ The scanner has ALREADY done ALL the filtering. Your ONLY job is to EXECUTE every signal with proper risk management.
+
+   **FORBIDDEN - DO NOT DO THIS:**
+   \`\`\`typescript
+   // ❌ DO NOT filter by time
+   if (entryTimeMinutes < 10 * 60 + 45) return null;  // WRONG!
+
+   // ❌ DO NOT filter by VWAP
+   if (entryBar.open <= vwap) return null;  // WRONG!
+
+   // ❌ DO NOT filter by volume
+   if (signalBar.volume < avgVolume * 1.2) return null;  // WRONG!
+
+   // ❌ DO NOT add ANY entry filters
+   if (someCondition) return null;  // WRONG!
+   \`\`\`
+
+   **CORRECT - EXECUTE ALL SIGNALS:**
+   \`\`\`typescript
+   // ✅ Find the signal bar, determine entry
+   const signalBarIndex = bars.findIndex(b => b.timeOfDay >= signal.signal_time);
+   if (signalBarIndex === -1 || signalBarIndex >= bars.length - 1) return null;
+
+   // ✅ Enter on next bar - NO FILTERING
+   const entryBarIndex = signalBarIndex + 1;
+   const entryBar = bars[entryBarIndex];
+   const entryPrice = entryBar.open;
+
+   // ✅ Manage the trade with stops/targets - NO ENTRY FILTERS
+   \`\`\`
+
+   The scanner found these signals for a reason. Execute them all. Only use risk management (stops/targets/time exits), never entry filters.
+
+1. **PREVENT LOOKAHEAD BIAS WITH 5-MINUTE BARS**:
+   - Data is 5-minute OHLC bars - you CANNOT enter and exit on the same bar
+   - Entry bar index MUST be tracked: \`const entryBarIndex = signalBarIndex + 1;\`
+   - Earliest exit is the bar AFTER entry: \`const minExitBarIndex = entryBarIndex + 1;\`
+   - Before ANY exit check, verify: \`if (currentBarIndex <= entryBarIndex) continue;\`
+   - Entry prices: Use \`entryBar.open\` (next bar after signal)
+   - Exit prices: Use current bar's \`close\` (not high/low from entry bar)
+   - Stop checks: Can use current bar's high/low, but must be on bars AFTER entry bar
+
+   **Example Implementation Pattern:**
+   \`\`\`typescript
+   const entryBarIndex = signalBarIndex + 1;
+   const entryBar = bars[entryBarIndex];
+
+   for (let i = entryBarIndex + 1; i < bars.length; i++) {  // Start AFTER entry bar
+     const bar = bars[i];
+     // Exit logic here - can now safely check stops and targets
+   }
+   \`\`\`
+
+2. **Align with Strategy**: The execution logic should directly implement the strategy described in the agent instructions
    - If instructions say "enter on first pullback", implement pullback detection
    - If instructions say "ride momentum continuation", use trailing stops not fixed targets
    - If instructions mention specific conditions, code them explicitly
 
-2. **Match Risk Profile**:
+3. **Match Risk Profile**:
    - Aggressive: Wider stops (2-4%), let winners run with trailing stops
    - Moderate: Balanced stops (1.5-2.5%), take partial profits
    - Conservative: Tight stops (0.5-1.5%), quick profit taking
 
-3. **Match Trading Style**:
+4. **Match Trading Style**:
    - Day trader: Exit before market close (15:55), tighter time-based stops
    - Swing trader: Can hold overnight, wider stops for volatility
    - Scalper: Very tight stops, quick profit targets
 
-4. **Direction Handling**: ALWAYS read direction from signal.direction field (LONG/SHORT)
+5. **Direction Handling**: ALWAYS read direction from signal.direction field (LONG/SHORT)
 
-5. **Output Format**: Return ONLY the execution code block that will be inserted between the loop and results output
+6. **Output Format**: Return ONLY the execution code block that will be inserted between the loop and results output
 
 Generate executable TypeScript code that will produce superior results by being true to the strategy's intent.`;
 
@@ -1831,6 +1886,93 @@ NOTE: No sample signals provided. Use flexible metric access:
 \`const someMetric = signal.metrics?.field_name || defaultValue;\`
 `}
 
+**CRITICAL REQUIREMENTS:**
+
+0. **DO NOT FILTER OR REJECT SIGNALS** (MOST IMPORTANT):
+   ⚠️ The scanner has ALREADY done ALL the filtering. Your ONLY job is to EXECUTE every signal with proper risk management.
+
+   **FORBIDDEN - DO NOT DO THIS:**
+   \`\`\`typescript
+   // ❌ DO NOT filter by time
+   const entryHour = parseInt(entryTime.split(':')[0]);
+   if (entryHour < 10 || entryHour > 11) return null;  // WRONG!
+
+   // ❌ DO NOT filter by VWAP
+   const vwap = calculateVWAP(barsBeforeSignal);
+   if (entryBar.open <= vwap) return null;  // WRONG!
+
+   // ❌ DO NOT filter by volume
+   if (signalBar.volume < avgVolume * 1.2) return null;  // WRONG!
+
+   // ❌ DO NOT filter by VWAP rising
+   if (!isVWAPRising(barsBeforeSignal, 3)) return null;  // WRONG!
+
+   // ❌ DO NOT add ANY entry filters
+   if (someCondition) return null;  // WRONG!
+   \`\`\`
+
+   **CORRECT - EXECUTE ALL SIGNALS:**
+   \`\`\`typescript
+   // ✅ Find the signal bar
+   const signalBarIndex = bars.findIndex(b => b.timeOfDay >= signal.signal_time);
+   if (signalBarIndex === -1 || signalBarIndex >= bars.length - 1) return null;
+
+   // ✅ Enter on next bar - NO FILTERING
+   const entryBarIndex = signalBarIndex + 1;
+   const entryBar = bars[entryBarIndex];
+   const entryPrice = entryBar.open;
+
+   // ✅ Manage the trade with stops/targets - NO ENTRY FILTERS
+   const stopLoss = entryPrice - (1.5 * atr);  // Risk management OK
+   \`\`\`
+
+   The scanner found these signals for a reason. Execute them all. Only use risk management (stops/targets/time exits), never entry filters.
+
+1. **PREVENT LOOKAHEAD BIAS:**
+   ⚠️ **YOU MUST PREVENT SAME-BAR ENTRY/EXIT TO AVOID LOOKAHEAD BIAS**
+
+   The data consists of 5-minute OHLC bars. You CANNOT know the high or low of a bar until it closes.
+   Therefore, you MUST NOT enter and exit on the same bar.
+
+   **Required Implementation:**
+   1. Entry bar: \`const entryBarIndex = signalBarIndex + 1;\`
+   2. Entry price: Use \`entryBar.open\` (the open of the bar AFTER the signal)
+   3. Exit loop: Start from \`entryBarIndex + 1\` (the bar AFTER entry)
+      \`\`\`typescript
+      for (let i = entryBarIndex + 1; i < bars.length; i++) {
+        const bar = bars[i];
+        // NOW you can check stops and targets using bar.high, bar.low, bar.close
+      }
+      \`\`\`
+   4. Exit prices: Use current bar's close (or realistic fill: bar.low for stop on LONG, bar.high for stop on SHORT)
+
+**WRONG (Lookahead Bias):**
+\`\`\`typescript
+// ❌ DON'T DO THIS - entering at low and exiting at high on same bar
+for (let i = signalBarIndex + 1; i < bars.length; i++) {
+  const bar = bars[i];
+  if (!position) {
+    position = { entry: bar.open, ...};
+  }
+  // Checking exit on same bar as entry = LOOKAHEAD BIAS
+  if (position && bar.high >= target) { /* exit */ }
+}
+\`\`\`
+
+**CORRECT (No Lookahead Bias):**
+\`\`\`typescript
+// ✅ CORRECT - enter on bar N, exit earliest on bar N+1
+const entryBarIndex = signalBarIndex + 1;
+const entryBar = bars[entryBarIndex];
+const position = { entry: entryBar.open, ... };
+
+for (let i = entryBarIndex + 1; i < bars.length; i++) {  // Start AFTER entry
+  const bar = bars[i];
+  // Now safe to check exits
+  if (bar.high >= target) { /* exit */ }
+}
+\`\`\`
+
 The script should follow this structure:
 
 \`\`\`typescript
@@ -1927,7 +2069,7 @@ async function executeSignals(signals: Signal[]): Promise<Trade[]> {
 const signals = [];
 
 executeSignals(signals).then(trades => {
-  console.log(JSON.stringify(trades, null, 2));
+  console.log(JSON.stringify(trades));  // Compact JSON to avoid 64KB stdout truncation
   process.exit(0);
 }).catch(error => {
   console.error('Execution error:', error);

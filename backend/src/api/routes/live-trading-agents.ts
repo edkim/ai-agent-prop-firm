@@ -4,7 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import tradingAgentService from '../../services/trading-agent.service';
+import tradingAgentService from '../../services/live-trading-agent.service';
 import tradestationService from '../../services/tradestation.service';
 import logger from '../../services/logger.service';
 import { getDatabase } from '../../database/db';

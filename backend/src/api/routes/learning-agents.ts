@@ -242,6 +242,28 @@ router.delete('/:id', async (req: Request, res: Response) => {
 // ========================================
 
 /**
+ * GET /api/agents/:id/iterations/preview
+ * Preview what the next iteration's scanner prompt would be
+ */
+router.get('/:id/iterations/preview', async (req: Request, res: Response) => {
+  try {
+    const agentId = req.params.id;
+    const preview = await agentLearning.previewNextIteration(agentId);
+
+    res.json({
+      success: true,
+      preview,
+    });
+  } catch (error: any) {
+    console.error('Error previewing iteration:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
  * POST /api/agents/:id/iterations/start
  * Start a new learning iteration for an agent
  */
