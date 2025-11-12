@@ -76,9 +76,9 @@ interface ScannerSignal {
   ticker: string;
   signal_date: string;
   signal_time: string;
-  pattern_strength?: number;
-  direction?: 'LONG' | 'SHORT';
-  metrics?: { [key: string]: any };
+  pattern_strength: number;
+  direction: 'LONG' | 'SHORT';
+  metrics: { [key: string]: any };
 }
 
 // SCANNER_SIGNALS: Injected from scan results
@@ -144,6 +144,81 @@ runBacktest().catch(console.error);
     }
 
     return grouped;
+  }
+
+  /**
+   * Wrap custom execution code (from Claude) in full boilerplate template
+   *
+   * @param executionCode - Raw execution loop code (expects SCANNER_SIGNALS, helpers, db, results)
+   * @param signals - Scanner signals to inject
+   * @returns Complete executable script with imports, interfaces, and signal data
+   */
+  renderCustomExecutionScript(
+    executionCode: string,
+    signals: ScannerSignal[]
+  ): string {
+    // Build complete script with imports, interfaces, and execution logic
+    const fullScript = `
+import { initializeDatabase, getDatabase } from '../../../src/database/db';
+import * as helpers from '../../../src/utils/backtest-helpers';
+import dotenv from 'dotenv';
+import path from 'path';
+
+dotenv.config({ path: path.resolve(__dirname, '../../../../.env') });
+
+interface Bar {
+  timestamp: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  timeOfDay: string;
+}
+
+interface TradeResult {
+  ticker: string;
+  signal_date: string;
+  entry_time?: string;
+  exit_time?: string;
+  direction?: 'LONG' | 'SHORT';
+  entry_price?: number;
+  exit_price?: number;
+  shares?: number;
+  pnl?: number;
+  pnl_percent?: number;
+  exit_reason?: string;
+  hold_time_minutes?: number;
+}
+
+interface ScannerSignal {
+  ticker: string;
+  signal_date: string;
+  signal_time: string;
+  pattern_strength: number;
+  direction: 'LONG' | 'SHORT';
+  metrics: { [key: string]: any };
+}
+
+// SCANNER_SIGNALS: Injected from scan results
+const SCANNER_SIGNALS: ScannerSignal[] = ${JSON.stringify(signals, null, 2)};
+
+async function runBacktest() {
+  const dbPath = process.env.DATABASE_PATH || './backtesting.db';
+  initializeDatabase(dbPath);
+  const db = getDatabase();
+
+  const results: TradeResult[] = [];
+
+  ${executionCode}
+
+  console.log(JSON.stringify(results, null, 2));
+}
+
+runBacktest().catch(console.error);
+`;
+
+    return fullScript;
   }
 
   /**

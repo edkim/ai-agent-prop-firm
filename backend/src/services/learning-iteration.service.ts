@@ -640,57 +640,16 @@ export class LearningIterationService {
       }
 
       try {
-        // Embed signals data into the custom script
-        // The custom script expects to read from stdin, but we'll embed the data directly
-        const signalsJson = JSON.stringify(filteredResults, null, 2);
-
-        // Replace either the readFileSync pattern OR the empty array placeholder
-        let scriptWithSignals = executionScript.replace(
-          /const input = require\('fs'\)\.readFileSync\(0, 'utf-8'\);?\s*const signals = JSON\.parse\(input\);?/g,
-          `const signals = ${signalsJson};`
-        );
-
-        // Also handle the placeholder pattern: const signals = [];
-        scriptWithSignals = scriptWithSignals.replace(
-          /const signals\s*=\s*\[\s*\];?/g,
-          `const signals = ${signalsJson};`
+        // Wrap the custom execution code in full boilerplate template with signal embedding
+        const scriptWithSignals = this.templateRenderer.renderCustomExecutionScript(
+          executionScript,
+          filteredResults
         );
 
         // Store the embedded version for database storage
         embeddedExecutionScript = scriptWithSignals;
 
-        // Fix import paths: Claude generates ../../src/database/db but script is nested 3 levels deep
-        // generated-scripts/success/YYYY-MM-DD/ -> need ../../../src/database/db
-        scriptWithSignals = scriptWithSignals.replace(
-          /from ['"]\.\.\/\.\.\/src\//g,
-          `from '../../../src/`
-        );
-
-        // Add database initialization if missing
-        // Look for import of getDatabase and add initializeDatabase import if not present
-        if (!scriptWithSignals.includes('initializeDatabase')) {
-          scriptWithSignals = scriptWithSignals.replace(
-            /import \{ getDatabase \} from ['"]\.\.\/\.\.\/\.\.\/src\/database\/db['"]/,
-            `import { initializeDatabase, getDatabase } from '../../../src/database/db'`
-          );
-        }
-
-        // Add database initialization call before executeSignals if missing
-        // Look for the pattern where executeSignals is called
-        if (!scriptWithSignals.includes('initializeDatabase(')) {
-          scriptWithSignals = scriptWithSignals.replace(
-            /async function executeSignals\(signals: Signal\[\]\): Promise<Trade\[\]> \{[\s\S]*?const db = getDatabase\(\);/,
-            (match) => {
-              // Add initialization call before getDatabase
-              return match.replace(
-                'const db = getDatabase();',
-                `const dbPath = process.env.DATABASE_PATH || './backtesting.db';\n  initializeDatabase(dbPath);\n  const db = getDatabase();`
-              );
-            }
-          );
-        }
-
-        // Save modified script to file
+        // Save complete script to file
         fs.writeFileSync(scriptPath, scriptWithSignals);
 
         // Execute with 120 second timeout

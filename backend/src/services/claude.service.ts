@@ -1973,117 +1973,52 @@ for (let i = entryBarIndex + 1; i < bars.length; i++) {  // Start AFTER entry
 }
 \`\`\`
 
-The script should follow this structure:
+Generate ONLY the execution loop code (no imports, no function wrapper). The code will be inserted into a template that provides:
+- \`SCANNER_SIGNALS\`: Array of signals with the interface shown above
+- \`results\`: Array to push TradeResult objects to
+- \`db\`: Database instance from getDatabase()
+- \`helpers\`: Helper functions including \`helpers.getIntradayData(db, ticker, signal_date, timeframe)\`
 
+Example structure (generate the loop code only):
 \`\`\`typescript
-import { Database } from 'better-sqlite3';
-import { getDatabase } from '../../src/database/db';
-import path from 'path';
-import dotenv from 'dotenv';
+for (const signal of SCANNER_SIGNALS) {
+  const { ticker, signal_date, signal_time, direction, metrics } = signal;
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+  // Fetch intraday bars
+  const bars = await helpers.getIntradayData(db, ticker, signal_date, '5min');
+  if (!bars || bars.length === 0) continue;
 
-${signalInterface}
+  // Find signal bar and entry bar
+  const signalBarIndex = bars.findIndex(b => b.timeOfDay >= signal_time);
+  if (signalBarIndex === -1 || signalBarIndex >= bars.length - 1) continue;
 
-interface Trade {
-  date: string;
-  ticker: string;
-  side: 'LONG' | 'SHORT';
-  entry_time: string;
-  entry_price: number;
-  exit_time: string;
-  exit_price: number;
-  pnl: number;
-  pnl_percent: number;
-  exit_reason: string;
-  highest_price?: number;
-  lowest_price?: number;
-}
-
-async function executeSignal(signal: Signal, db: Database): Promise<Trade | null> {
-  // Get intraday 5-minute bars for the signal date
-  const dateStart = new Date(\`\${signal.signal_date}T00:00:00Z\`).getTime();
-  const nextDate = new Date(signal.signal_date);
-  nextDate.setDate(nextDate.getDate() + 1);
-  const dateEnd = nextDate.getTime();
-
-  const bars = db.prepare(\`
-    SELECT timestamp, open, high, low, close, volume, time_of_day as timeOfDay
-    FROM ohlcv_data
-    WHERE ticker = ? AND timeframe = '5min'
-      AND timestamp >= ? AND timestamp < ?
-    ORDER BY timestamp ASC
-  \`).all(signal.ticker, dateStart, dateEnd) as any[];
-
-  if (bars.length === 0) return null;
-
-  // Find the signal bar and entry bar (next bar after signal)
-  const signalBarIndex = bars.findIndex((b: any) => b.timeOfDay >= signal.signal_time);
-  if (signalBarIndex === -1 || signalBarIndex >= bars.length - 1) return null;
-
-  const entryBar = bars[signalBarIndex + 1];
+  const entryBarIndex = signalBarIndex + 1;
+  const entryBar = bars[entryBarIndex];
   const entryPrice = entryBar.open;
 
-  // Determine trade side based on pattern type and signal metrics
-  // Adapt this logic to your scanner's specific output!
-  const side: 'LONG' | 'SHORT' = 'LONG';  // Customize based on signal.metrics fields
+  // ... YOUR EXECUTION LOGIC HERE based on learnings ...
+  // Include: stop loss, take profit, trailing stops, time-based exits
+  // Use the direction from signal (LONG/SHORT) or infer from metrics
 
-  // Implementation with improved execution logic
-  // Include: entry timing, stop loss, take profit, trailing stops, time-based exits
-  // ... (add your custom logic here based on learnings)
-
-  // Example return (customize based on your exit logic):
-  return {
-    date: signal.signal_date,
-    ticker: signal.ticker,
-    side,
+  // Push trade result
+  results.push({
+    ticker,
+    signal_date,
     entry_time: entryBar.timeOfDay,
+    exit_time: exitTime,
+    direction: tradeDirection,
     entry_price: entryPrice,
-    exit_time: bars[bars.length - 1].timeOfDay,
-    exit_price: bars[bars.length - 1].close,
-    pnl: side === 'LONG' ?
-      (bars[bars.length - 1].close - entryPrice) :
-      (entryPrice - bars[bars.length - 1].close),
-    pnl_percent: side === 'LONG' ?
-      ((bars[bars.length - 1].close - entryPrice) / entryPrice) * 100 :
-      ((entryPrice - bars[bars.length - 1].close) / entryPrice) * 100,
-    exit_reason: 'time_exit',
-    highest_price: Math.max(...bars.slice(signalBarIndex + 1).map((b: any) => b.high)),
-    lowest_price: Math.min(...bars.slice(signalBarIndex + 1).map((b: any) => b.low))
-  };
+    exit_price: exitPrice,
+    shares: positionSize,
+    pnl: pnl,
+    pnl_percent: pnlPercent,
+    exit_reason: exitReason,
+    hold_time_minutes: holdTime
+  });
 }
-
-async function executeSignals(signals: Signal[]): Promise<Trade[]> {
-  const db = getDatabase();
-  const trades: Trade[] = [];
-
-  for (const signal of signals) {
-    const trade = await executeSignal(signal, db);
-    if (trade) trades.push(trade);
-  }
-
-  return trades;
-}
-
-// Signals will be embedded here by the system (replaces stdin reading)
-const signals = [];
-
-executeSignals(signals).then(trades => {
-  console.log(JSON.stringify(trades));  // Compact JSON to avoid 64KB stdout truncation
-  process.exit(0);
-}).catch(error => {
-  console.error('Execution error:', error);
-  process.exit(1);
-});
 \`\`\`
 
-Provide your response in this JSON format:
-{
-  "script": "// Full TypeScript execution script code here",
-  "rationale": "Explanation of key improvements made and why they address previous issues"
-}
-
-Return ONLY the JSON object, no additional text.`;
+Generate the execution loop code that improves upon the previous iteration by incorporating the learnings and addressing the identified issues.`;
 
     try {
       const client = this.getClient();
@@ -2102,15 +2037,16 @@ Return ONLY the JSON object, no additional text.`;
 
       const content = response.content[0];
       if (content.type === 'text') {
-        // Extract JSON from response
-        const jsonMatch = content.text.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const result = JSON.parse(jsonMatch[0]);
-          console.log('✅ Generated custom execution script');
-          console.log('📝 Rationale:', result.rationale.substring(0, 200) + '...');
-          return { ...result, prompt: userPrompt };
-        }
-        throw new Error('No JSON found in Claude response');
+        // Extract code block (Claude returns markdown code blocks)
+        const codeBlockMatch = content.text.match(/```(?:typescript|ts)?\n([\s\S]*?)```/);
+        const script = codeBlockMatch ? codeBlockMatch[1].trim() : content.text.trim();
+
+        // Extract rationale (text before first code block)
+        const rationaleMatch = content.text.match(/([\s\S]*?)```/);
+        const rationale = rationaleMatch ? rationaleMatch[1].trim() : 'Improved custom execution script';
+
+        console.log('✅ Generated custom execution script');
+        return { script, rationale, prompt: userPrompt };
       }
 
       throw new Error('Unexpected response format from Claude');

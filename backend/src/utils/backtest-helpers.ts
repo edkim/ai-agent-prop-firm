@@ -12,7 +12,61 @@ export interface Bar {
   low: number;
   close: number;
   volume: number;
-  timeOfDay?: string;
+  timeOfDay: string;
+}
+
+/**
+ * Fetch intraday bars for a specific ticker and date
+ *
+ * @param db - SQLite database instance
+ * @param ticker - Stock ticker symbol
+ * @param date - Date in YYYY-MM-DD format
+ * @param timeframe - Timeframe (e.g., '5min', '1min')
+ * @returns Array of bars sorted by time, or null if no data
+ */
+export function getIntradayData(
+  db: any,
+  ticker: string,
+  date: string,
+  timeframe: string
+): Bar[] | null {
+  const query = `
+    SELECT
+      timestamp,
+      open,
+      high,
+      low,
+      close,
+      volume,
+      time_of_day as timeOfDay
+    FROM ohlcv_data
+    WHERE ticker = ?
+      AND date(timestamp/1000, 'unixepoch') = ?
+      AND timeframe = ?
+    ORDER BY timestamp ASC
+  `;
+
+  try {
+    const stmt = db.prepare(query);
+    const rows = stmt.all(ticker, date, timeframe);
+
+    if (!rows || rows.length === 0) {
+      return null;
+    }
+
+    return rows.map((row: any) => ({
+      timestamp: row.timestamp,
+      open: row.open,
+      high: row.high,
+      low: row.low,
+      close: row.close,
+      volume: row.volume,
+      timeOfDay: row.timeOfDay
+    }));
+  } catch (error) {
+    console.error(`Error fetching intraday data for ${ticker} on ${date}:`, error);
+    return null;
+  }
 }
 
 /**
