@@ -475,7 +475,7 @@ CREATE INDEX IF NOT EXISTS idx_strategy_performance_win_rate ON batch_strategy_p
 -- =====================================================
 
 -- Trading Agents Configuration (Enhanced for Learning Laboratory)
-CREATE TABLE IF NOT EXISTS trading_agents (
+CREATE TABLE IF NOT EXISTS learning_agents (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
 
@@ -515,7 +515,7 @@ CREATE TABLE IF NOT EXISTS live_signals (
     status TEXT DEFAULT 'DETECTED', -- DETECTED, ANALYZING, EXECUTED, REJECTED, EXPIRED
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE
+    FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_live_signals_status ON live_signals(status);
@@ -541,7 +541,7 @@ CREATE TABLE IF NOT EXISTS trade_recommendations (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (signal_id) REFERENCES live_signals(id) ON DELETE CASCADE,
-    FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE
+    FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_trade_recommendations_status ON trade_recommendations(status);
@@ -590,7 +590,7 @@ CREATE TABLE IF NOT EXISTS executed_trades (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE,
+    FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE,
     FOREIGN KEY (recommendation_id) REFERENCES trade_recommendations(id) ON DELETE SET NULL
 );
 
@@ -620,7 +620,7 @@ CREATE TABLE IF NOT EXISTS portfolio_state (
     -- Last update
     last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE
+    FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE
 );
 
 -- Risk Metrics (historical tracking)
@@ -658,7 +658,7 @@ CREATE TABLE IF NOT EXISTS risk_metrics (
     
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE,
+    FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE,
     UNIQUE(agent_id, metric_date)
 );
 
@@ -695,7 +695,7 @@ CREATE TABLE IF NOT EXISTS tradestation_orders (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE,
+    FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE,
     FOREIGN KEY (trade_id) REFERENCES executed_trades(id) ON DELETE SET NULL
 );
 
@@ -704,19 +704,19 @@ CREATE INDEX IF NOT EXISTS idx_tradestation_orders_status ON tradestation_orders
 CREATE INDEX IF NOT EXISTS idx_tradestation_orders_trade ON tradestation_orders(trade_id);
 
 -- Agent Activity Log (audit trail)
-CREATE TABLE IF NOT EXISTS agent_activity_log (
+CREATE TABLE IF NOT EXISTS learning_agent_activity_log (
     id TEXT PRIMARY KEY,
-    agent_id TEXT NOT NULL,
+    learning_agent_id TEXT NOT NULL,
     activity_type TEXT NOT NULL, -- SIGNAL_DETECTED, TRADE_ANALYZED, ORDER_PLACED, POSITION_CLOSED, RISK_LIMIT_HIT, etc.
     ticker TEXT,
     description TEXT NOT NULL,
     data TEXT, -- JSON: additional context
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     
-    FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE
+    FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_agent_activity_agent_time ON agent_activity_log(agent_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_agent_activity_agent_time ON learning_agent_activity_log(learning_agent_id, timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_agent_activity_type ON agent_activity_log(activity_type, timestamp DESC);
 
 -- =====================================================
@@ -729,7 +729,7 @@ CREATE INDEX IF NOT EXISTS idx_agent_activity_type ON agent_activity_log(activit
 -- Agent Knowledge Base (each agent's independent learning)
 CREATE TABLE IF NOT EXISTS agent_knowledge (
   id TEXT PRIMARY KEY,
-  agent_id TEXT NOT NULL,
+  learning_agent_id TEXT NOT NULL,
   knowledge_type TEXT NOT NULL, -- 'INSIGHT', 'PARAMETER_PREF', 'PATTERN_RULE'
   pattern_type TEXT, -- e.g., 'vwap_bounce', 'gap_and_go'
   insight TEXT NOT NULL, -- Human-readable insight
@@ -739,17 +739,17 @@ CREATE TABLE IF NOT EXISTS agent_knowledge (
   times_validated INTEGER DEFAULT 0, -- How many times confirmed
   last_validated TEXT, -- Last validation date
   created_at TEXT NOT NULL,
-  FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE
+  FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_agent_knowledge_agent ON agent_knowledge(agent_id);
-CREATE INDEX IF NOT EXISTS idx_agent_knowledge_type ON agent_knowledge(agent_id, knowledge_type);
+CREATE INDEX IF NOT EXISTS idx_agent_knowledge_agent ON agent_knowledge(learning_agent_id);
+CREATE INDEX IF NOT EXISTS idx_agent_knowledge_type ON agent_knowledge(learning_agent_id, knowledge_type);
 CREATE INDEX IF NOT EXISTS idx_agent_knowledge_pattern ON agent_knowledge(pattern_type);
 
 -- Agent Learning Iterations (backtest experiments)
 CREATE TABLE IF NOT EXISTS agent_iterations (
   id TEXT PRIMARY KEY,
-  agent_id TEXT NOT NULL,
+  learning_agent_id TEXT NOT NULL,
   iteration_number INTEGER NOT NULL,
 
   -- Strategy under test
@@ -776,16 +776,16 @@ CREATE TABLE IF NOT EXISTS agent_iterations (
   git_commit_hash TEXT, -- Git commit hash when iteration was created
 
   created_at TEXT NOT NULL,
-  FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE
+  FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_agent_iterations_agent ON agent_iterations(agent_id, iteration_number);
+CREATE INDEX IF NOT EXISTS idx_agent_iterations_agent ON agent_iterations(learning_agent_id, iteration_number);
 CREATE INDEX IF NOT EXISTS idx_agent_iterations_status ON agent_iterations(iteration_status);
 
 -- Agent Strategy Versions (evolution tracking)
 CREATE TABLE IF NOT EXISTS agent_strategies (
   id TEXT PRIMARY KEY,
-  agent_id TEXT NOT NULL,
+  learning_agent_id TEXT NOT NULL,
   version TEXT NOT NULL, -- "v1.0", "v1.1", "v2.0"
 
   -- Strategy scripts
@@ -803,12 +803,12 @@ CREATE TABLE IF NOT EXISTS agent_strategies (
   changes_from_parent TEXT, -- Description of what changed
 
   created_at TEXT NOT NULL,
-  FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE,
+  FOREIGN KEY (agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE,
   UNIQUE(agent_id, version)
 );
 
-CREATE INDEX IF NOT EXISTS idx_agent_strategies_agent ON agent_strategies(agent_id);
-CREATE INDEX IF NOT EXISTS idx_agent_strategies_current ON agent_strategies(agent_id, is_current_version);
+CREATE INDEX IF NOT EXISTS idx_agent_strategies_agent ON agent_strategies(learning_agent_id);
+CREATE INDEX IF NOT EXISTS idx_agent_strategies_current ON agent_strategies(learning_agent_id, is_current_version);
 CREATE INDEX IF NOT EXISTS idx_agent_strategies_performance ON agent_strategies(backtest_sharpe DESC);
 
 -- News Events (catalyst tracking)
