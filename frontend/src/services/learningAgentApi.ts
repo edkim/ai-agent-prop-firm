@@ -35,7 +35,7 @@ export interface LearningAgent {
 
 export interface AgentIteration {
   id: string;
-  agent_id: string;
+  learning_agent_id: string;
   iteration_number: number;
   scan_script: string;
   execution_script: string;
@@ -54,7 +54,7 @@ export interface AgentIteration {
 
 export interface AgentStrategy {
   id: string;
-  agent_id: string;
+  learning_agent_id: string;
   version: string;
   scan_script: string;
   execution_script: string;
@@ -69,7 +69,7 @@ export interface AgentStrategy {
 
 export interface AgentKnowledge {
   id: string;
-  agent_id: string;
+  learning_agent_id: string;
   knowledge_type: 'INSIGHT' | 'PARAMETER_PREF' | 'PATTERN_RULE';
   pattern_type?: string;
   insight: string;
