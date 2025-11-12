@@ -1,12 +1,12 @@
 # Database Schema Reference
 
-**Last Updated:** 2025-11-10
+**Last Updated:** 2025-11-12
 **Database:** `/Users/edwardkim/Code/ai-backtest/backtesting.db`
 
 ## Quick Stats
-- **Total Agents:** 8
-- **Total Iterations Completed:** 51
-- **Total Knowledge Entries:** 173
+- **Total Agents:** 9
+- **Total Iterations Completed:** 75
+- **Total Knowledge Entries:** 528
 
 ---
 
@@ -18,21 +18,44 @@ Main table for all trading agents in the system.
 
 **Key Columns:**
 ```
-id TEXT PRIMARY KEY                    -- UUID
-name TEXT                              -- "VWAP Mean Reversion Trader"
-instructions TEXT                      -- Natural language instructions
-system_prompt TEXT                     -- Generated Claude system prompt
-risk_tolerance TEXT                    -- 'conservative', 'moderate', 'aggressive'
-trading_style TEXT                     -- 'scalper', 'day_trader', 'swing_trader'
-pattern_focus TEXT                     -- JSON: ["vwap_bounce", "gap_fill"]
-market_conditions TEXT                 -- JSON: ["trending", "ranging", "volatile"]
-status TEXT DEFAULT 'learning'         -- 'learning', 'paper_trading', 'live_trading', 'paused'
-universe TEXT DEFAULT 'Tech Sector'    -- Stock universe to trade
-timeframe TEXT NOT NULL                -- 'intraday', 'swing', 'position'
-auto_learn_enabled INTEGER DEFAULT 0   -- Boolean for automated learning
-continuous_learning_enabled INTEGER    -- Boolean for continuous learning mode
-created_at DATETIME
-updated_at DATETIME
+id TEXT PRIMARY KEY                        -- UUID
+name TEXT NOT NULL                         -- "VWAP Mean Reversion Trader"
+account_id TEXT                            -- TradeStation account ID (for live trading)
+timeframe TEXT NOT NULL                    -- 'intraday', 'swing', 'position'
+strategies TEXT                            -- JSON: strategy configurations
+risk_limits TEXT                           -- JSON: risk management settings
+
+-- Learning Configuration
+instructions TEXT                          -- Natural language instructions
+system_prompt TEXT                         -- Generated Claude system prompt
+risk_tolerance TEXT                        -- 'conservative', 'moderate', 'aggressive'
+trading_style TEXT                         -- 'scalper', 'day_trader', 'swing_trader'
+pattern_focus TEXT                         -- JSON: ["vwap_bounce", "gap_fill"]
+market_conditions TEXT                     -- JSON: ["trending", "ranging", "volatile"]
+risk_config TEXT                           -- JSON: risk parameters
+
+-- Status & Lifecycle
+status TEXT DEFAULT 'learning'             -- 'learning', 'paper_trading', 'live_trading', 'paused'
+active BOOLEAN DEFAULT 1                   -- Whether agent is active
+universe TEXT DEFAULT 'Tech Sector'        -- Stock universe to trade
+description TEXT                           -- Human-readable description
+created_by TEXT DEFAULT 'system'           -- Creator identifier
+exit_strategy_config TEXT                  -- JSON: exit strategy configuration
+
+-- Autonomous Learning Features
+auto_learn_enabled INTEGER DEFAULT 0       -- Boolean for scheduled learning
+learning_schedule TEXT                     -- Cron expression for scheduled learning
+next_scheduled_iteration TEXT              -- ISO timestamp of next scheduled run
+auto_approve_enabled INTEGER DEFAULT 0     -- Boolean for auto-approval
+approval_thresholds TEXT                   -- JSON: auto-approval criteria
+continuous_learning_enabled INTEGER DEFAULT 0  -- Boolean for continuous learning
+max_iterations_per_day INTEGER DEFAULT 10  -- Daily iteration limit
+min_iteration_gap_minutes INTEGER DEFAULT 60   -- Minimum time between iterations
+convergence_threshold REAL DEFAULT 0.01    -- Threshold for convergence detection
+
+-- Timestamps
+created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ```
 
 **Example Query:**
@@ -75,6 +98,8 @@ refinements_suggested TEXT             -- JSON array of suggested improvements
 winning_template TEXT                  -- Which template won: 'conservative', 'aggressive', 'time_based', etc.
 iteration_status TEXT DEFAULT 'completed'  -- 'completed', 'approved', 'rejected'
 manual_guidance TEXT                   -- Optional human feedback
+scanner_prompt TEXT                    -- Full prompt used to generate scan_script
+execution_prompt TEXT                  -- Full prompt used to generate execution_script
 created_at TEXT NOT NULL
 ```
 
@@ -405,7 +430,8 @@ ohlcv_data
 
 | Agent ID | Name | Latest Iteration | Status |
 |----------|------|------------------|--------|
-| d992e829-27d9-406d-b771-8e3789645a5e | VWAP Mean Reversion Trader | 3 | learning |
-| 5dc3c49f-188e-48f5-9244-485ec7f67175 | Gap Down Specialist | 2 | learning |
-| 3159d447-5cbc-41ec-828d-525c76db97b0 | VWAP Mean Reversion Agent | 16 | learning |
-| 4eed4e6a-dec3-4115-a865-c125df39b8d1 | First Red Day Fade Trader | 22 | learning |
+| 701ea2b4-082d-4562-8e89-308f686d538c | Gap and Go v2 | 5 | learning |
+| 277d5564-5e93-4c52-a88b-a5b5eb1e0909 | Opening Range Breakout | 9 | learning |
+| 5304d178-0879-4d78-ac29-207112dfe951 | High of Day Breakout Scalper | 11 | learning |
+| d83aa4198080f311c10df79b3adcaa7a | Opening Range Breakout Agent | 1 | learning |
+| 846c68de-ea7d-4f89-addc-41e68b93ee79 | Momentum Pullback Hunter | (no iterations yet) | learning |

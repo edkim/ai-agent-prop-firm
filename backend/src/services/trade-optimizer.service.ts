@@ -6,7 +6,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { v4 as uuidv4 } from 'uuid';
 import { DatabaseService } from './database.service';
-import { TradingAgentService } from './trading-agent.service';
+import { TradingAgentService } from './live-trading-agent.service';
 import {
   LiveSignal,
   TradeRecommendation,

@@ -4,7 +4,7 @@
  */
 
 import { getDatabase } from '../database/db';
-import tradingAgentService from './trading-agent.service';
+import tradingAgentService from './live-trading-agent.service';
 import tradestationService from './tradestation.service';
 import { ExecutionEngineService } from './execution-engine.service';
 import { ExecutedTrade, TradingAgent } from '../types/trading-agent.types';

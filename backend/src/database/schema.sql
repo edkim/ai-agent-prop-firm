@@ -772,6 +772,9 @@ CREATE TABLE IF NOT EXISTS agent_iterations (
   -- Status
   iteration_status TEXT DEFAULT 'completed', -- 'completed', 'approved', 'rejected', 'improved_upon'
 
+  -- Git tracking
+  git_commit_hash TEXT, -- Git commit hash when iteration was created
+
   created_at TEXT NOT NULL,
   FOREIGN KEY (agent_id) REFERENCES trading_agents(id) ON DELETE CASCADE
 );

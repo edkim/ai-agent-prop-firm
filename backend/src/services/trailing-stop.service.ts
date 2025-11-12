@@ -4,7 +4,7 @@
  */
 
 import { DatabaseService } from './database.service';
-import { TradingAgentService } from './trading-agent.service';
+import { TradingAgentService } from './live-trading-agent.service';
 import { ExecutedTrade } from '../types/trading-agent.types';
 
 interface TrailingStopConfig {
