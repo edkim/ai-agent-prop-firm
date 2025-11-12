@@ -55,7 +55,7 @@ export class RefinementApprovalService {
     // Get agent's approval settings
     const agent = db.prepare(`
       SELECT auto_approve_enabled, approval_thresholds
-      FROM trading_agents
+      FROM learning_agents
       WHERE id = ?
     `).get(agentId) as any;
 
@@ -258,7 +258,7 @@ export class RefinementApprovalService {
     // Get current thresholds
     const agent = db.prepare(`
       SELECT approval_thresholds
-      FROM trading_agents
+      FROM learning_agents
       WHERE id = ?
     `).get(agentId) as any;
 

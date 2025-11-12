@@ -499,7 +499,7 @@ export class AgentKnowledgeExtractionService {
    */
   private async getAgent(agentId: string): Promise<TradingAgent> {
     const db = getDatabase();
-    const row = db.prepare('SELECT * FROM trading_agents WHERE id = ?').get(agentId) as any;
+    const row = db.prepare('SELECT * FROM learning_agents WHERE id = ?').get(agentId) as any;
 
     if (!row) {
       throw new Error(`Agent not found: ${agentId}`);
