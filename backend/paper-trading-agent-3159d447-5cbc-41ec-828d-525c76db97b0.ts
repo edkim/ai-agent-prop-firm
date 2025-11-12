@@ -44,8 +44,8 @@ async function runScan(): Promise<ScanMatch[]> {
   const db = getDatabase();
   const results: ScanMatch[] = [];
 
-  const startDate = '2025-11-11';
-  const endDate = '2025-11-11';
+  const startDate = '2025-11-12';
+  const endDate = '2025-11-12';
 
   console.error(`🔍 Scanning for VWAP mean reversion patterns (mid-session 10:00-14:00)`);
   console.error(`📅 Date range: ${startDate} to ${endDate}`);
