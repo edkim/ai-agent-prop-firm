@@ -1,0 +1,101 @@
+SIGNAL EMBEDDING INVESTIGATION - SUMMARY
+=========================================
+
+CONTEXT:
+- Iteration 6 has an execution script with `const signals = [];` (EMPTY ARRAY)
+- The scanner found 500 signals for iteration 6
+- The signals SHOULD have been injected into the script before execution
+- The signal cap was recently increased from 20 to 200
+
+KEY FINDINGS:
+
+1. SIGNAL CAP CONFIGURATION
+   Location: agent-learning.service.ts, lines 34-40
+   - max_signals_per_iteration: 200 (increased from 20)
+   - This creates 80-100 KB of JSON when embedded
+   - Max signals per date: 200
+   - Max signals per ticker+date: 2
+
+2. SIGNAL FILTERING PROCESS
+   Location: agent-learning.service.ts, lines 507-508
+   - 500 scanner signals → 200 filtered signals (via applySignalFiltering())
+   - Filters by quality, applies diversification
+   - Sorts by pattern_strength and caps at 200
+
+3. SIGNAL EMBEDDING - THE CRITICAL CODE
+   Location: agent-learning.service.ts, lines 629-678
+   
+   This is the EXACT code that should embed signals:
+   
+   ```typescript
+   const signalsJson = JSON.stringify(filteredResults, null, 2);
+   
+   // Replace Pattern 1: stdin-based loading
+   let scriptWithSignals = executionScript.replace(
+     /const input = require\('fs'\)\.readFileSync\(0, 'utf-8'\);?\s*const signals = JSON\.parse\(input\);?/g,
+     `const signals = ${signalsJson};`
+   );
+   
+   // Replace Pattern 2: empty array placeholder
+   scriptWithSignals = scriptWithSignals.replace(
+     /const signals\s*=\s*\[\s*\];?/g,
+     `const signals = ${signalsJson};`
+   );
+   ```
+
+4. WHY ITERATION 6 MIGHT HAVE EMPTY SIGNALS
+   
+   Three possible failure points:
+   
+   a) Regex Pattern Mismatch
+      - If Claude generates: `const signals: Signal[] = [];`
+      - The regex `/const signals\s*=\s*\[\s*\];?/g` won't match
+      - Type annotations would cause the pattern to fail
+      - Result: Empty array remains in script
+   
+   b) Execution Script Generation Failed
+      - Lines 1801+ (generateExecutionScript method)
+      - If Claude API fails, strategy.executionScript is empty string
+      - Nothing to embed into
+   
+   c) Script Regeneration Didn't Happen
+      - Lines 105-127 regenerate script for iteration 2+
+      - Only if previousIteration has backtest_results + expert_analysis
+      - If conditions aren't met, iteration 1's empty script is reused
+
+5. NO VALIDATION AFTER EMBEDDING
+   - The code doesn't verify the regex replacement succeeded
+   - If regex doesn't match, it fails silently
+   - Script runs with empty `const signals = []` unmodified
+
+FILE LOCATIONS SUMMARY:
+
+agent-learning.service.ts:
+- Lines 34-40: Signal cap configuration (200)
+- Lines 105-127: Script regeneration for iteration 2+
+- Lines 445-487: executeScan() - scanner execution
+- Lines 493-772: runBacktests() - main backtest orchestration
+- Lines 507-508: Signal filtering call
+- Lines 629-678: *** SIGNAL EMBEDDING (critical) ***
+- Lines 1144-1220: applySignalFiltering() implementation
+
+claude.service.ts:
+- Lines 1646-1796: generateExecutionScriptFromStrategy() (iteration 1)
+- Lines 1801+: generateExecutionScript() (iteration 2+)
+- These generate the script with `const signals = [];`
+
+POTENTIAL ISSUES WITH 200-SIGNAL INCREASE:
+
+1. Large JSON embedding (80-100 KB inline)
+2. TypeScript compilation timeout on massive array literals
+3. V8 parser struggling with huge object literals
+4. Regex replacements slow on 1MB+ files
+5. Type annotation mismatch causing regex failures
+
+RECOMMENDED FIXES:
+
+1. Add logging to verify embedding success
+2. Improve regex to handle type annotations
+3. Consider alternative signal passing (file-based, stdin)
+4. Add validation that `const signals = ` was actually replaced
+5. Split large signal arrays into batches

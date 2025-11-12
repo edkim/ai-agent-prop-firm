@@ -29,6 +29,7 @@ import { AgentKnowledgeExtractionService } from './agent-knowledge-extraction.se
 import { TemplateRendererService } from './template-renderer.service';
 import { executionTemplates, DEFAULT_TEMPLATES } from '../templates/execution';
 import { createIterationLogger } from '../utils/logger';
+import { execSync } from 'child_process';
 
 // Default backtest configuration
 const DEFAULT_BACKTEST_CONFIG: AgentBacktestConfig = {
@@ -132,7 +133,7 @@ export class AgentLearningService {
 
       // Step 3: Run backtests on scan results
       logger.info('Step 3: Running backtests with template library');
-      const backtestResults = await this.runBacktests(strategy.executionScript, scanResults, strategy.executionTokenUsage);
+      const backtestResults = await this.runBacktests(strategy.executionScript, scanResults, agent.name, iterationNumber, strategy.executionTokenUsage);
       logger.info('Backtests complete', {
         totalTrades: backtestResults.totalTrades,
         winningTemplate: backtestResults.winningTemplate,
@@ -490,7 +491,7 @@ export class AgentLearningService {
    * Run backtests using multiple execution templates
    * Tests all 5 templates and returns the best performing one
    */
-  private async runBacktests(executionScript: string, scanResults: any[], tokenUsage?: any): Promise<any> {
+  private async runBacktests(executionScript: string, scanResults: any[], agentName: string, iterationNumber: number, tokenUsage?: any): Promise<any> {
     if (scanResults.length === 0) {
       return {
         totalTrades: 0,
@@ -618,7 +619,8 @@ export class AgentLearningService {
 
       // Execute custom script for all signals
       const scriptId = uuidv4();
-      const scriptPath = path.join(__dirname, '../../generated-scripts/success', new Date().toISOString().split('T')[0], `${scriptId}-custom-execution.ts`);
+      const sanitizedAgentName = agentName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      const scriptPath = path.join(__dirname, '../../generated-scripts/success', new Date().toISOString().split('T')[0], `iter${iterationNumber}-${sanitizedAgentName}-${scriptId}-custom-execution.ts`);
 
       // Ensure directory exists
       const dir = path.dirname(scriptPath);
@@ -1002,6 +1004,15 @@ export class AgentLearningService {
     );
   }
 
+  private getGitCommitHash(): string | null {
+    try {
+      return execSync('git rev-parse HEAD', { encoding: 'utf-8', cwd: __dirname }).trim();
+    } catch (error) {
+      console.error('Failed to get git commit hash:', error);
+      return null;
+    }
+  }
+
   private async saveIteration(data: any): Promise<AgentIteration> {
     const db = getDatabase();
     const id = uuidv4();
@@ -1025,6 +1036,7 @@ export class AgentLearningService {
       expert_analysis: JSON.stringify(data.analysis),
       refinements_suggested: data.refinements,
       iteration_status: 'completed',
+      git_commit_hash: this.getGitCommitHash(),
       created_at: new Date().toISOString(),
     };
 
@@ -1032,8 +1044,8 @@ export class AgentLearningService {
       INSERT INTO agent_iterations (
         id, agent_id, iteration_number, scan_script, execution_script, scanner_prompt, execution_prompt,
         version_notes, manual_guidance, signals_found, backtest_results, win_rate, sharpe_ratio,
-        total_return, winning_template, expert_analysis, refinements_suggested, iteration_status, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        total_return, winning_template, expert_analysis, refinements_suggested, iteration_status, git_commit_hash, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       iteration.id,
       iteration.agent_id,
@@ -1053,6 +1065,7 @@ export class AgentLearningService {
       iteration.expert_analysis,
       JSON.stringify(iteration.refinements_suggested),
       iteration.iteration_status,
+      iteration.git_commit_hash,
       iteration.created_at
     );
 
@@ -1217,5 +1230,105 @@ export class AgentLearningService {
     }
 
     return diversified;
+  }
+
+  /**
+   * Preview what the next iteration's scanner prompt would be without executing
+   */
+  async previewNextIteration(agentId: string): Promise<{
+    scannerPrompt: string;
+    nextIterationNumber: number;
+    agentInstructions: string;
+    learningsApplied?: Array<{
+      iteration: number;
+      insight: string;
+      confidence: number;
+    }>;
+  }> {
+    const agent = await this.agentMgmt.getAgent(agentId);
+    if (!agent) {
+      throw new Error(`Agent not found: ${agentId}`);
+    }
+
+    const nextIterationNumber = await this.getNextIterationNumber(agentId);
+
+    // Build scanner prompt using the same logic as generateStrategy()
+    let scannerQuery: string;
+    let learningsApplied: Array<{ iteration: number; insight: string; confidence: number }> = [];
+
+    if (nextIterationNumber === 1) {
+      // Iteration 1: Use agent's instructions or pattern focus
+      if (agent.instructions && agent.instructions.trim() !== '') {
+        scannerQuery = agent.instructions;
+      } else {
+        scannerQuery = `Find ${agent.pattern_focus.join(' or ')} patterns in ${agent.market_conditions.join(' or ')} market conditions. Trading style: ${agent.trading_style}, risk tolerance: ${agent.risk_tolerance}.`;
+      }
+    } else {
+      // Iteration 2+: Get learnings from previous iterations
+      const db = getDatabase();
+      const previousIterations = db.prepare(`
+        SELECT iteration_number, expert_analysis, win_rate, total_return
+        FROM agent_iterations
+        WHERE agent_id = ?
+        ORDER BY iteration_number DESC
+        LIMIT 3
+      `).all(agentId) as any[];
+
+      // Extract key insights from previous iterations
+      const insights: string[] = [];
+      for (const iter of previousIterations) {
+        try {
+          if (iter.expert_analysis) {
+            const analysis = typeof iter.expert_analysis === 'string'
+              ? JSON.parse(iter.expert_analysis)
+              : iter.expert_analysis;
+
+            // Extract summary as key insight
+            if (analysis.summary) {
+              insights.push(`Iteration ${iter.iteration_number}: ${analysis.summary}`);
+              learningsApplied.push({
+                iteration: iter.iteration_number,
+                insight: analysis.summary,
+                confidence: iter.win_rate || 0.5
+              });
+            }
+
+            // Extract parameter recommendations
+            if (analysis.parameter_recommendations) {
+              for (const param of analysis.parameter_recommendations.slice(0, 2)) {
+                if (param.expectedImprovement) {
+                  insights.push(`- ${param.expectedImprovement}`);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          // Skip malformed analysis
+          continue;
+        }
+      }
+
+      const knowledgeSummary = insights.join('\n');
+
+      if (agent.instructions && agent.instructions.trim() !== '') {
+        // Specialized strategy with custom instructions
+        scannerQuery = agent.instructions;
+
+        // Append learnings to refine the custom strategy
+        if (knowledgeSummary && knowledgeSummary.trim() !== '') {
+          scannerQuery += `\n\nINCORPORATE THESE LEARNINGS:\n${knowledgeSummary}`;
+        }
+      } else {
+        // Generic agent - use pattern focus with learnings
+        scannerQuery = `Find ${agent.pattern_focus.join(' or ')} patterns incorporating these learnings:\n${knowledgeSummary}`;
+      }
+    }
+
+    return {
+      scannerPrompt: scannerQuery,
+      nextIterationNumber,
+      agentInstructions: agent.instructions,
+      learningsApplied: learningsApplied.length > 0 ? learningsApplied : undefined
+    };
   }
 }
