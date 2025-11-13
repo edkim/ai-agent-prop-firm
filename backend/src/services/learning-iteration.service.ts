@@ -1254,7 +1254,8 @@ export class LearningIterationService {
     const byTickerDate = new Map<string, any[]>();
 
     for (const signal of signals) {
-      const key = `${signal.ticker}:${signal.date}`;
+      // Use signal_date (not date) - scanner signals use signal_date field
+      const key = `${signal.ticker}:${signal.signal_date || signal.date}`;
       if (!byTickerDate.has(key)) {
         byTickerDate.set(key, []);
       }
