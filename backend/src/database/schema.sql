@@ -497,6 +497,7 @@ CREATE TABLE IF NOT EXISTS learning_agents (
     -- Status
     status TEXT DEFAULT 'learning', -- 'learning', 'paper_trading', 'live_trading', 'paused'
     active BOOLEAN DEFAULT 1,
+    discovery_mode BOOLEAN DEFAULT 0, -- Fast signal discovery: skip custom execution + analysis
 
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

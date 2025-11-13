@@ -300,6 +300,7 @@ Provide actionable insights based on YOUR experience and personality.`;
       universe: row.universe || undefined,
       status: (row.status as any) || 'learning',
       active: row.active === 1,
+      discovery_mode: row.discovery_mode === 1,
       account_id: row.account_id || undefined,
       timeframe: row.timeframe,
       strategies: row.strategies ? JSON.parse(row.strategies) : undefined,

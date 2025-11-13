@@ -138,9 +138,9 @@ export class LearningIterationService {
         timeMs: scanEndTime - scanStartTime
       });
 
-      // Step 2.5: ALWAYS regenerate execution script with actual signals
-      // This ensures consistent behavior and correct field names across all iterations
-      if (scanResults.length > 0) {
+      // Step 2.5: Regenerate execution script with actual signals (SKIP in discovery mode)
+      // In discovery mode, we use template execution only for faster iterations
+      if (scanResults.length > 0 && !agent.discovery_mode) {
         logger.info('Step 2.5: Generating execution script with actual scanner signals');
         this.performanceTracker.updatePhase(iterationId, 'execution_generation');
 
@@ -170,6 +170,7 @@ export class LearningIterationService {
         });
 
         strategy.executionScript = executionResult.script;
+        strategy.executionPrompt = executionResult.prompt;  // Save the prompt for debugging/transparency
 
         const execRegenEndTime = Date.now();
         this.performanceTracker.updateMetrics(iterationId, {
@@ -178,6 +179,8 @@ export class LearningIterationService {
         });
 
         logger.info(`✅ Execution script generated with actual signals (iteration ${iterationNumber})`);
+      } else if (scanResults.length > 0 && agent.discovery_mode) {
+        logger.info('⚡ Discovery mode: Skipping custom execution generation, will use template only');
       }
 
       if (scanResults.length === 0) {
@@ -189,7 +192,7 @@ export class LearningIterationService {
       this.performanceTracker.updatePhase(iterationId, 'backtest_execution');
 
       const backtestStartTime = Date.now();
-      const backtestResults = await this.runBacktests(strategy.executionScript, scanResults, agent.name, iterationNumber, strategy.executionTokenUsage);
+      const backtestResults = await this.runBacktests(strategy.executionScript, scanResults, agent.name, iterationNumber, strategy.executionTokenUsage, agent.discovery_mode);
       const backtestEndTime = Date.now();
 
       this.performanceTracker.updateMetrics(iterationId, {
@@ -211,15 +214,30 @@ export class LearningIterationService {
         logger.info('Updated strategy with signal-embedded execution script');
       }
 
-      // Step 4: Agent analyzes results
-      logger.info('Step 4: Analyzing results');
-      this.performanceTracker.updatePhase(iterationId, 'analysis');
-      const analysisStartTime = Date.now();
-
+      // Step 4: Agent analyzes results (SKIP in discovery mode for faster iterations)
       let analysis: ExpertAnalysis;
       let analysisTokens = 0;
+      let refinements: any[] = [];
 
-      if (scanResults.length === 0) {
+      if (agent.discovery_mode) {
+        logger.info('⚡ Discovery mode: Skipping expert analysis - use manual guidance to iterate');
+        // Create minimal analysis for database storage
+        analysis = {
+          summary: 'Discovery mode - skipped expert analysis',
+          parameter_recommendations: [],
+          strategic_insights: [],
+          trade_quality_assessment: backtestResults.totalTrades > 0
+            ? `${backtestResults.totalTrades} trades, ${(backtestResults.winRate * 100).toFixed(1)}% win rate, ${backtestResults.profitFactor.toFixed(2)} PF`
+            : 'No trades generated',
+          risk_assessment: 'Manual review required',
+          market_condition_notes: 'Use manual guidance for next iteration'
+        };
+      } else {
+        logger.info('Step 4: Analyzing results');
+        this.performanceTracker.updatePhase(iterationId, 'analysis');
+        const analysisStartTime = Date.now();
+
+        if (scanResults.length === 0) {
         // Special case: Scanner found 0 signals - analyze scanner filters
         logger.warn('No signals found - analyzing scanner for filter adjustments');
 
@@ -277,21 +295,22 @@ export class LearningIterationService {
         });
       }
 
-      // Step 4.5: Extract and store knowledge from analysis
-      logger.info('Step 4.5: Extracting knowledge');
-      const knowledge = await this.knowledgeExtraction.extractKnowledge(agentId, analysis, iterationNumber);
-      await this.knowledgeExtraction.storeKnowledge(agentId, knowledge);
+        // Step 4.5: Extract and store knowledge from analysis (only in normal mode)
+        logger.info('Step 4.5: Extracting knowledge');
+        const knowledge = await this.knowledgeExtraction.extractKnowledge(agentId, analysis, iterationNumber);
+        await this.knowledgeExtraction.storeKnowledge(agentId, knowledge);
 
-      // Step 5: Agent proposes refinements
-      logger.info('Step 5: Proposing refinements');
-      const refinements = await this.proposeRefinements(agent, analysis);
-      logger.info('Refinements proposed', { count: refinements.length });
+        // Step 5: Agent proposes refinements (only in normal mode)
+        logger.info('Step 5: Proposing refinements');
+        refinements = await this.proposeRefinements(agent, analysis);
+        logger.info('Refinements proposed', { count: refinements.length });
 
-      const analysisEndTime = Date.now();
-      this.performanceTracker.updateMetrics(iterationId, {
-        analysis_time_ms: analysisEndTime - analysisStartTime,
-        analysis_tokens: analysisTokens,
-      });
+        const analysisEndTime = Date.now();
+        this.performanceTracker.updateMetrics(iterationId, {
+          analysis_time_ms: analysisEndTime - analysisStartTime,
+          analysis_tokens: analysisTokens,
+        });
+      } // End of else block for normal mode analysis
 
       // Step 6: Save iteration to database
       const iteration = await this.saveIteration({
@@ -554,7 +573,7 @@ export class LearningIterationService {
    * Run backtests using multiple execution templates
    * Tests all 5 templates and returns the best performing one
    */
-  private async runBacktests(executionScript: string, scanResults: any[], agentName: string, iterationNumber: number, tokenUsage?: any): Promise<any> {
+  private async runBacktests(executionScript: string, scanResults: any[], agentName: string, iterationNumber: number, tokenUsage?: any, discoveryMode?: boolean): Promise<any> {
     if (scanResults.length === 0) {
       return {
         totalTrades: 0,
@@ -572,7 +591,9 @@ export class LearningIterationService {
     // Apply signal filtering to reduce to manageable set
     const filteredResults = this.applySignalFiltering(scanResults, DEFAULT_BACKTEST_CONFIG);
 
-    console.log(`   Testing ${DEFAULT_TEMPLATES.length} execution templates on ${filteredResults.length} filtered signals...`);
+    // In discovery mode, use only one template for faster iterations
+    const templatesToTest = discoveryMode ? [DEFAULT_TEMPLATES[0]] : DEFAULT_TEMPLATES;
+    console.log(`   Testing ${templatesToTest.length} execution template${templatesToTest.length > 1 ? 's' : ''} on ${filteredResults.length} filtered signals...${discoveryMode ? ' (Discovery mode: single template)' : ''}`);
 
     // Group signals by ticker
     const signalsByTicker: { [ticker: string]: any[] } = {};
@@ -590,8 +611,8 @@ export class LearningIterationService {
     let customTrades: any[] = []; // Track custom script trades
 
     if (ENABLE_TEMPLATE_EXECUTION) {
-      console.log(`   \n   Testing ${DEFAULT_TEMPLATES.length} execution templates...`);
-      for (const templateName of DEFAULT_TEMPLATES) {
+      console.log(`   \n   Testing ${templatesToTest.length} execution template${templatesToTest.length > 1 ? 's' : ''}...`);
+      for (const templateName of templatesToTest) {
         const template = executionTemplates[templateName];
         console.log(`   \n   📊 Testing template: ${template.name}`);
 

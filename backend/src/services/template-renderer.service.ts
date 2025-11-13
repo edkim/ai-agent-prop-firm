@@ -189,6 +189,7 @@ interface TradeResult {
   pnl_percent?: number;
   exit_reason?: string;
   hold_time_minutes?: number;
+  metadata?: any; // Optional field for strategy-specific tracking
 }
 
 interface ScannerSignal {
