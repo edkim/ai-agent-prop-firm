@@ -44,7 +44,7 @@ const DEFAULT_BACKTEST_CONFIG: AgentBacktestConfig = {
 // Template execution configuration
 // Set to false to skip template testing and use only custom execution scripts (faster iterations)
 // Set to true to test all templates and compare with custom execution (comprehensive testing)
-const ENABLE_TEMPLATE_EXECUTION = false;
+const ENABLE_TEMPLATE_EXECUTION = true;
 
 export class LearningIterationService {
   private agentMgmt: LearningAgentManagementService;
@@ -246,7 +246,7 @@ export class LearningIterationService {
         const previousSignals = prevIteration?.signals_found;
 
         // Get agent knowledge for context
-        const knowledgeItems = await this.knowledgeExtraction.getAgentKnowledge(agentId);
+        const knowledgeItems = await this.getAgentKnowledge(agentId);
         const knowledgeContext = knowledgeItems.length > 0
           ? knowledgeItems.map((k: any) => `- ${k.insight}`).join('\n')
           : 'No prior knowledge yet';

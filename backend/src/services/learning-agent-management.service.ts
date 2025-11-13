@@ -45,6 +45,7 @@ export class LearningAgentManagementService {
       market_conditions: personality.market_conditions,
       status: 'learning',
       active: true,
+      discovery_mode: true, // Enable fast signal discovery by default
       timeframe: this.getTimeframeFromStyle(personality.trading_style),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -62,8 +63,8 @@ export class LearningAgentManagementService {
       INSERT INTO learning_agents (
         id, name, instructions, system_prompt, risk_tolerance, trading_style,
         pattern_focus, market_conditions, risk_config, status, active,
-        timeframe, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        discovery_mode, timeframe, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     insertStmt.run(
@@ -78,6 +79,7 @@ export class LearningAgentManagementService {
       JSON.stringify(agent.risk_config),
       agent.status,
       agent.active ? 1 : 0,
+      agent.discovery_mode ? 1 : 0,
       agent.timeframe,
       agent.created_at,
       agent.updated_at

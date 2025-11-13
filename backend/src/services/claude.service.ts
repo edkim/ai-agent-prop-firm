@@ -711,7 +711,7 @@ Your task is to generate a complete, runnable TypeScript scanner that queries th
 - timeframe: '5min', '1min', '15min', '1h', '1d' (TEXT)
 - open, high, low, close: Price values (REAL)
 - volume: Share volume (REAL)
-- time_of_day: Time in 'HH:MM' format **in UTC timezone**, e.g., '13:30' UTC (09:30 ET), '18:15' UTC (14:15 ET) (TEXT)
+- time_of_day: Time in 'HH:MM:SS' format **in UTC timezone**, e.g., '13:30:00' UTC (09:30 ET), '18:15:00' UTC (14:15 ET) (TEXT)
 
 **Query Example:**
 \`\`\`sql
