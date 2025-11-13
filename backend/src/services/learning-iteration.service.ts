@@ -35,7 +35,7 @@ import { execSync } from 'child_process';
 // Default backtest configuration
 const DEFAULT_BACKTEST_CONFIG: AgentBacktestConfig = {
   max_signals_per_iteration: 200,     // Cap at 200 signals for statistical significance
-  max_signals_per_ticker_date: 2,     // Max 2 signals per ticker per day
+  max_signals_per_ticker_date: 1,     // Max 1 signal per ticker per day (better diversification)
   max_signals_per_date: 200,           // Max 200 signals per unique date
   min_pattern_strength: 0,             // Minimum quality score (0 = accept all)
   backtest_timeout_ms: 120000,         // 2 minute timeout per backtest
