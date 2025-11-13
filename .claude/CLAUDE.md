@@ -19,3 +19,20 @@ When querying or testing:
 - Always use: `/Users/edwardkim/Code/ai-backtest/backtesting.db`
 - Environment variable: `DATABASE_PATH` (if set) or defaults to `./backtesting.db` relative to project root
 - Timestamps in `ohlcv_data` table are stored as **milliseconds**, use `timestamp/1000` for date conversions
+
+## Server Startup
+
+### Backend Server
+```bash
+cd /Users/edwardkim/Code/ai-backtest/backend && npm run dev
+```
+- Runs on port 3000 (default)
+- Uses ts-node-dev for hot reloading
+- Remember to kill and restart before running learning iterations or tests
+
+### Frontend Server
+```bash
+cd /Users/edwardkim/Code/ai-backtest/frontend && npm run dev
+```
+- Runs on port 5173 (default Vite port)
+- Uses Vite for hot module replacement

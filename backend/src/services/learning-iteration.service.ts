@@ -27,6 +27,7 @@ import { RefinementApprovalService } from './refinement-approval.service';
 import { ScriptExecutionService } from './script-execution.service';
 import { AgentKnowledgeExtractionService } from './agent-knowledge-extraction.service';
 import { TemplateRendererService } from './template-renderer.service';
+import { IterationPerformanceService } from './iteration-performance.service';
 import { executionTemplates, DEFAULT_TEMPLATES } from '../templates/execution';
 import { createIterationLogger } from '../utils/logger';
 import { execSync } from 'child_process';
@@ -55,6 +56,7 @@ export class LearningIterationService {
   private refinementApproval: RefinementApprovalService;
   private scriptExecution: ScriptExecutionService;
   private templateRenderer: TemplateRendererService;
+  private performanceTracker: IterationPerformanceService;
 
   constructor() {
     this.agentMgmt = new LearningAgentManagementService();
@@ -66,6 +68,7 @@ export class LearningIterationService {
     this.scriptExecution = new ScriptExecutionService();
     this.knowledgeExtraction = new AgentKnowledgeExtractionService();
     this.templateRenderer = new TemplateRendererService();
+    this.performanceTracker = new IterationPerformanceService();
   }
 
   /**
@@ -80,6 +83,9 @@ export class LearningIterationService {
     // Get current iteration number
     const iterationNumber = await this.getNextIterationNumber(agentId);
 
+    // Generate iteration ID upfront for performance tracking
+    const iterationId = uuidv4();
+
     // Create iteration-specific logger
     const logger = createIterationLogger(agentId, iterationNumber);
     logger.info('Starting learning iteration', {
@@ -88,48 +94,90 @@ export class LearningIterationService {
       hasOverridePrompt: !!overrideScannerPrompt
     });
 
+    // Create performance tracking record
+    this.performanceTracker.createPerformanceRecord(iterationId, agentId, iterationNumber);
+
     try {
       // Step 1: Generate strategy (scan + execution)
       logger.info('Step 1: Generating strategy');
+      this.performanceTracker.updatePhase(iterationId, 'scanner_generation');
+
+      const strategyStartTime = Date.now();
       const strategy = await this.generateStrategy(agent, iterationNumber, manualGuidance, overrideScannerPrompt);
+      const strategyEndTime = Date.now();
+
+      // Track scanner generation performance
+      this.performanceTracker.updateMetrics(iterationId, {
+        scanner_generation_time_ms: strategyEndTime - strategyStartTime,
+        scanner_generation_tokens: strategy.scannerTokenUsage?.total_tokens || 0,
+        execution_generation_tokens: strategy.executionTokenUsage?.total_tokens || 0,
+      });
+
       logger.info('Strategy generated', {
         scannerTokens: strategy.scannerTokenUsage?.total_tokens,
         executionTokens: strategy.executionTokenUsage?.total_tokens,
-        customPrompt: !!overrideScannerPrompt
+        customPrompt: !!overrideScannerPrompt,
+        timeMs: strategyEndTime - strategyStartTime
       });
 
       // Step 2: Execute scan
       logger.info('Step 2: Running scan');
+      this.performanceTracker.updatePhase(iterationId, 'scan_execution');
+
+      const scanStartTime = Date.now();
       const scanResults = await this.executeScan(strategy.scanScript, strategy.scannerTokenUsage);
-      logger.info('Scan complete', {
-        signalsFound: scanResults.length,
-        tickers: [...new Set(scanResults.map((s: any) => s.ticker))]
+      const scanEndTime = Date.now();
+
+      this.performanceTracker.updateMetrics(iterationId, {
+        scan_execution_time_ms: scanEndTime - scanStartTime,
       });
 
-      // Step 2.5: For iteration 2+, regenerate execution script with actual signals
-      // Always regenerate to ensure it uses the actual signal structure from scanner
-      if (iterationNumber > 1 && scanResults.length > 0) {
-        logger.info('Step 2.5: Regenerating execution script with actual scanner signals');
-        const previousIteration = this.getPreviousIteration(agent.id, iterationNumber);
+      logger.info('Scan complete', {
+        signalsFound: scanResults.length,
+        tickers: [...new Set(scanResults.map((s: any) => s.ticker))],
+        timeMs: scanEndTime - scanStartTime
+      });
+
+      // Step 2.5: ALWAYS regenerate execution script with actual signals
+      // This ensures consistent behavior and correct field names across all iterations
+      if (scanResults.length > 0) {
+        logger.info('Step 2.5: Generating execution script with actual scanner signals');
+        this.performanceTracker.updatePhase(iterationId, 'execution_generation');
+
+        const execRegenStartTime = Date.now();
         const knowledge = await this.getAgentKnowledge(agent.id);
         const knowledgeSummary = this.formatKnowledgeSummary(knowledge, agent);
 
-        if (previousIteration && previousIteration.backtest_results && previousIteration.expert_analysis) {
-          const agentPersonality = `${agent.trading_style} trader with ${agent.risk_tolerance} risk tolerance, focusing on ${agent.pattern_focus.join(', ')}.`;
+        const agentPersonality = `${agent.trading_style} trader with ${agent.risk_tolerance} risk tolerance, focusing on ${agent.pattern_focus.join(', ')}.`;
 
-          const executionResult = await this.claude.generateExecutionScript({
-            agentPersonality,
-            winningTemplate: previousIteration.winning_template || 'time_based',
-            templatePerformances: previousIteration.backtest_results.templateResults || [],
-            executionAnalysis: previousIteration.expert_analysis.execution_analysis || {},
-            agentKnowledge: knowledgeSummary,
-            scannerContext: strategy.rationale,
-            actualScannerSignals: scanResults.slice(0, 5)  // Pass first 5 signals as samples
-          });
+        // For iteration 2+, get previous iteration data for learnings
+        const previousIteration = iterationNumber > 1 ? this.getPreviousIteration(agent.id, iterationNumber) : null;
+        const previousIterationData = previousIteration?.backtest_results && previousIteration?.expert_analysis ? {
+          executionAnalysis: previousIteration.expert_analysis.execution_analysis || {},
+          agentKnowledge: knowledgeSummary
+        } : undefined;
 
-          strategy.executionScript = executionResult.script;
-          logger.info('✅ Execution script regenerated with actual signals');
-        }
+        const executionResult = await this.claude.generateExecutionScript({
+          agentInstructions: agent.instructions,
+          agentPersonality,
+          patternFocus: agent.pattern_focus,
+          tradingStyle: agent.trading_style,
+          riskTolerance: agent.risk_tolerance,
+          marketConditions: agent.market_conditions,
+          scannerContext: strategy.rationale,
+          actualScannerSignals: scanResults.slice(0, 5),  // Pass first 5 signals as samples
+          previousIterationData  // Optional: only present for iteration 2+
+        });
+
+        strategy.executionScript = executionResult.script;
+
+        const execRegenEndTime = Date.now();
+        this.performanceTracker.updateMetrics(iterationId, {
+          execution_generation_time_ms: execRegenEndTime - execRegenStartTime,
+          execution_generation_tokens: executionResult.tokenUsage?.totalTokens || 0,
+        });
+
+        logger.info(`✅ Execution script generated with actual signals (iteration ${iterationNumber})`);
       }
 
       if (scanResults.length === 0) {
@@ -138,12 +186,22 @@ export class LearningIterationService {
 
       // Step 3: Run backtests on scan results
       logger.info('Step 3: Running backtests with template library');
+      this.performanceTracker.updatePhase(iterationId, 'backtest_execution');
+
+      const backtestStartTime = Date.now();
       const backtestResults = await this.runBacktests(strategy.executionScript, scanResults, agent.name, iterationNumber, strategy.executionTokenUsage);
+      const backtestEndTime = Date.now();
+
+      this.performanceTracker.updateMetrics(iterationId, {
+        backtest_execution_time_ms: backtestEndTime - backtestStartTime,
+      });
+
       logger.info('Backtests complete', {
         totalTrades: backtestResults.totalTrades,
         winningTemplate: backtestResults.winningTemplate,
         profitFactor: backtestResults.profitFactor,
-        templatesResults: backtestResults.templateResults?.length || 0
+        templatesResults: backtestResults.templateResults?.length || 0,
+        timeMs: backtestEndTime - backtestStartTime
       });
 
       // Update strategy with signal-embedded execution script for database storage
@@ -155,7 +213,11 @@ export class LearningIterationService {
 
       // Step 4: Agent analyzes results
       logger.info('Step 4: Analyzing results');
+      this.performanceTracker.updatePhase(iterationId, 'analysis');
+      const analysisStartTime = Date.now();
+
       let analysis: ExpertAnalysis;
+      let analysisTokens = 0;
 
       if (scanResults.length === 0) {
         // Special case: Scanner found 0 signals - analyze scanner filters
@@ -172,7 +234,7 @@ export class LearningIterationService {
           : 'No prior knowledge yet';
 
         // Call Claude to analyze the scanner and suggest filter adjustments
-        const zeroSignalAnalysis = await this.claudeService.analyzeZeroSignalScanner({
+        const zeroSignalAnalysis = await this.claude.analyzeZeroSignalScanner({
           agentPersonality: agent.instructions || 'You are a trading agent learning to identify profitable patterns.',
           scannerScript: strategy.scanScript,
           agentKnowledge: knowledgeContext,
@@ -205,10 +267,13 @@ export class LearningIterationService {
           market_condition_notes: 'Scripts did not execute successfully'
         };
       } else {
-        analysis = await this.analyzeResults(agent, backtestResults, scanResults);
+        const result = await this.analyzeResults(agent, backtestResults, scanResults);
+        analysis = result.analysis;
+        analysisTokens = result.tokenUsage;
         logger.info('Analysis complete', {
           winRate: backtestResults.winRate,
-          sharpeRatio: backtestResults.sharpeRatio
+          sharpeRatio: backtestResults.sharpeRatio,
+          tokensUsed: analysisTokens
         });
       }
 
@@ -222,8 +287,15 @@ export class LearningIterationService {
       const refinements = await this.proposeRefinements(agent, analysis);
       logger.info('Refinements proposed', { count: refinements.length });
 
+      const analysisEndTime = Date.now();
+      this.performanceTracker.updateMetrics(iterationId, {
+        analysis_time_ms: analysisEndTime - analysisStartTime,
+        analysis_tokens: analysisTokens,
+      });
+
       // Step 6: Save iteration to database
       const iteration = await this.saveIteration({
+        id: iterationId,
         agentId,
         iterationNumber,
         strategy,
@@ -233,6 +305,9 @@ export class LearningIterationService {
         refinements,
         manualGuidance,
       });
+
+      // Mark performance tracking as completed
+      this.performanceTracker.updatePhase(iterationId, 'completed');
 
       logger.info('Iteration complete', {
         iterationId: iteration.id,
@@ -262,6 +337,9 @@ export class LearningIterationService {
         refinements,
       };
     } catch (error: any) {
+      // Mark iteration as failed in performance tracking
+      this.performanceTracker.updatePhase(iterationId, 'failed', error.message);
+
       logger.error('Iteration failed', {
         error: error.message,
         stack: error.stack
@@ -403,59 +481,12 @@ export class LearningIterationService {
       });
     }
 
-    // Step 2: Execution script generation
+    // Step 2: Placeholder execution script - will be regenerated in Step 2.5 with actual signals
+    // This ensures consistent behavior across all iterations
     let executionScript = '';
     let executionTokenUsage: any = undefined;
-    let executionRationale = '';
+    let executionRationale = 'Execution script will be generated after scan with actual signal structure';
     let executionResult: any = undefined;
-
-    if (iterationNumber === 1) {
-      // First iteration: generate custom execution script based on agent's strategy
-      console.log(`   Iteration 1: Generating custom execution script based on agent strategy...`);
-
-      const agentPersonality = `${agent.trading_style} trader with ${agent.risk_tolerance} risk tolerance, focusing on ${agent.pattern_focus.join(', ')}.`;
-
-      executionResult = await this.claude.generateExecutionScriptFromStrategy({
-        agentInstructions: agent.instructions,
-        agentPersonality,
-        patternFocus: agent.pattern_focus,
-        tradingStyle: agent.trading_style,
-        riskTolerance: agent.risk_tolerance,
-        marketConditions: agent.market_conditions,
-        scannerContext: scannerResult.explanation
-      });
-
-      executionScript = executionResult.script;
-      executionRationale = executionResult.rationale;
-      executionTokenUsage = executionResult.tokenUsage;
-      console.log(`   ✅ Strategy-aligned execution script generated`);
-    } else {
-      // Subsequent iterations: generate custom execution script based on learnings
-      console.log(`   Iteration ${iterationNumber}: Generating custom execution script based on learnings...`);
-
-      const previousIteration = this.getPreviousIteration(agent.id, iterationNumber);
-
-      if (previousIteration && previousIteration.backtest_results && previousIteration.expert_analysis) {
-        const agentPersonality = `${agent.trading_style} trader with ${agent.risk_tolerance} risk tolerance, focusing on ${agent.pattern_focus.join(', ')}.`;
-
-        executionResult = await this.claude.generateExecutionScript({
-          agentPersonality,
-          winningTemplate: previousIteration.winning_template || 'time_based',
-          templatePerformances: previousIteration.backtest_results.templateResults || [],
-          executionAnalysis: previousIteration.expert_analysis.execution_analysis || {},
-          agentKnowledge: knowledgeSummary,
-          scannerContext: scannerResult.explanation
-        });
-
-        executionScript = executionResult.script;
-        executionRationale = executionResult.rationale;
-        // Note: executionTokenUsage would need to be captured from the Claude API call
-        console.log(`   ✅ Custom execution script generated`);
-      } else {
-        console.log(`   ⚠️  No previous iteration found, falling back to template library`);
-        executionRationale = 'No previous iteration data available, using template library.';
-      }
-    }
 
     const rationale = iterationNumber === 1
       ? `Initial strategy: ${scannerResult.explanation}. ${executionRationale}`
@@ -848,20 +879,25 @@ export class LearningIterationService {
     agent: TradingAgent,
     backtestResults: any,
     scanResults: any[]
-  ): Promise<ExpertAnalysis> {
+  ): Promise<{ analysis: ExpertAnalysis; tokenUsage: number }> {
     const agentPersonality = `${agent.trading_style} ${agent.risk_tolerance} risk trader focusing on ${agent.pattern_focus.join(', ')} patterns in ${agent.market_conditions.join(', ')} conditions. ${agent.system_prompt || ''}`;
 
     console.log(`   Analyzing results with agent personality...`);
 
-    const analysis = await this.claude.analyzeBacktestResults({
+    const result = await this.claude.analyzeBacktestResults({
       agentPersonality,
       backtestResults,
       scanResultsCount: scanResults.length
     });
 
-    console.log(`   Analysis complete: ${analysis.summary}`);
+    console.log(`   Analysis complete: ${result.summary}`);
 
-    return analysis;
+    // Extract tokenUsage and return both analysis and tokens
+    const { tokenUsage, ...analysis } = result;
+    return {
+      analysis: analysis as ExpertAnalysis,
+      tokenUsage: tokenUsage?.totalTokens || 0
+    };
   }
 
   /**
@@ -1015,7 +1051,7 @@ export class LearningIterationService {
 
   private async saveIteration(data: any): Promise<AgentIteration> {
     const db = getDatabase();
-    const id = uuidv4();
+    const id = data.id || uuidv4();  // Use provided ID or generate new one
 
     const iteration: AgentIteration = {
       id,

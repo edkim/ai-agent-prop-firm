@@ -785,6 +785,47 @@ CREATE TABLE IF NOT EXISTS agent_iterations (
 CREATE INDEX IF NOT EXISTS idx_agent_iterations_agent ON agent_iterations(learning_agent_id, iteration_number);
 CREATE INDEX IF NOT EXISTS idx_agent_iterations_status ON agent_iterations(iteration_status);
 
+-- Iteration Performance Tracking (time and token usage per phase)
+CREATE TABLE IF NOT EXISTS iteration_performance (
+  id TEXT PRIMARY KEY,
+  iteration_id TEXT NOT NULL,
+  learning_agent_id TEXT NOT NULL,
+  iteration_number INTEGER NOT NULL,
+
+  -- Phase timing (milliseconds)
+  scanner_generation_time_ms INTEGER,
+  execution_generation_time_ms INTEGER,
+  scan_execution_time_ms INTEGER,
+  backtest_execution_time_ms INTEGER,
+  analysis_time_ms INTEGER,
+  total_time_ms INTEGER,
+
+  -- Token usage per phase
+  scanner_generation_tokens INTEGER,
+  execution_generation_tokens INTEGER,
+  analysis_tokens INTEGER,
+  total_tokens INTEGER,
+
+  -- Claude model used (for future multi-model support)
+  scanner_model TEXT DEFAULT 'claude-sonnet-4-5-20250929',
+  execution_model TEXT DEFAULT 'claude-sonnet-4-5-20250929',
+  analysis_model TEXT DEFAULT 'claude-sonnet-4-5-20250929',
+
+  -- Status tracking
+  current_phase TEXT, -- 'scanner_generation', 'execution_generation', 'scan_execution', 'backtest_execution', 'analysis', 'completed', 'failed'
+  error_message TEXT,
+
+  created_at TEXT NOT NULL,
+  completed_at TEXT,
+
+  FOREIGN KEY (learning_agent_id) REFERENCES learning_agents(id) ON DELETE CASCADE,
+  UNIQUE(iteration_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_iteration_performance_iteration ON iteration_performance(iteration_id);
+CREATE INDEX IF NOT EXISTS idx_iteration_performance_agent ON iteration_performance(learning_agent_id);
+CREATE INDEX IF NOT EXISTS idx_iteration_performance_status ON iteration_performance(current_phase);
+
 -- Agent Strategy Versions (evolution tracking)
 CREATE TABLE IF NOT EXISTS agent_strategies (
   id TEXT PRIMARY KEY,

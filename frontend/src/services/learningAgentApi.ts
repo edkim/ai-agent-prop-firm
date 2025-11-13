@@ -33,6 +33,26 @@ export interface LearningAgent {
   updated_at: string;
 }
 
+export interface PerformanceMetrics {
+  scanner_generation_time_ms?: number;
+  execution_generation_time_ms?: number;
+  scan_execution_time_ms?: number;
+  backtest_execution_time_ms?: number;
+  analysis_time_ms?: number;
+  total_time_ms?: number;
+  scanner_generation_tokens?: number;
+  execution_generation_tokens?: number;
+  analysis_tokens?: number;
+  total_tokens?: number;
+  scanner_model?: string;
+  execution_model?: string;
+  analysis_model?: string;
+  current_phase?: string;
+  error_message?: string;
+  created_at?: string;
+  completed_at?: string;
+}
+
 export interface AgentIteration {
   id: string;
   learning_agent_id: string;
@@ -50,6 +70,8 @@ export interface AgentIteration {
   refinements_suggested: any[];
   iteration_status: 'completed' | 'approved' | 'rejected' | 'improved_upon';
   created_at: string;
+  git_commit_hash?: string;
+  performance?: PerformanceMetrics;
 }
 
 export interface AgentStrategy {
@@ -207,9 +229,16 @@ export const learningAgentApi = {
   /**
    * Get all iterations for an agent
    */
-  async getIterations(agentId: string): Promise<AgentIteration[]> {
-    const response = await apiClient.get<{ success: boolean; iterations: AgentIteration[] }>(`/${agentId}/iterations`);
-    return response.data.iterations;
+  async getIterations(agentId: string): Promise<{ iterations: AgentIteration[]; inProgressIteration: any | null }> {
+    const response = await apiClient.get<{
+      success: boolean;
+      iterations: AgentIteration[];
+      inProgressIteration: any | null;
+    }>(`/${agentId}/iterations`);
+    return {
+      iterations: response.data.iterations,
+      inProgressIteration: response.data.inProgressIteration,
+    };
   },
 
   /**

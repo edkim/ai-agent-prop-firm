@@ -1426,7 +1426,13 @@ Return ONLY the JSON object, no additional text.`;
         // Extract JSON from response
         const jsonMatch = content.text.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-          return JSON.parse(jsonMatch[0]);
+          const analysis = JSON.parse(jsonMatch[0]);
+          const tokenUsage = {
+            inputTokens: response.usage?.input_tokens || 0,
+            outputTokens: response.usage?.output_tokens || 0,
+            totalTokens: (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0)
+          };
+          return { ...analysis, tokenUsage };
         }
         throw new Error('No JSON found in Claude response');
       }
@@ -1641,10 +1647,11 @@ ${metricsFields}
 // You MUST use "${directionHint}" as the trade direction (side) in your execution logic.` : ''}`;
   }
 
+
   /**
-   * Generate custom execution script from agent's strategy (for iteration 1)
+   * Generate custom execution script (unified for all iterations)
    */
-  async generateExecutionScriptFromStrategy(params: {
+  async generateExecutionScript(params: {
     agentInstructions: string;
     agentPersonality: string;
     patternFocus: string[];
@@ -1652,14 +1659,42 @@ ${metricsFields}
     riskTolerance: string;
     marketConditions: string[];
     scannerContext: string;
-  }): Promise<{ script: string; rationale: string; tokenUsage: any; prompt: string }> {
-    console.log('🎯 Generating strategy-aligned execution script with Claude...');
+    actualScannerSignals: any[];  // Sample signals from actual scanner output
+    // Optional: learnings from previous iterations
+    previousIterationData?: {
+      executionAnalysis?: any;
+      agentKnowledge?: string;
+    };
+  }): Promise<{ script: string; rationale: string; prompt: string; tokenUsage: any }> {
+    console.log('🎯 Generating custom execution script with Claude...');
+
+    // Infer signal interface from actual scanner output
+    const sampleSignal = params.actualScannerSignals?.[0];
+    const signalInterface = this.inferSignalInterface(sampleSignal, params.scannerContext);
+
+    const isFirstIteration = !params.previousIterationData?.agentKnowledge;
 
     const systemPrompt = `You are an expert algorithmic trader specializing in execution strategy design. ${params.agentPersonality}
 
-Your task is to create a custom execution script that implements the agent's trading strategy as described in their instructions.`;
+Your task is to create a custom execution script that implements the agent's trading strategy${isFirstIteration ? '' : ' and incorporates learnings from previous iterations'}.`;
 
-    const userPrompt = `Generate a custom execution script that implements this trading strategy:
+    // Build learnings section if we have previous iteration data
+    const learningsSection = params.previousIterationData?.agentKnowledge ? `
+
+**Agent's Accumulated Knowledge from Previous Iterations:**
+${params.previousIterationData.agentKnowledge}
+
+${params.previousIterationData.executionAnalysis ? `**Execution Analysis from Previous Iteration:**
+${JSON.stringify(params.previousIterationData.executionAnalysis, null, 2)}
+` : ''}
+
+Generate a custom TypeScript execution script that:
+1. Implements the core strategy described in the agent instructions
+2. Incorporates the learnings and insights from previous iterations
+3. Addresses any execution issues identified in the analysis
+4. Adapts to the specific pattern characteristics from the scanner` : `
+
+Generate a custom TypeScript execution script that implements this trading strategy:
 
 **Agent Instructions:**
 ${params.agentInstructions}
@@ -1667,196 +1702,13 @@ ${params.agentInstructions}
 **Pattern Focus:** ${params.patternFocus.join(', ')}
 **Trading Style:** ${params.tradingStyle}
 **Risk Tolerance:** ${params.riskTolerance}
-**Market Conditions:** ${params.marketConditions.join(', ')}
+**Market Conditions:** ${params.marketConditions.join(', ')}`;
+
+    const userPrompt = `${isFirstIteration ? 'Generate an initial execution script for this trading strategy.' : 'Based on previous iteration results, generate an improved custom execution script.'}
+${learningsSection}
 
 **Scanner Context:**
 ${params.scannerContext}
-
-**YOUR TASK:**
-Generate TypeScript code that will be inserted into the backtest execution loop to implement the strategy.
-
-The code will receive:
-- \`SCANNER_SIGNALS\`: Array of signals with fields: ticker, signal_date, signal_time, direction, metrics
-- \`results\`: Array to push TradeResult objects
-- Access to database via \`helpers.getIntradayData(db, ticker, signal_date, timeframe)\`
-
-**IMPORTANT**: Signal fields are \`signal_date\` and \`signal_time\` (NOT \`date\` and \`time\`)
-
-Example signal destructuring:
-\`\`\`typescript
-for (const signal of SCANNER_SIGNALS) {
-  const { ticker, signal_date, signal_time, direction, metrics } = signal;
-  const bars = await helpers.getIntradayData(db, ticker, signal_date, '5min');
-  // ... rest of logic
-}
-\`\`\`
-
-Generate ONLY the execution loop code (no imports, no function wrapper). The code should:
-1. Loop through each signal in SCANNER_SIGNALS
-2. Fetch intraday bars using signal_date (not date!)
-3. Find entry point based on strategy (e.g., "enter on pullback" → implement pullback logic)
-4. Track position with stop loss and profit targets matching risk tolerance
-5. Push TradeResult to results array
-
-**CRITICAL REQUIREMENTS:**
-
-0. **DO NOT FILTER OR REJECT SIGNALS** (MOST IMPORTANT):
-   ⚠️ The scanner has ALREADY done ALL the filtering. Your ONLY job is to EXECUTE every signal with proper risk management.
-
-   **FORBIDDEN - DO NOT DO THIS:**
-   \`\`\`typescript
-   // ❌ DO NOT filter by time
-   if (entryTimeMinutes < 10 * 60 + 45) return null;  // WRONG!
-
-   // ❌ DO NOT filter by VWAP
-   if (entryBar.open <= vwap) return null;  // WRONG!
-
-   // ❌ DO NOT filter by volume
-   if (signalBar.volume < avgVolume * 1.2) return null;  // WRONG!
-
-   // ❌ DO NOT add ANY entry filters
-   if (someCondition) return null;  // WRONG!
-   \`\`\`
-
-   **CORRECT - EXECUTE ALL SIGNALS:**
-   \`\`\`typescript
-   // ✅ Find the signal bar, determine entry
-   const signalBarIndex = bars.findIndex(b => b.timeOfDay >= signal.signal_time);
-   if (signalBarIndex === -1 || signalBarIndex >= bars.length - 1) return null;
-
-   // ✅ Enter on next bar - NO FILTERING
-   const entryBarIndex = signalBarIndex + 1;
-   const entryBar = bars[entryBarIndex];
-   const entryPrice = entryBar.open;
-
-   // ✅ Manage the trade with stops/targets - NO ENTRY FILTERS
-   \`\`\`
-
-   The scanner found these signals for a reason. Execute them all. Only use risk management (stops/targets/time exits), never entry filters.
-
-1. **PREVENT LOOKAHEAD BIAS WITH 5-MINUTE BARS**:
-   - Data is 5-minute OHLC bars - you CANNOT enter and exit on the same bar
-   - Entry bar index MUST be tracked: \`const entryBarIndex = signalBarIndex + 1;\`
-   - Earliest exit is the bar AFTER entry: \`const minExitBarIndex = entryBarIndex + 1;\`
-   - Before ANY exit check, verify: \`if (currentBarIndex <= entryBarIndex) continue;\`
-   - Entry prices: Use \`entryBar.open\` (next bar after signal)
-   - Exit prices: Use current bar's \`close\` (not high/low from entry bar)
-   - Stop checks: Can use current bar's high/low, but must be on bars AFTER entry bar
-
-   **Example Implementation Pattern:**
-   \`\`\`typescript
-   const entryBarIndex = signalBarIndex + 1;
-   const entryBar = bars[entryBarIndex];
-
-   for (let i = entryBarIndex + 1; i < bars.length; i++) {  // Start AFTER entry bar
-     const bar = bars[i];
-     // Exit logic here - can now safely check stops and targets
-   }
-   \`\`\`
-
-2. **Align with Strategy**: The execution logic should directly implement the strategy described in the agent instructions
-   - If instructions say "enter on first pullback", implement pullback detection
-   - If instructions say "ride momentum continuation", use trailing stops not fixed targets
-   - If instructions mention specific conditions, code them explicitly
-
-3. **Match Risk Profile**:
-   - Aggressive: Wider stops (2-4%), let winners run with trailing stops
-   - Moderate: Balanced stops (1.5-2.5%), take partial profits
-   - Conservative: Tight stops (0.5-1.5%), quick profit taking
-
-4. **Match Trading Style**:
-   - Day trader: Exit before market close (15:55), tighter time-based stops
-   - Swing trader: Can hold overnight, wider stops for volatility
-   - Scalper: Very tight stops, quick profit targets
-
-5. **Direction Handling**: ALWAYS read direction from signal.direction field (LONG/SHORT)
-
-6. **Output Format**: Return ONLY the execution code block that will be inserted between the loop and results output
-
-Generate executable TypeScript code that will produce superior results by being true to the strategy's intent.`;
-
-    try {
-      const completion = await this.getClient().messages.create({
-        model: this.model,
-        max_tokens: 16000,
-        system: systemPrompt,
-        messages: [{
-          role: 'user',
-          content: userPrompt
-        }]
-      });
-
-      const responseText = completion.content[0].type === 'text'
-        ? completion.content[0].text
-        : '';
-
-      // Extract code block
-      const codeBlockMatch = responseText.match(/```(?:typescript|ts)?\n([\s\S]*?)```/);
-      const script = codeBlockMatch ? codeBlockMatch[1].trim() : responseText.trim();
-
-      // Extract rationale (text before first code block)
-      const rationaleMatch = responseText.match(/([\s\S]*?)```/);
-      const rationale = rationaleMatch ? rationaleMatch[1].trim() : 'Strategy-aligned custom execution script';
-
-      const tokenUsage = {
-        inputTokens: completion.usage?.input_tokens || 0,
-        outputTokens: completion.usage?.output_tokens || 0
-      };
-
-      console.log(`   ✅ Generated execution script (${tokenUsage.inputTokens} in, ${tokenUsage.outputTokens} out)`);
-
-      return { script, rationale, tokenUsage, prompt: userPrompt };
-    } catch (error: any) {
-      console.error('❌ Error generating execution script:', error.message);
-      throw new Error(`Failed to generate execution script: ${error.message}`);
-    }
-  }
-
-  /**
-   * Generate custom execution script based on learnings from previous iterations
-   */
-  async generateExecutionScript(params: {
-    agentPersonality: string;
-    winningTemplate: string;
-    templatePerformances: any[];
-    executionAnalysis: any;
-    agentKnowledge: string;
-    scannerContext: string;
-    actualScannerSignals?: any[];  // NEW: Sample signals from actual scanner output
-  }): Promise<{ script: string; rationale: string; prompt: string }> {
-    console.log('🎯 Generating custom execution script with Claude...');
-
-    // Infer signal interface from actual scanner output
-    const sampleSignal = params.actualScannerSignals?.[0];
-    const signalInterface = this.inferSignalInterface(sampleSignal, params.scannerContext);
-
-    const systemPrompt = `You are an expert algorithmic trader specializing in execution strategy optimization. ${params.agentPersonality}
-
-Your task is to generate a custom execution script that improves upon previous template performance by incorporating learned insights.`;
-
-    const userPrompt = `Based on previous iteration results, generate an improved custom execution script.
-
-**Previous Winning Template:** ${params.winningTemplate}
-
-**Template Performance Comparison:**
-${params.templatePerformances.map((t: any) => `
-- ${t.templateDisplayName}: ${(t.winRate * 100).toFixed(0)}% win rate, ${t.sharpeRatio.toFixed(2)} Sharpe, ${t.profitFactor?.toFixed(2)} PF
-  Total Return: ${t.totalReturn.toFixed(1)}%`).join('\n')}
-
-**Execution Analysis from Previous Iteration:**
-${JSON.stringify(params.executionAnalysis, null, 2)}
-
-**Agent's Accumulated Knowledge:**
-${params.agentKnowledge}
-
-**Scanner Context:**
-${params.scannerContext}
-
-Generate a custom TypeScript execution script that:
-1. Builds upon the winning template's strengths
-2. Addresses the execution issues identified in the analysis
-3. Incorporates patterns learned from all template performances
-4. Adapts to the specific pattern characteristics from the scanner
 
 IMPORTANT: The script will be saved to backend/generated-scripts/success/[date]/[id]-custom-execution.ts
 Use CORRECT import paths: '../../src/database/db' (not './src/database/db')
@@ -2043,10 +1895,16 @@ Generate the execution loop code that improves upon the previous iteration by in
 
         // Extract rationale (text before first code block)
         const rationaleMatch = content.text.match(/([\s\S]*?)```/);
-        const rationale = rationaleMatch ? rationaleMatch[1].trim() : 'Improved custom execution script';
+        const rationale = rationaleMatch ? rationaleMatch[1].trim() : 'Custom execution script';
 
-        console.log('✅ Generated custom execution script');
-        return { script, rationale, prompt: userPrompt };
+        const tokenUsage = {
+          inputTokens: response.usage?.input_tokens || 0,
+          outputTokens: response.usage?.output_tokens || 0,
+          totalTokens: (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0)
+        };
+
+        console.log(`✅ Generated custom execution script (${tokenUsage.inputTokens} in, ${tokenUsage.outputTokens} out)`);
+        return { script, rationale, prompt: userPrompt, tokenUsage };
       }
 
       throw new Error('Unexpected response format from Claude');

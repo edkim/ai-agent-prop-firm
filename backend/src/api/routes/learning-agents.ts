@@ -12,6 +12,7 @@ import { ContinuousLearningService } from '../../services/continuous-learning.se
 import { PerformanceMonitorService } from '../../services/performance-monitor.service';
 import { GraduationService } from '../../services/graduation.service';
 import { AgentActivityLogService } from '../../services/agent-activity-log.service';
+import { IterationPerformanceService } from '../../services/iteration-performance.service';
 import { getDatabase } from '../../database/db';
 import {
   CreateAgentRequest,
@@ -28,6 +29,7 @@ const continuousLearning = ContinuousLearningService.getInstance();
 const performanceMonitor = new PerformanceMonitorService();
 const graduation = new GraduationService();
 const activityLog = new AgentActivityLogService();
+const iterationPerformance = new IterationPerformanceService();
 
 /**
  * Helper function to format expert analysis JSON for display
@@ -302,16 +304,26 @@ router.get('/:id/iterations', async (req: Request, res: Response) => {
     `).all(agentId);
 
     // Parse JSON fields and format expert_analysis
-    const iterations = rows.map((row: any) => ({
-      ...row,
-      backtest_results: row.backtest_results ? JSON.parse(row.backtest_results) : null,
-      refinements_suggested: row.refinements_suggested ? JSON.parse(row.refinements_suggested) : [],
-      expert_analysis: formatExpertAnalysis(row.expert_analysis),
-    }));
+    const iterations = rows.map((row: any) => {
+      // Get performance metrics for this iteration
+      const performanceMetrics = iterationPerformance.getPerformanceMetrics(row.id);
+
+      return {
+        ...row,
+        backtest_results: row.backtest_results ? JSON.parse(row.backtest_results) : null,
+        refinements_suggested: row.refinements_suggested ? JSON.parse(row.refinements_suggested) : [],
+        expert_analysis: formatExpertAnalysis(row.expert_analysis),
+        performance: performanceMetrics || null,
+      };
+    });
+
+    // Check if there's an in-progress iteration
+    const inProgressIteration = iterationPerformance.getInProgressIteration(agentId);
 
     res.json({
       success: true,
       iterations,
+      inProgressIteration,
     });
   } catch (error: any) {
     console.error('Error getting iterations:', error);

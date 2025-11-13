@@ -23,6 +23,7 @@ interface ScriptModal {
 
 export default function AgentIterationView({ agentId }: AgentIterationViewProps) {
   const [iterations, setIterations] = useState<AgentIteration[]>([]);
+  const [inProgressIteration, setInProgressIteration] = useState<any | null>(null);
   const [selectedIteration, setSelectedIteration] = useState<AgentIteration | null>(null);
   const [activeTab, setActiveTab] = useState<IterationTab>('summary');
   const [selectedStrategy, setSelectedStrategy] = useState<string>('custom');
@@ -52,9 +53,10 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
     try {
       setLoading(true);
       const data = await learningAgentApi.getIterations(agentId);
-      setIterations(data);
-      if (data.length > 0 && !selectedIteration) {
-        setSelectedIteration(data[0]); // Select most recent
+      setIterations(data.iterations);
+      setInProgressIteration(data.inProgressIteration);
+      if (data.iterations.length > 0 && !selectedIteration) {
+        setSelectedIteration(data.iterations[0]); // Select most recent
       }
       setError(null);
     } catch (err: any) {
@@ -221,6 +223,30 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
             Learning History ({iterations.length} iterations)
           </h3>
         <div className="space-y-2 max-h-[600px] overflow-y-auto">
+          {/* In-Progress Iteration */}
+          {inProgressIteration && (
+            <div className="w-full text-left p-3 rounded-lg border-2 border-yellow-400 bg-yellow-50">
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-medium text-gray-900">
+                  Iteration #{inProgressIteration.iteration_number}
+                </span>
+                <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-200 text-yellow-800 animate-pulse">
+                  IN PROGRESS
+                </span>
+              </div>
+              <div className="text-xs text-gray-600 space-y-1">
+                <div className="flex items-center gap-1">
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600"></div>
+                  <span className="capitalize">{inProgressIteration.performance?.current_phase?.replace('_', ' ') || 'Starting...'}</span>
+                </div>
+                {inProgressIteration.performance?.total_time_ms && (
+                  <div>Time: {(inProgressIteration.performance.total_time_ms / 1000).toFixed(1)}s</div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Completed Iterations */}
           {iterations.map(iteration => (
             <button
               key={iteration.id}
@@ -374,6 +400,101 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
                       </div>
                     </div>
                   </div>
+
+                  {/* Version Information */}
+                  {selectedIteration.git_commit_hash && (
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h4 className="text-sm font-medium text-gray-900 mb-3">📌 Version Information</h4>
+                      <div className="text-xs text-gray-600 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">Git Commit:</span>
+                          <code className="bg-gray-200 px-2 py-0.5 rounded font-mono">{selectedIteration.git_commit_hash.substring(0, 8)}</code>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Performance Tracking */}
+                  {selectedIteration.performance && (
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <h4 className="text-sm font-medium text-gray-900 mb-3">⚡ Performance Tracking</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Time Breakdown */}
+                        <div>
+                          <h5 className="text-xs font-medium text-gray-700 mb-2">Time Breakdown</h5>
+                          <div className="text-xs text-gray-600 space-y-1">
+                            {selectedIteration.performance.scanner_generation_time_ms && (
+                              <div className="flex justify-between">
+                                <span>Scanner Generation:</span>
+                                <span className="font-medium">{(selectedIteration.performance.scanner_generation_time_ms / 1000).toFixed(1)}s</span>
+                              </div>
+                            )}
+                            {selectedIteration.performance.execution_generation_time_ms && (
+                              <div className="flex justify-between">
+                                <span>Execution Regen:</span>
+                                <span className="font-medium">{(selectedIteration.performance.execution_generation_time_ms / 1000).toFixed(1)}s</span>
+                              </div>
+                            )}
+                            {selectedIteration.performance.scan_execution_time_ms && (
+                              <div className="flex justify-between">
+                                <span>Scan Execution:</span>
+                                <span className="font-medium">{(selectedIteration.performance.scan_execution_time_ms / 1000).toFixed(1)}s</span>
+                              </div>
+                            )}
+                            {selectedIteration.performance.backtest_execution_time_ms && (
+                              <div className="flex justify-between">
+                                <span>Backtest Execution:</span>
+                                <span className="font-medium">{(selectedIteration.performance.backtest_execution_time_ms / 1000).toFixed(1)}s</span>
+                              </div>
+                            )}
+                            {selectedIteration.performance.analysis_time_ms && (
+                              <div className="flex justify-between">
+                                <span>Analysis:</span>
+                                <span className="font-medium">{(selectedIteration.performance.analysis_time_ms / 1000).toFixed(1)}s</span>
+                              </div>
+                            )}
+                            {selectedIteration.performance.total_time_ms && (
+                              <div className="flex justify-between pt-1 mt-1 border-t border-gray-300">
+                                <span className="font-medium">Total:</span>
+                                <span className="font-bold">{(selectedIteration.performance.total_time_ms / 1000).toFixed(1)}s</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Token Usage */}
+                        <div>
+                          <h5 className="text-xs font-medium text-gray-700 mb-2">Claude API Token Usage</h5>
+                          <div className="text-xs text-gray-600 space-y-1">
+                            {selectedIteration.performance.scanner_generation_tokens && (
+                              <div className="flex justify-between">
+                                <span>Scanner Generation:</span>
+                                <span className="font-medium">{selectedIteration.performance.scanner_generation_tokens.toLocaleString()}</span>
+                              </div>
+                            )}
+                            {selectedIteration.performance.execution_generation_tokens ? (
+                              <div className="flex justify-between">
+                                <span>Execution Regen:</span>
+                                <span className="font-medium">{selectedIteration.performance.execution_generation_tokens.toLocaleString()}</span>
+                              </div>
+                            ) : null}
+                            {selectedIteration.performance.analysis_tokens && (
+                              <div className="flex justify-between">
+                                <span>Analysis:</span>
+                                <span className="font-medium">{selectedIteration.performance.analysis_tokens.toLocaleString()}</span>
+                              </div>
+                            )}
+                            {selectedIteration.performance.total_tokens && (
+                              <div className="flex justify-between pt-1 mt-1 border-t border-gray-300">
+                                <span className="font-medium">Total:</span>
+                                <span className="font-bold">{selectedIteration.performance.total_tokens.toLocaleString()}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Manual Guidance */}
                   {selectedIteration.manual_guidance && (
