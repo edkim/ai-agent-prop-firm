@@ -25,13 +25,14 @@ export const executionTemplates: Record<string, ExecutionTemplate> = {
 
 /**
  * Default templates to test for new agents
+ * In discovery mode, only the first template is used
  */
 export const DEFAULT_TEMPLATES = [
+  'price_action',      // Default for discovery mode
   'conservative',
   'aggressive',
   'time_based',
-  'volatility_adaptive',
-  'price_action'
+  'volatility_adaptive'
 ];
 
 /**
