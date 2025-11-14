@@ -139,6 +139,7 @@ export interface AgentIteration {
   sharpe_ratio: number;
   total_return: number;
   winning_template?: string; // Which execution template performed best (e.g., 'price_action')
+  scanner_validation?: string | null; // JSON: Lookahead bias validation result
 
   // Claude's analysis
   expert_analysis: string;

@@ -535,7 +535,8 @@ export class LearningIterationService {
       scannerTokenUsage: scannerResult.tokenUsage,
       executionTokenUsage,
       scannerPrompt: scannerResult.prompt || scannerQuery,
-      executionPrompt: executionResult?.prompt || `Generated ${iterationNumber === 1 ? 'initial' : 'refined'} execution script`
+      executionPrompt: executionResult?.prompt || `Generated ${iterationNumber === 1 ? 'initial' : 'refined'} execution script`,
+      validationResult: scannerResult.validationResult
     };
   }
 
@@ -1167,6 +1168,7 @@ export class LearningIterationService {
       sharpe_ratio: data.backtestResults.sharpeRatio || 0,
       total_return: data.backtestResults.totalReturn || 0,
       winning_template: data.backtestResults.winningTemplate || null,
+      scanner_validation: data.strategy.validationResult ? JSON.stringify(data.strategy.validationResult) : null,
       expert_analysis: JSON.stringify(data.analysis),
       refinements_suggested: data.refinements,
       iteration_status: 'completed',
@@ -1178,8 +1180,8 @@ export class LearningIterationService {
       INSERT INTO agent_iterations (
         id, learning_agent_id, iteration_number, scan_script, execution_script, scanner_prompt, execution_prompt,
         version_notes, manual_guidance, signals_found, backtest_results, win_rate, sharpe_ratio,
-        total_return, winning_template, expert_analysis, refinements_suggested, iteration_status, git_commit_hash, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        total_return, winning_template, scanner_validation, expert_analysis, refinements_suggested, iteration_status, git_commit_hash, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       iteration.id,
       iteration.learning_agent_id,
@@ -1196,6 +1198,7 @@ export class LearningIterationService {
       iteration.sharpe_ratio,
       iteration.total_return,
       iteration.winning_template,
+      iteration.scanner_validation,
       iteration.expert_analysis,
       JSON.stringify(iteration.refinements_suggested),
       iteration.iteration_status,
