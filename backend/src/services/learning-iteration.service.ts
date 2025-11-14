@@ -32,6 +32,7 @@ import { executionTemplates, DEFAULT_TEMPLATES } from '../templates/execution';
 import { createIterationLogger } from '../utils/logger';
 import { execSync } from 'child_process';
 import { detectLookAheadBias, formatValidationReport } from '../utils/validate-scanner';
+import { runRealtimeBacktest, RealtimeBacktestOptions } from '../backtesting/realtime-backtest.engine';
 
 // Default backtest configuration
 const DEFAULT_BACKTEST_CONFIG: AgentBacktestConfig = {
@@ -541,11 +542,77 @@ export class LearningIterationService {
   }
 
   /**
-   * Execute scan script and return matches
+   * Execute scan script - routes to legacy or real-time mode based on feature flag
+   *
+   * PHASE 3: This method provides clean separation between:
+   * - LEGACY MODE (executeScanLegacy): Original batch processing (has lookahead bias)
+   * - REAL-TIME MODE (executeScanRealtime): Sequential bar-by-bar (bias-free)
+   *
+   * Feature flag: USE_REALTIME_SIMULATION=true|false in .env
+   *
+   * TODO: After Phase 3 validation, delete executeScanLegacy and always use real-time
    */
   private async executeScan(scanScript: string, tokenUsage?: any): Promise<any[]> {
+    const useRealtimeMode = process.env.USE_REALTIME_SIMULATION === 'true';
+
+    if (useRealtimeMode) {
+      console.log('🚀 Using REAL-TIME SIMULATION (Phase 3)');
+      return this.executeScanRealtime(scanScript, tokenUsage);
+    } else {
+      console.log('⚠️  Using LEGACY MODE (has lookahead bias vulnerability)');
+      return this.executeScanLegacy(scanScript, tokenUsage);
+    }
+  }
+
+  /**
+   * PHASE 3: Real-time scan execution (bar-by-bar simulation)
+   *
+   * This method eliminates lookahead bias by:
+   * 1. Processing bars sequentially (not all at once)
+   * 2. Only providing bars available up to current moment
+   * 3. Early termination after first signal per ticker/date
+   */
+  private async executeScanRealtime(scanScript: string, tokenUsage?: any): Promise<any[]> {
+    console.log('   📊 Real-Time Backtest: Processing bars sequentially...');
+
+    try {
+      // Configure real-time backtest options
+      const options: RealtimeBacktestOptions = {
+        startDate: this.getDateDaysAgo(20), // 20 days of data
+        endDate: this.getDateDaysAgo(1),     // Up to yesterday
+        tickers: await this.getUniverseTickers('Tech Sector'), // TODO: Get from agent config
+        warmupBars: 30,                      // Need 30 bars for indicators
+        timeframe: '5min',
+        maxSignalsPerIteration: 200,
+        enableParallelProcessing: true
+      };
+
+      // Run real-time backtest
+      const signals = await runRealtimeBacktest(scanScript, options);
+
+      console.log(`   ✅ Real-Time Scan Complete: ${signals.length} signals found`);
+      return signals;
+
+    } catch (error: any) {
+      console.error('   ❌ Real-Time Scan Failed:', error.message);
+      throw new Error(`Real-time scan execution failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * LEGACY: Original scan execution (batch processing)
+   *
+   * ⚠️  WARNING: This method has lookahead bias vulnerability!
+   * - Scanner receives ALL bars for a day at once
+   * - Can peek at future bars within that batch
+   * - Results may be unrealistically good
+   *
+   * TODO: DELETE THIS METHOD after Phase 3 validation complete
+   *       Mark for deletion: 2025-11-24
+   */
+  private async executeScanLegacy(scanScript: string, tokenUsage?: any): Promise<any[]> {
     const scriptId = uuidv4();
-    const scriptPath = path.join(__dirname, '../../', `agent-scan-${scriptId}.ts`);
+    const scriptPath = path.join(__dirname, '../../', `agent-scan-legacy-${scriptId}.ts`);
 
     try {
       // Save script to temp file
