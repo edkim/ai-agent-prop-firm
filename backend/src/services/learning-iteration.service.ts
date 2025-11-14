@@ -1550,4 +1550,20 @@ export class LearningIterationService {
       estimatedComplexity
     };
   }
+
+  /**
+   * Get list of tickers for a universe (for real-time backtest)
+   */
+  private async getUniverseTickers(universeName: string): Promise<string[]> {
+    const db = getDatabase();
+
+    const tickers = db.prepare(`
+      SELECT DISTINCT ticker FROM universe_stocks
+      WHERE universe_id = (SELECT id FROM universe WHERE name = ?)
+      AND active = 1
+      ORDER BY ticker
+    `).all(universeName.toLowerCase().replace(/\s+/g, '_')) as any[];
+
+    return tickers.map((t: any) => t.ticker);
+  }
 }

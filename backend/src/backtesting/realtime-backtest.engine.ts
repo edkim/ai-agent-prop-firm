@@ -222,6 +222,9 @@ async function scanTickerRealtime(
  *
  * This is the key function that enforces the real-time constraint.
  * Scanner ONLY receives bars[0..currentIndex], not the entire day.
+ *
+ * Strategy: Create temp database with ONLY available bars, scanner queries that.
+ * This way scanner code doesn't need modification!
  */
 async function runScannerAtBar(
   ticker: string,
@@ -230,22 +233,21 @@ async function runScannerAtBar(
   currentIndex: number,
   scannerScriptPath: string
 ): Promise<Signal | null> {
-  // Write available bars to temp file for scanner to read
-  const barsFilePath = path.join('/tmp', `realtime-bars-${ticker}-${Date.now()}.json`);
+  const tempDbPath = path.join('/tmp', `realtime-db-${ticker}-${Date.now()}.db`);
+  const scriptExecution = new ScriptExecutionService();
 
   try {
-    // CRITICAL: Only write bars available up to current moment
-    fs.writeFileSync(barsFilePath, JSON.stringify({
-      ticker,
-      date,
-      currentBarIndex: currentIndex,
-      availableBars: availableBars, // No future bars!
-      totalBarsToday: availableBars.length // For context only
-    }));
+    // Create temp database with ONLY available bars
+    await createTempDatabase(tempDbPath, ticker, availableBars);
 
-    // Execute scanner (it will read from this temp file)
-    const scriptExecution = new ScriptExecutionService();
-    const result = await scriptExecution.executeScript(scannerScriptPath, 30000);
+    // Execute scanner with temp database
+    // Scanner will query temp DB instead of main DB
+    const result = await scriptExecution.executeScript(
+      scannerScriptPath,
+      30000,
+      undefined,
+      { DATABASE_PATH: tempDbPath } // Override DB path
+    );
 
     if (!result.success || !result.data) {
       return null;
@@ -254,80 +256,98 @@ async function runScannerAtBar(
     // Parse scanner output
     const scannerOutput = Array.isArray(result.data) ? result.data : [result.data];
 
-    // Return first signal for this bar (if any)
-    return scannerOutput.length > 0 ? scannerOutput[0] : null;
+    // Filter for signals at current bar time
+    const currentBar = availableBars[currentIndex];
+    const relevantSignals = scannerOutput.filter((s: any) => {
+      // Signal should be for current time or earlier (not future)
+      return s.signal_time <= currentBar.time_of_day;
+    });
+
+    // Return first relevant signal
+    return relevantSignals.length > 0 ? relevantSignals[0] : null;
 
   } catch (error: any) {
-    // Scanner execution errors are common and expected (e.g., no signal)
+    // Scanner execution errors are expected (no signal, pattern not matched, etc.)
     return null;
   } finally {
-    // Clean up temp file
-    if (fs.existsSync(barsFilePath)) {
-      fs.unlinkSync(barsFilePath);
+    // Clean up temp database
+    if (fs.existsSync(tempDbPath)) {
+      fs.unlinkSync(tempDbPath);
     }
   }
 }
 
 /**
- * Create scanner script adapted for real-time execution
+ * Create temporary database with only available bars
  *
- * This modifies the scanner to read from the available bars file
- * instead of querying the database directly.
+ * This is the KEY to preventing lookahead bias!
+ * Scanner queries this temp DB, which only has bars[0..currentIndex].
+ */
+async function createTempDatabase(dbPath: string, ticker: string, availableBars: Bar[]): Promise<void> {
+  const Database = require('better-sqlite3');
+  const tempDb = new Database(dbPath);
+
+  try {
+    // Create minimal schema (just what scanners need)
+    tempDb.exec(`
+      CREATE TABLE ohlcv_data (
+        ticker TEXT,
+        timestamp INTEGER,
+        time_of_day TEXT,
+        open REAL,
+        high REAL,
+        low REAL,
+        close REAL,
+        volume INTEGER,
+        timeframe TEXT
+      );
+      CREATE INDEX idx_ticker_time ON ohlcv_data(ticker, timestamp);
+    `);
+
+    // Insert ONLY available bars (no future data!)
+    const insertStmt = tempDb.prepare(`
+      INSERT INTO ohlcv_data (ticker, timestamp, time_of_day, open, high, low, close, volume, timeframe)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const insertMany = tempDb.transaction((bars: Bar[]) => {
+      for (const bar of bars) {
+        insertStmt.run(
+          ticker,
+          bar.timestamp,
+          bar.time_of_day,
+          bar.open,
+          bar.high,
+          bar.low,
+          bar.close,
+          bar.volume,
+          '5min' // Assume 5min for now
+        );
+      }
+    });
+
+    insertMany(availableBars);
+
+  } finally {
+    tempDb.close();
+  }
+}
+
+/**
+ * Create scanner script for real-time execution
+ *
+ * SIMPLIFIED APPROACH: We don't modify the scanner code!
+ * Instead, we run it with a temp database that has ONLY available bars.
+ * Scanner code stays unchanged, just queries different database.
  */
 async function createRealtimeScannerScript(originalScannerCode: string): Promise<string> {
   const scriptPath = path.join('/tmp', `realtime-scanner-${Date.now()}.ts`);
 
-  // Adapt scanner to read from temp file instead of database
-  const adaptedScript = `
-import * as fs from 'fs';
-import { getDatabase } from '../database/db';
+  // Scanner code stays exactly the same!
+  // We just control what data it has access to via the temp database
+  fs.writeFileSync(scriptPath, originalScannerCode);
 
-// PHASE 3: Real-Time Simulation Mode
-// This scanner receives ONLY bars available up to the current moment
-
-async function runRealtimeScan() {
-  try {
-    // Read available bars from temp file (written by engine)
-    const barsFile = process.env.REALTIME_BARS_FILE;
-    if (!barsFile) {
-      throw new Error('REALTIME_BARS_FILE not set');
-    }
-
-    const context = JSON.parse(fs.readFileSync(barsFile, 'utf-8'));
-    const { ticker, date, currentBarIndex, availableBars } = context;
-
-    // Scanner logic (adapted from original)
-    ${adaptOriginalScannerLogic(originalScannerCode)}
-
-    // Return signals detected at this bar
-    const signals = detectSignals(ticker, date, availableBars, currentBarIndex);
-    console.log(JSON.stringify(signals));
-
-  } catch (error: any) {
-    console.error('Scanner error:', error.message);
-    process.exit(1);
-  }
-}
-
-runRealtimeScan().catch(console.error);
-`;
-
-  fs.writeFileSync(scriptPath, adaptedScript);
   return scriptPath;
-}
-
-/**
- * Adapt original scanner logic to work with provided bars array
- * instead of database queries
- */
-function adaptOriginalScannerLogic(originalCode: string): string {
-  // TODO: This is a placeholder - actual implementation will need to:
-  // 1. Extract the pattern detection logic from original scanner
-  // 2. Replace database queries with array operations on availableBars
-  // 3. Ensure no future bars are accessed
-
-  // For now, return the original code as-is (will need refinement)
-  return originalCode;
 }
 
 /**
