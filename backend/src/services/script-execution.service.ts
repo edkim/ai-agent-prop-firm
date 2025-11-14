@@ -212,7 +212,8 @@ export class ScriptExecutionService {
   async executeScript(
     scriptPath: string,
     timeout?: number,
-    tokenUsage?: TokenUsageMetadata
+    tokenUsage?: TokenUsageMetadata,
+    customEnv?: Record<string, string>
   ): Promise<ScriptExecutionResult> {
     const startTime = Date.now();
     const absolutePath = path.resolve(scriptPath);
@@ -222,6 +223,7 @@ export class ScriptExecutionService {
       scriptPath: absolutePath,
       command,
       timeout: timeout || this.defaultTimeout,
+      customEnv: customEnv ? Object.keys(customEnv) : undefined,
     });
 
     try {
@@ -238,6 +240,7 @@ export class ScriptExecutionService {
           env: {
             ...process.env,
             NODE_ENV: 'script-execution',
+            ...customEnv, // Merge custom environment variables
           },
         }
       );
