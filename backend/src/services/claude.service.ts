@@ -933,15 +933,25 @@ async function runScan(): Promise<ScanMatch[]> {
   const db = getDatabase();
   const results: ScanMatch[] = [];
 
-  // Get list of tickers with intraday data
+  // Get ticker list from environment variable (comma-separated)
+  // This allows the scanner to focus on specific tickers instead of querying all tickers in DB
+  const tickerList = (process.env.SCAN_TICKERS || '').split(',').filter(t => t.trim());
+
+  if (tickerList.length === 0) {
+    throw new Error('SCAN_TICKERS environment variable must be set with comma-separated ticker list');
+  }
+
+  console.log(\`Scanning \${tickerList.length} tickers for patterns...\`);
+
+  // Query ONLY the specified tickers (more efficient than querying all tickers)
+  const placeholders = tickerList.map(() => '?').join(',');
   const tickersStmt = db.prepare(\`
     SELECT DISTINCT ticker FROM ohlcv_data
-    WHERE timeframe = '5min'
+    WHERE ticker IN (\${placeholders})
+      AND timeframe = '5min'
       AND date(timestamp/1000, 'unixepoch') BETWEEN ? AND ?
   \`);
-  const tickers = tickersStmt.all('2025-10-28', '2025-10-29') as any[];
-
-  console.log(\`Scanning \${tickers.length} tickers with intraday data...\`);
+  const tickers = tickersStmt.all(...tickerList, '2025-10-28', '2025-10-29') as any[];
 
   // Scan each ticker
   for (const { ticker } of tickers) {
@@ -1211,6 +1221,12 @@ ${tableInstruction}
 PARAMETERS:
 - Universe: ${params.universe}
 - Date Range: ${startDate} to ${endDate}
+
+IMPORTANT REQUIREMENTS:
+1. The scanner MUST read the ticker list from the SCAN_TICKERS environment variable (comma-separated)
+2. Use ticker filtering in SQL queries: WHERE ticker IN (placeholders) - DO NOT query all tickers in the database
+3. This makes scanning efficient by only processing the specific tickers we care about
+4. Throw an error if SCAN_TICKERS is not set or empty
 
 Please generate a complete, runnable TypeScript scanner script that finds stocks matching the user's criteria.`;
   }

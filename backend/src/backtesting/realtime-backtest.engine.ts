@@ -84,13 +84,29 @@ export async function runRealtimeBacktest(
     let allSignals: Signal[] = [];
 
     if (enableParallelProcessing) {
-      // Process tickers in parallel (for performance)
-      const signalArrays = await Promise.all(
-        tickers.map(ticker =>
-          scanTickerRealtime(ticker, startDate, endDate, warmupBars, timeframe, scannerScriptPath)
-        )
-      );
-      allSignals = signalArrays.flat();
+      // Process tickers in BATCHES to avoid overwhelming the CPU
+      // Instead of 65 parallel processes, do 5 at a time
+      const BATCH_SIZE = 5;
+      console.log(`   Processing ${tickers.length} tickers in batches of ${BATCH_SIZE}...`);
+
+      for (let i = 0; i < tickers.length; i += BATCH_SIZE) {
+        const batch = tickers.slice(i, i + BATCH_SIZE);
+        console.log(`   📦 Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(tickers.length / BATCH_SIZE)}: ${batch.join(', ')}`);
+
+        const signalArrays = await Promise.all(
+          batch.map(ticker =>
+            scanTickerRealtime(ticker, startDate, endDate, warmupBars, timeframe, scannerScriptPath, tickers)
+          )
+        );
+
+        allSignals.push(...signalArrays.flat());
+
+        // Early termination if we've hit max signals
+        if (allSignals.length >= maxSignalsPerIteration) {
+          console.log(`   ⚠️  Reached max signals (${maxSignalsPerIteration}), stopping early`);
+          break;
+        }
+      }
     } else {
       // Process tickers sequentially (for debugging)
       for (const ticker of tickers) {
@@ -100,7 +116,8 @@ export async function runRealtimeBacktest(
           endDate,
           warmupBars,
           timeframe,
-          scannerScriptPath
+          scannerScriptPath,
+          tickers
         );
         allSignals.push(...signals);
 
@@ -141,7 +158,8 @@ async function scanTickerRealtime(
   endDate: string,
   warmupBars: number,
   timeframe: string,
-  scannerScriptPath: string
+  scannerScriptPath: string,
+  allTickers: string[] // Pass full ticker list for scanner env var
 ): Promise<Signal[]> {
   const db = getDatabase();
   const signals: Signal[] = [];
@@ -191,7 +209,8 @@ async function scanTickerRealtime(
         date,
         availableBars,
         currentBarIndex,
-        scannerScriptPath
+        scannerScriptPath,
+        allTickers
       );
 
       if (signal) {
@@ -231,7 +250,8 @@ async function runScannerAtBar(
   date: string,
   availableBars: Bar[],
   currentIndex: number,
-  scannerScriptPath: string
+  scannerScriptPath: string,
+  allTickers: string[]
 ): Promise<Signal | null> {
   const tempDbPath = path.join('/tmp', `realtime-db-${ticker}-${Date.now()}.db`);
   const scriptExecution = new ScriptExecutionService();
@@ -240,13 +260,18 @@ async function runScannerAtBar(
     // Create temp database with ONLY available bars
     await createTempDatabase(tempDbPath, ticker, availableBars);
 
-    // Execute scanner with temp database
+    // Execute scanner with temp database and ticker list
     // Scanner will query temp DB instead of main DB
+    // Scanner will filter by specific tickers instead of querying all tickers
+    // Increased timeout to 120s to handle complex scanners on slow machines
     const result = await scriptExecution.executeScript(
       scannerScriptPath,
-      30000,
+      120000,
       undefined,
-      { DATABASE_PATH: tempDbPath } // Override DB path
+      {
+        DATABASE_PATH: tempDbPath,
+        SCAN_TICKERS: allTickers.join(',')  // Pass ticker list for efficient querying
+      }
     );
 
     if (!result.success || !result.data) {
@@ -341,11 +366,33 @@ async function createTempDatabase(dbPath: string, ticker: string, availableBars:
  * Scanner code stays unchanged, just queries different database.
  */
 async function createRealtimeScannerScript(originalScannerCode: string): Promise<string> {
-  const scriptPath = path.join('/tmp', `realtime-scanner-${Date.now()}.ts`);
+  // Write to backend directory so ts-node can find node_modules
+  const backendPath = path.resolve(__dirname, '../..');
+  const scriptDir = path.join(backendPath, 'generated-scripts');
 
-  // Scanner code stays exactly the same!
-  // We just control what data it has access to via the temp database
-  fs.writeFileSync(scriptPath, originalScannerCode);
+  // Create directory if it doesn't exist
+  if (!fs.existsSync(scriptDir)) {
+    fs.mkdirSync(scriptDir, { recursive: true });
+  }
+
+  const scriptPath = path.join(scriptDir, `realtime-scanner-${Date.now()}.ts`);
+
+  // Fix relative imports to work from generated-scripts directory
+  let fixedCode = originalScannerCode;
+
+  // Replace './src/' with '../src/' since we're in backend/generated-scripts/
+  fixedCode = fixedCode.replace(
+    /from\s+['"]\.\/src\//g,
+    "from '../src/"
+  );
+
+  // Fix dotenv config path
+  fixedCode = fixedCode.replace(
+    /path\.resolve\(__dirname,\s*['"]\.\.\/\.env['"]\)/g,
+    `path.resolve(__dirname, '../.env')`
+  );
+
+  fs.writeFileSync(scriptPath, fixedCode);
 
   return scriptPath;
 }

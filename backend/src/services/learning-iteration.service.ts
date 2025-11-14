@@ -553,7 +553,10 @@ export class LearningIterationService {
    * TODO: After Phase 3 validation, delete executeScanLegacy and always use real-time
    */
   private async executeScan(scanScript: string, tokenUsage?: any): Promise<any[]> {
+    // Debug: Log the actual env variable value
+    console.log(`🔍 DEBUG: USE_REALTIME_SIMULATION = "${process.env.USE_REALTIME_SIMULATION}"`);
     const useRealtimeMode = process.env.USE_REALTIME_SIMULATION === 'true';
+    console.log(`🔍 DEBUG: useRealtimeMode = ${useRealtimeMode}`);
 
     if (useRealtimeMode) {
       console.log('🚀 Using REAL-TIME SIMULATION (Phase 3)');
@@ -578,13 +581,13 @@ export class LearningIterationService {
     try {
       // Configure real-time backtest options
       const options: RealtimeBacktestOptions = {
-        startDate: this.getDateDaysAgo(20), // 20 days of data
+        startDate: this.getDateDaysAgo(10), // 10 days of data (reduced for performance)
         endDate: this.getDateDaysAgo(1),     // Up to yesterday
         tickers: await this.getUniverseTickers('Tech Sector'), // TODO: Get from agent config
         warmupBars: 30,                      // Need 30 bars for indicators
         timeframe: '5min',
         maxSignalsPerIteration: 200,
-        enableParallelProcessing: true
+        enableParallelProcessing: true      // Uses batch processing (5 tickers at a time)
       };
 
       // Run real-time backtest
@@ -620,8 +623,15 @@ export class LearningIterationService {
       console.log(`   Saved scan script to ${scriptPath}`);
 
       // Execute script with 60 second timeout
-      console.log(`   Executing scan script...`);
-      const result = await this.scriptExecution.executeScript(scriptPath, 60000, tokenUsage);
+      // Pass ticker list for efficient scanning
+      const tickers = await this.getUniverseTickers('Tech Sector'); // TODO: Get from agent config
+      console.log(`   Executing scan script with ${tickers.length} tickers...`);
+      const result = await this.scriptExecution.executeScript(
+        scriptPath,
+        60000,
+        tokenUsage,
+        { SCAN_TICKERS: tickers.join(',') }
+      );
 
       if (!result.success) {
         console.error(`   Scan script execution failed: ${result.error}`);
@@ -1560,7 +1570,7 @@ export class LearningIterationService {
     const tickers = db.prepare(`
       SELECT DISTINCT ticker FROM universe_stocks
       WHERE universe_id = (SELECT id FROM universe WHERE name = ?)
-      AND active = 1
+      AND is_active = 1
       ORDER BY ticker
     `).all(universeName.toLowerCase().replace(/\s+/g, '_')) as any[];
 
