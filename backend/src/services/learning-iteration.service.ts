@@ -31,6 +31,7 @@ import { IterationPerformanceService } from './iteration-performance.service';
 import { executionTemplates, DEFAULT_TEMPLATES } from '../templates/execution';
 import { createIterationLogger } from '../utils/logger';
 import { execSync } from 'child_process';
+import { detectLookAheadBias, formatValidationReport } from '../utils/validate-scanner';
 
 // Default backtest configuration
 const DEFAULT_BACKTEST_CONFIG: AgentBacktestConfig = {
@@ -498,6 +499,22 @@ export class LearningIterationService {
           end: this.getDateDaysAgo(1)
         }
       });
+    }
+
+    // Validate scanner for lookahead bias
+    console.log(`   Validating scanner for lookahead bias...`);
+    const validationResult = detectLookAheadBias(scannerResult.script);
+    console.log(formatValidationReport(validationResult));
+
+    // Log validation result to iteration logger if available
+    if (validationResult.hasLookAheadBias) {
+      console.warn(`   ⚠️  LOOKAHEAD BIAS DETECTED! Scanner may produce unrealistic results.`);
+      console.warn(`   Violations: ${validationResult.violations.length}`);
+      // Store validation result in strategy for transparency
+      scannerResult.validationResult = validationResult;
+    } else {
+      console.log(`   ✅ Scanner validation passed - no lookahead bias detected`);
+      scannerResult.validationResult = validationResult;
     }
 
     // Step 2: Placeholder execution script - will be regenerated in Step 2.5 with actual signals
