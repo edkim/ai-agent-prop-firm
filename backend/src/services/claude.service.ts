@@ -779,13 +779,13 @@ for (const [date, dayBars] of Object.entries(barsByDay)) {
 ### 🎯 THE FUNDAMENTAL RULE:
 
 **At bar index i, you can ONLY use:**
-- `dayBars.slice(0, i)` - bars BEFORE current
-- `dayBars.slice(i - N, i)` - last N bars BEFORE current
-- `dayBars[i]` - current bar (just closed)
+- dayBars.slice(0, i) - bars BEFORE current
+- dayBars.slice(i - N, i) - last N bars BEFORE current
+- dayBars[i] - current bar (just closed)
 
 **You CANNOT use:**
-- `dayBars.slice(i + 1)` - future bars ❌
-- `dayBars.slice(0, dayBars.length)` - entire day (includes future) ❌
+- dayBars.slice(i + 1) - future bars ❌
+- dayBars.slice(0, dayBars.length) - entire day (includes future) ❌
 - Finding max/min of entire day first ❌
 
 ### 💭 MENTAL MODEL: "What do I know RIGHT NOW?"
