@@ -238,4 +238,192 @@ async function runScannerWithTempDb(
 2. ✅ Scanner queries only 5 tickers (not 2,046)
 3. ✅ Reduced ticker count from 65 to 5 for testing
 
-**Next step: Implement incremental temp DB optimization**
+---
+
+## CRITICAL ISSUE: Process Spawning Overhead
+
+**The BIGGEST bottleneck isn't temp DBs - it's process spawning!**
+
+### Current Implementation (lines 266-274)
+```typescript
+// This runs ~2,000 times (5 tickers × 10 days × ~40 bars)
+const result = await scriptExecution.executeScript(
+  scannerScriptPath,  // Spawns: npx ts-node script.ts
+  120000,
+  undefined,
+  { DATABASE_PATH, SCAN_TICKERS }
+);
+```
+
+### Problem
+- **Each `executeScript()` spawns a new Node.js process**
+- Process startup: ~100-500ms overhead
+- 2,000 processes × 300ms avg = **600 seconds (10 minutes) just spawning processes!**
+- This is separate from actual scanner execution time
+
+### Performance Breakdown
+| Operation | Current Time | Per Iteration |
+|-----------|--------------|---------------|
+| **Process spawn** | 300ms | **600s total** |
+| Temp DB create | 20ms | 40s total |
+| Temp DB insert | 10ms | 20s total |
+| Scanner logic | 100ms | 200s total |
+| Temp DB cleanup | 10ms | 20s total |
+| **TOTAL** | ~440ms/bar | **~880s (14.6 min)** |
+
+### Solution Options
+
+#### Option A: Keep Scanner Process Alive (Most Efficient)
+Run scanner ONCE and communicate via stdin/stdout:
+
+```typescript
+class PersistentScannerProcess {
+  private process: ChildProcess;
+
+  async initialize(scannerPath: string) {
+    // Start once, keep alive
+    this.process = spawn('npx', ['ts-node', scannerPath]);
+  }
+
+  async scan(tempDbPath: string, tickers: string[]): Promise<Signal[]> {
+    // Send command via stdin
+    this.process.stdin.write(JSON.stringify({
+      DATABASE_PATH: tempDbPath,
+      SCAN_TICKERS: tickers
+    }));
+
+    // Read result from stdout
+    return await this.readResult();
+  }
+
+  cleanup() {
+    this.process.kill();
+  }
+}
+```
+
+**Reduction: 2,000 process spawns → 1 process spawn**
+**Expected savings: ~590 seconds (9.8 minutes)**
+
+#### Option B: Run Scanner Once Per Day With Time Filter
+Instead of running scanner per bar, run ONCE per day with all bars:
+
+```typescript
+// Add to temp DB: current_time parameter
+scanner queries: WHERE time_of_day <= ?  // Pass current time
+
+// Run scanner once per day, not per bar
+for (let barIndex = 0; barIndex < dayBars.length; barIndex++) {
+  const currentTime = dayBars[barIndex].time_of_day;
+
+  // Pass time filter to existing temp DB
+  const signals = await scanner.scan(tempDbPath, currentTime);
+  if (signals.length > 0) break;
+}
+```
+
+**Reduction: ~40 scanner runs per day → 1 scanner run per day**
+**But:** Scanner would need to iterate through bars internally
+
+---
+
+## Additional Inefficiencies Found
+
+### 1. Signal Filtering Redundancy (lines 283-291)
+
+**Current:**
+```typescript
+// Filter for signals at current bar time
+const relevantSignals = scannerOutput.filter((s: any) => {
+  return s.signal_time <= currentBar.time_of_day;
+});
+```
+
+**Problem:**
+- Temp DB already contains ONLY bars up to current time
+- Scanner can't see future bars
+- This filtering is redundant
+
+**Fix:**
+- Remove this filtering step
+- Trust that scanner only sees available bars
+
+---
+
+### 2. Single-Ticker Temp DB (Potential Issue)
+
+**Current:** Temp DB contains bars for ONE ticker only (line 260)
+
+**Potential Problem:**
+- Scanner might want to compare across tickers
+- Example: "Is AAPL stronger than SPY today?"
+- Scanner would fail if it queries SPY but only AAPL is in temp DB
+
+**Solution:**
+- **Option A:** Include ALL tickers in temp DB (but only bars up to current time)
+- **Option B:** Document that Phase 3 scanners can only analyze one ticker at a time
+- **Option C:** Load reference tickers (e.g., SPY, QQQ) with full data for comparison
+
+---
+
+### 3. Early Termination Optimization
+
+**Current:** Scan every bar from warmupBars to end of day
+
+**Optimization Opportunity:**
+- Most patterns occur during specific times:
+  - Market open (9:30-10:00 AM)
+  - Lunch (12:00-1:00 PM)
+  - Power hour (3:00-4:00 PM)
+
+**Potential Optimization:**
+- Skip bars during low-activity periods
+- Or: Sample every Nth bar instead of every bar
+- **Trade-off:** Might miss signals, but much faster
+
+---
+
+## Recommended Implementation Priority
+
+1. **HIGH PRIORITY:** Keep scanner process alive (Option A above)
+   - Expected: 9.8 minute savings
+   - Difficulty: Medium (needs IPC mechanism)
+
+2. **HIGH PRIORITY:** Incremental temp DB (already documented)
+   - Expected: 1-2 minute savings
+   - Difficulty: Medium (refactor temp DB creation)
+
+3. **MEDIUM PRIORITY:** Remove redundant signal filtering
+   - Expected: Negligible time savings, but cleaner code
+   - Difficulty: Easy (delete lines 283-291)
+
+4. **LOW PRIORITY:** Multi-ticker temp DB support
+   - Only if scanners need cross-ticker comparison
+   - Difficulty: Easy (modify createTempDatabase to accept ticker list)
+
+---
+
+## Updated Performance Projections
+
+### Current (5 tickers, with all issues)
+- Time: ~14.6 minutes per iteration
+
+### After Incremental Temp DB
+- Time: ~13 minutes per iteration (10% improvement)
+
+### After Persistent Scanner Process
+- Time: ~5 minutes per iteration (66% improvement)
+
+### After Both Optimizations
+- Time: **~3.5 minutes per iteration** (76% improvement)
+
+### After All + Multi-threading
+- Time: **< 1 minute per iteration** (goal)
+
+---
+
+**Next steps:**
+1. Test current implementation (5 tickers) to establish baseline
+2. Implement persistent scanner process (biggest win)
+3. Implement incremental temp DB
+4. Re-test and measure actual improvements
