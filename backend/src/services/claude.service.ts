@@ -701,6 +701,101 @@ Your task is to generate a complete, runnable TypeScript scanner that queries th
    - No mention of intraday timeframes or VWAP
    - Keywords: "days", "weeks", "daily", "swing trade"
 
+## ⚠️ CRITICAL: PREVENT LOOKAHEAD BIAS ⚠️
+
+**YOUR SCANNER MUST SIMULATE REAL-TIME BAR-BY-BAR PROCESSING**
+
+In live trading, you process one bar at a time as it arrives. You NEVER know future bars.
+Your scanner MUST follow the same constraint to produce realistic backtest results.
+
+### ❌ FORBIDDEN PATTERNS (Lookahead Bias):
+
+**DO NOT find the high/low of the day first, then work backwards:**
+\`\`\`typescript
+// ❌ WRONG - This looks at the ENTIRE day to find the peak
+const allBars = barsStmt.all(ticker, startDate, endDate);
+for (let i = 0; i < allBars.length; i++) {
+  if (bar.high > maxHigh) {
+    peakBar = bar;  // ← You don't know the peak until EOD!
+    peakIndex = i;
+  }
+}
+const postPeakBars = allBars.slice(peakIndex + 1);  // ❌ Using future knowledge
+\`\`\`
+
+**DO NOT process all morning bars at once:**
+\`\`\`typescript
+// ❌ WRONG - At 9:35 AM you don't know what happens at 11:30 AM
+const morningBars = dayBars.filter(b => time >= '13:35' && time <= '15:30');
+for (let j = 0; j < morningBars.length; j++) {
+  // ← At bar 0 (9:35), you already see bar N (11:30)!
+}
+\`\`\`
+
+**DO NOT use Math.max/min on entire day:**
+\`\`\`typescript
+// ❌ WRONG - This reveals the high/low before it happens
+const dayHigh = Math.max(...allBars.map(b => b.high));  // ← Future data!
+\`\`\`
+
+### ✅ CORRECT PATTERN (Sequential Processing):
+
+**Process bars ONE AT A TIME, like real trading:**
+\`\`\`typescript
+// ✅ CORRECT - Sequential bar-by-bar processing
+for (const [date, dayBars] of Object.entries(barsByDay)) {
+
+  // Process each bar sequentially (i = current bar index)
+  for (let i = 30; i < dayBars.length; i++) {
+    const current = dayBars[i];
+
+    // ✅ You can ONLY look at bars BEFORE current bar
+    const lookback20 = dayBars.slice(i - 20, i);  // Past 20 bars
+    const lookback50 = dayBars.slice(i - 50, i);  // Past 50 bars
+
+    // ✅ Calculate stats on PAST bars only
+    const recentHigh = Math.max(...lookback20.map(b => b.high));
+    const recentLow = Math.min(...lookback20.map(b => b.low));
+
+    // ✅ Detect if pattern is forming RIGHT NOW (at bar i)
+    const priceNearHigh = current.close >= recentHigh * 0.98;
+    const volumeIncreasing = current.volume > avgVolume(lookback20) * 1.5;
+
+    if (priceNearHigh && volumeIncreasing) {
+      // ✅ Signal detected at THIS moment (bar i)
+      // We DON'T know if this is the actual top - just that it LOOKS like topping NOW
+      results.push({
+        ticker,
+        signal_date: date,
+        signal_time: current.time_of_day,  // ← Time when signal detected
+        pattern_strength: calculateStrength(lookback20, current),
+        metrics: { /* ... */ }
+      });
+    }
+  }
+}
+\`\`\`
+
+### 🎯 THE FUNDAMENTAL RULE:
+
+**At bar index i, you can ONLY use:**
+- dayBars.slice(0, i) - bars BEFORE current
+- dayBars.slice(i - N, i) - last N bars BEFORE current
+- dayBars[i] - current bar (just closed)
+
+**You CANNOT use:**
+- dayBars.slice(i + 1) - future bars ❌
+- dayBars.slice(0, dayBars.length) - entire day (includes future) ❌
+- Finding max/min of entire day first ❌
+
+### 💭 MENTAL MODEL: "What do I know RIGHT NOW?"
+
+Before writing any code, ask yourself:
+- "At 10:30 AM, do I know what the stock will do at 2:00 PM?" → **NO**
+- "At 10:30 AM, do I know what happened at 9:45 AM?" → **YES**
+- "Can I detect a pattern forming based on the last 20 bars?" → **YES**
+- "Can I find the exact top and fade from there?" → **NO** (that's lookahead bias)
+
 ## Available Data Tables
 
 ### Table 1: ohlcv_data (INTRADAY - Use for VWAP and intraday patterns)

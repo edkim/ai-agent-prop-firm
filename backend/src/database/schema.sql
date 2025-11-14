@@ -768,6 +768,7 @@ CREATE TABLE IF NOT EXISTS agent_iterations (
   sharpe_ratio REAL,
   total_return REAL,
   winning_template TEXT, -- Which execution template performed best
+  scanner_validation TEXT, -- JSON: Lookahead bias validation result
 
   -- Claude's analysis
   expert_analysis TEXT, -- Full expert analysis from Claude

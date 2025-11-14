@@ -294,6 +294,64 @@ export default function AgentIterationView({ agentId }: AgentIterationViewProps)
               </p>
             </div>
 
+            {/* Scanner Validation Badge */}
+            {selectedIteration.scanner_validation && (() => {
+              try {
+                const validation = JSON.parse(selectedIteration.scanner_validation);
+                const hasErrors = validation.violations?.some((v: any) => v.severity === 'error');
+                const hasWarnings = validation.violations?.some((v: any) => v.severity === 'warning');
+
+                return (
+                  <div className={`border rounded-lg p-3 ${
+                    hasErrors ? 'bg-red-50 border-red-200' :
+                    hasWarnings ? 'bg-yellow-50 border-yellow-200' :
+                    'bg-green-50 border-green-200'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">
+                        {hasErrors ? '🚨' : hasWarnings ? '⚠️' : '✅'}
+                      </span>
+                      <div className="flex-1">
+                        <h4 className={`text-sm font-medium ${
+                          hasErrors ? 'text-red-900' :
+                          hasWarnings ? 'text-yellow-900' :
+                          'text-green-900'
+                        }`}>
+                          Scanner Lookahead Bias Check
+                        </h4>
+                        <p className={`text-xs mt-0.5 ${
+                          hasErrors ? 'text-red-700' :
+                          hasWarnings ? 'text-yellow-700' :
+                          'text-green-700'
+                        }`}>
+                          {validation.summary || (hasErrors ? 'Errors detected' : hasWarnings ? 'Warnings detected' : 'Passed validation')}
+                        </p>
+                        {validation.violations && validation.violations.length > 0 && (
+                          <details className="mt-2">
+                            <summary className={`text-xs cursor-pointer ${
+                              hasErrors ? 'text-red-600' : 'text-yellow-600'
+                            }`}>
+                              View {validation.violations.length} issue{validation.violations.length > 1 ? 's' : ''}
+                            </summary>
+                            <ul className="mt-2 space-y-1 text-xs">
+                              {validation.violations.map((v: any, idx: number) => (
+                                <li key={idx} className={hasErrors && v.severity === 'error' ? 'text-red-700' : 'text-yellow-700'}>
+                                  {v.severity === 'error' ? '🚨' : '⚠️'} {v.message}
+                                  {v.line && ` (Line ${v.line})`}
+                                </li>
+                              ))}
+                            </ul>
+                          </details>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              } catch (e) {
+                return null;
+              }
+            })()}
+
             {/* Script Viewer Buttons */}
             <div className="flex gap-2 flex-wrap">
               <button
