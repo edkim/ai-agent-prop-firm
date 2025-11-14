@@ -33,6 +33,29 @@ export class TemplateRendererService {
     // Generate the execution code
     const executionCode = templateWithOverrides.generateExecutionCode();
 
+    // EFFICIENCY: Handle multi-ticker execution when ticker='all'
+    const isMultiTicker = ticker === 'all';
+
+    const multiTickerCode = isMultiTicker ? `
+  // Process each unique ticker from signals
+  const allSignals = SCANNER_SIGNALS;
+  const uniqueTickers = [...new Set(allSignals.map(s => s.ticker))];
+  console.error(\`Processing \${uniqueTickers.length} tickers...\`);
+
+  for (const ticker of uniqueTickers) {
+    // IMPORTANT: Filter SCANNER_SIGNALS to only this ticker to avoid duplicates
+    const SCANNER_SIGNALS = allSignals.filter(s => s.ticker === ticker);
+    const timeframe = '5min';
+
+    ${executionCode}
+  }
+` : `
+  const ticker = '${ticker}';
+  const timeframe = '5min';
+
+  ${executionCode}
+`;
+
     // Build complete script with imports, interfaces, and execution logic
     // Note: Scripts are saved in backend/generated-scripts/success/YYYY-MM-DD/
     // So imports need to go up 3 levels to reach backend/, then into src/
@@ -89,12 +112,9 @@ async function runBacktest() {
   initializeDatabase(dbPath);
   const db = getDatabase();
 
-  const ticker = '${ticker}';
-  const timeframe = '5min';
-
   const results: TradeResult[] = [];
 
-  ${executionCode}
+${multiTickerCode}
 
   console.log(JSON.stringify(results, null, 2));
 }

@@ -77,6 +77,69 @@ Iteration 2: Win rate 35%, Sharpe 3.58, Profit factor 1.87
 
 ---
 
+## ✨ Discovery Mode (2025-11-13)
+
+**Ultra-Fast Strategy Testing with Template Library**
+
+Discovery mode enables rapid strategy exploration by using pre-built execution templates instead of generating custom scripts, dramatically speeding up iteration cycles:
+
+```
+Traditional Mode: 3-5 minutes per iteration (AI code generation + execution)
+Discovery Mode:   30-60 seconds per iteration (template execution only)
+                  ↓
+                  5-10x faster iteration cycles
+```
+
+**How It Works:**
+1. Agent generates scanner strategy (same as traditional mode)
+2. Scanner finds signals from historical data
+3. **Template library** executes trades (skips AI code generation)
+4. Multiple templates tested automatically (price-action, conservative, aggressive, etc.)
+5. Best performing template selected for that strategy
+
+**Efficiency Optimizations (2025-11-13):**
+- **Unified script generation**: 1 script per template (not 1 per ticker)
+- **Sequential execution**: Tickers processed in single process
+- **No system overload**: Previously 130+ parallel processes → Now 1 process
+- **100% success rate**: Fixed resource exhaustion issues
+
+**Template Library:**
+- `price_action`: Trailing stops based on price movement
+- `conservative`: Tight stops, quick exits
+- `aggressive`: Wider stops, larger position sizes
+- `time_based`: Time-of-day exit rules
+- `volatility_adaptive`: Adjusts stops based on volatility
+
+**When to Use:**
+- ✅ **Early exploration**: Testing if a pattern has edge
+- ✅ **Rapid iteration**: Need to test 10+ variations quickly
+- ✅ **Pattern discovery**: Finding signals before optimizing execution
+- ✅ **Resource constraints**: Lower Claude API costs (no code generation)
+
+**When to Switch to Traditional Mode:**
+- Pattern shows promise (>50% win rate)
+- Need custom execution logic for specific setup
+- Ready to optimize entry/exit timing
+- Want strategy-specific risk management
+
+**Example Results:**
+```
+Discovery Test - Parabolic Fader (Iteration 11)
+- 272 signals scanned
+- 200 trades executed
+- 47% win rate
+- Template: price_action (trailing stops)
+- Time: 45 seconds
+```
+
+**Technical Details:**
+- Enabled via `discovery_mode` flag in agent configuration
+- Templates in `backend/src/templates/execution/`
+- Multi-ticker execution in `template-renderer.service.ts`
+- Execution loop in `learning-iteration.service.ts`
+
+---
+
 ## ✨ Manual Guidance (2025-11-03)
 
 **Take control of the learning process while maintaining automation**

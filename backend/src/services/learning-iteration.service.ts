@@ -591,6 +591,13 @@ export class LearningIterationService {
     // Apply signal filtering to reduce to manageable set
     const filteredResults = this.applySignalFiltering(scanResults, DEFAULT_BACKTEST_CONFIG);
 
+    // DEBUG: Check if we have any signals after filtering
+    console.log(`\n🔍 POST-FILTER CHECK:`);
+    console.log(`   Filtered results count: ${filteredResults.length}`);
+    if (filteredResults.length === 0) {
+      console.error(`   ⚠️  WARNING: No signals after filtering! Cannot proceed with backtesting.`);
+    }
+
     // In discovery mode, use only one template for faster iterations
     const templatesToTest = discoveryMode ? [DEFAULT_TEMPLATES[0]] : DEFAULT_TEMPLATES;
     console.log(`   Testing ${templatesToTest.length} execution template${templatesToTest.length > 1 ? 's' : ''} on ${filteredResults.length} filtered signals...${discoveryMode ? ' (Discovery mode: single template)' : ''}`);
@@ -606,6 +613,15 @@ export class LearningIterationService {
 
     console.log(`   Grouped into ${Object.keys(signalsByTicker).length} ticker(s)`);
 
+    // DEBUG: Log signal structure
+    if (filteredResults.length > 0) {
+      console.log(`   📋 Sample signal structure:`, JSON.stringify(filteredResults[0], null, 2));
+    }
+
+    // DEBUG: Log ticker grouping details
+    const tickerKeys = Object.keys(signalsByTicker);
+    console.log(`   📊 Tickers to process: ${tickerKeys.slice(0, 5).join(', ')}${tickerKeys.length > 5 ? ` ... (+${tickerKeys.length - 5} more)` : ''}`);
+
     // Test each template
     const templateResults: any[] = [];
     let customTrades: any[] = []; // Track custom script trades
@@ -615,66 +631,110 @@ export class LearningIterationService {
       for (const templateName of templatesToTest) {
         const template = executionTemplates[templateName];
         console.log(`   \n   📊 Testing template: ${template.name}`);
+        console.log(`   🔧 Template configured: ${template ? 'YES' : 'NO'}`);
+        console.log(`   🎯 Number of tickers to backtest: ${Object.keys(signalsByTicker).length}`);
 
       const allTrades: any[] = [];
       let successfulBacktests = 0;
 
-      // Execute backtests for all tickers with this template
-      const backtestPromises = Object.entries(signalsByTicker).map(async ([ticker, signals]) => {
-        const scriptId = uuidv4();
-        const scriptPath = path.join(__dirname, '../../generated-scripts/success', new Date().toISOString().split('T')[0], `${scriptId}-${templateName}-${ticker}.ts`);
+      // EFFICIENCY IMPROVEMENT: Generate ONE script per template with ALL signals
+      // Instead of 100+ separate script files and processes, execute just once
+      console.log(`   🚀 Generating single optimized script for all ${Object.keys(signalsByTicker).length} tickers...`);
 
-        // Ensure directory exists
-        const dir = path.dirname(scriptPath);
-        if (!fs.existsSync(dir)) {
-          fs.mkdirSync(dir, { recursive: true });
-        }
+      const scriptId = uuidv4();
+      const scriptPath = path.join(__dirname, '../../generated-scripts/success', new Date().toISOString().split('T')[0], `${scriptId}-${templateName}-all-tickers.ts`);
 
-        try {
-          // Render script using template
-          const script = this.templateRenderer.renderScript(template, signals, ticker);
-
-          // Save to file
-          fs.writeFileSync(scriptPath, script);
-
-          // Execute with 120 second timeout
-          const result = await this.scriptExecution.executeScript(scriptPath, 120000, tokenUsage);
-
-          // Note: Keep generated scripts for debugging
-
-          if (result.success && result.data) {
-            // Parse results - handle both array and object formats
-            let trades: any[] = [];
-            if (Array.isArray(result.data)) {
-              trades = result.data;
-            } else if (result.data.trades) {
-              trades = result.data.trades;
-            }
-
-            return { ticker, trades, success: true };
-          } else {
-            console.log(`      ⚠️  Backtest failed for ${ticker}: ${result.error || 'Unknown error'}`);
-            return { ticker, trades: [], success: false, error: result.error };
-          }
-        } catch (error: any) {
-          console.error(`      Error backtesting ${ticker}: ${error.message}`);
-          return { ticker, trades: [], success: false, error: error.message };
-        }
-      });
-
-      // Wait for all backtests to complete for this template
-      const results = await Promise.all(backtestPromises);
-
-      // Aggregate successful results
-      for (const result of results) {
-        if (result.success && result.trades.length > 0) {
-          allTrades.push(...result.trades);
-          successfulBacktests++;
-        }
+      // Ensure directory exists
+      const dir = path.dirname(scriptPath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
       }
 
-      console.log(`      Completed ${successfulBacktests}/${Object.keys(signalsByTicker).length} backtests`);
-      console.log(`      Total trades: ${allTrades.length}`);
+      try {
+        // Flatten all signals into one array (template handles multiple tickers)
+        const allSignals = filteredResults;
+
+        // Render ONE script with ALL signals
+        console.log(`   🎨 Rendering unified script with ${allSignals.length} signals across ${Object.keys(signalsByTicker).length} tickers...`);
+        const script = this.templateRenderer.renderScript(template, allSignals, 'all');
+        console.log(`   ✅ Script rendered (${script.length} chars)`);
+
+        // Save to file
+        fs.writeFileSync(scriptPath, script);
+        console.log(`   💾 Script saved to: ${scriptPath}`);
+
+        // Execute ONCE with all signals
+        console.log(`   🏃 Executing unified backtest script...`);
+        const result = await this.scriptExecution.executeScript(scriptPath, 180000, tokenUsage); // 3 min timeout
+        console.log(`   ✅ Execution completed. Success: ${result.success}`);
+
+        const results: any[] = [];
+
+        if (result.success && result.data) {
+          // Parse results - handle both array and object formats
+          let trades: any[] = [];
+          if (Array.isArray(result.data)) {
+            trades = result.data;
+          } else if (result.data.trades) {
+            trades = result.data.trades;
+          }
+
+          console.log(`   📊 Total trades found: ${trades.length}`);
+
+          // Group trades by ticker for result format compatibility
+          const tradesByTicker: { [ticker: string]: any[] } = {};
+          for (const trade of trades) {
+            const ticker = trade.ticker;
+            if (!tradesByTicker[ticker]) {
+              tradesByTicker[ticker] = [];
+            }
+            tradesByTicker[ticker].push(trade);
+          }
+
+          // Create results array matching expected format
+          for (const [ticker, tickerTrades] of Object.entries(tradesByTicker)) {
+            results.push({ ticker, trades: tickerTrades, success: true });
+          }
+
+          // Add tickers with no trades
+          for (const ticker of Object.keys(signalsByTicker)) {
+            if (!tradesByTicker[ticker]) {
+              results.push({ ticker, trades: [], success: true });
+            }
+          }
+        } else {
+          console.log(`   ⚠️  Backtest failed: ${result.error || 'Unknown error'}`);
+          // Mark all tickers as failed
+          for (const ticker of Object.keys(signalsByTicker)) {
+            results.push({ ticker, trades: [], success: false, error: result.error });
+          }
+        }
+
+      console.log(`   ✅ Processed results for ${results.length} tickers`);
+
+        // Aggregate successful results
+        for (const result of results) {
+          if (result.success && result.trades.length > 0) {
+            allTrades.push(...result.trades);
+            successfulBacktests++;
+          } else if (!result.success) {
+            console.log(`      ⚠️  Failed: ${result.ticker} - ${result.error}`);
+          } else if (result.trades.length === 0) {
+            console.log(`      ℹ️  No trades: ${result.ticker}`);
+          }
+        }
+
+        console.log(`      Completed ${successfulBacktests}/${Object.keys(signalsByTicker).length} backtests`);
+        console.log(`      Total trades: ${allTrades.length}`);
+
+      } catch (error: any) {
+        console.error(`   ❌ Error in unified backtest execution: ${error.message}`);
+        console.error(`   Stack: ${error.stack}`);
+        // Mark all tickers as failed
+        for (const ticker of Object.keys(signalsByTicker)) {
+          console.log(`      ⚠️  Failed: ${ticker} - ${error.message}`);
+        }
+      }
 
       // Calculate performance metrics
       const aggregated = this.aggregateBacktestResults(allTrades);

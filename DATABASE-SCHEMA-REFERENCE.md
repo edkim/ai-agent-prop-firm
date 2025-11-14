@@ -1,6 +1,6 @@
 # Database Schema Reference
 
-**Last Updated:** 2025-11-12
+**Last Updated:** 2025-11-13
 **Database:** `/Users/edwardkim/Code/ai-backtest/backtesting.db`
 
 ## Quick Stats
@@ -12,9 +12,9 @@
 
 ## Core Agent Learning Tables
 
-### 1. `trading_agents` - Agent Definitions
+### 1. `learning_agents` - Agent Definitions
 
-Main table for all trading agents in the system.
+Main table for all learning agents in the system.
 
 **Key Columns:**
 ```
@@ -34,35 +34,30 @@ pattern_focus TEXT                         -- JSON: ["vwap_bounce", "gap_fill"]
 market_conditions TEXT                     -- JSON: ["trending", "ranging", "volatile"]
 risk_config TEXT                           -- JSON: risk parameters
 
+-- Execution Mode
+discovery_mode BOOLEAN DEFAULT 0           -- Use template library (fast) vs custom scripts (slow)
+
 -- Status & Lifecycle
 status TEXT DEFAULT 'learning'             -- 'learning', 'paper_trading', 'live_trading', 'paused'
 active BOOLEAN DEFAULT 1                   -- Whether agent is active
-universe TEXT DEFAULT 'Tech Sector'        -- Stock universe to trade
-description TEXT                           -- Human-readable description
-created_by TEXT DEFAULT 'system'           -- Creator identifier
-exit_strategy_config TEXT                  -- JSON: exit strategy configuration
-
--- Autonomous Learning Features
-auto_learn_enabled INTEGER DEFAULT 0       -- Boolean for scheduled learning
-learning_schedule TEXT                     -- Cron expression for scheduled learning
-next_scheduled_iteration TEXT              -- ISO timestamp of next scheduled run
-auto_approve_enabled INTEGER DEFAULT 0     -- Boolean for auto-approval
-approval_thresholds TEXT                   -- JSON: auto-approval criteria
-continuous_learning_enabled INTEGER DEFAULT 0  -- Boolean for continuous learning
-max_iterations_per_day INTEGER DEFAULT 10  -- Daily iteration limit
-min_iteration_gap_minutes INTEGER DEFAULT 60   -- Minimum time between iterations
-convergence_threshold REAL DEFAULT 0.01    -- Threshold for convergence detection
 
 -- Timestamps
 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+numeric_id INTEGER                         -- Auto-incrementing ID for display
 ```
+
+**Discovery Mode (added 2025-11-13):**
+- `discovery_mode = 1`: Use template library for fast iteration (30-60s per iteration)
+- `discovery_mode = 0`: Generate custom execution scripts (3-5 minutes per iteration)
+- Toggle via UI or API when creating/updating agents
+- Recommended for early exploration before optimizing execution logic
 
 **Example Query:**
 ```sql
 -- Get all active learning agents
-SELECT id, name, status, universe
-FROM trading_agents
+SELECT id, name, status, discovery_mode
+FROM learning_agents
 WHERE active = 1 AND status = 'learning';
 ```
 
@@ -75,12 +70,12 @@ Stores each iteration of an agent's learning process. This is the primary table 
 **Key Columns:**
 ```
 id TEXT PRIMARY KEY                    -- UUID
-agent_id TEXT NOT NULL                 -- Foreign key to trading_agents
+learning_agent_id TEXT NOT NULL        -- Foreign key to learning_agents
 iteration_number INTEGER NOT NULL      -- Sequential iteration number (1, 2, 3...)
 
 -- Strategy Scripts
 scan_script TEXT NOT NULL              -- TypeScript code for scanning
-execution_script TEXT NOT NULL         -- TypeScript code for execution logic
+execution_script TEXT                  -- TypeScript code (empty in discovery mode)
 version_notes TEXT                     -- "Testing tighter stops", "Added volume filter"
 
 -- Backtest Results
@@ -95,7 +90,7 @@ expert_analysis TEXT                   -- Full expert analysis from Claude (JSON
 refinements_suggested TEXT             -- JSON array of suggested improvements
 
 -- Metadata
-winning_template TEXT                  -- Which template won: 'conservative', 'aggressive', 'time_based', etc.
+winning_template TEXT                  -- Template used: 'price_action', 'conservative', etc.
 iteration_status TEXT DEFAULT 'completed'  -- 'completed', 'approved', 'rejected'
 manual_guidance TEXT                   -- Optional human feedback
 scanner_prompt TEXT                    -- Full prompt used to generate scan_script
@@ -104,9 +99,11 @@ created_at TEXT NOT NULL
 ```
 
 **Important Notes:**
-- `backtest_results` contains JSON with template comparisons
+- `backtest_results` contains JSON with `templateResults` array (in discovery mode) or single result (custom script)
+- `templateResults` structure: `[{template, totalTrades, winRate, totalReturn, profitFactor, trades[]}]`
 - `expert_analysis` contains JSON with Claude's detailed analysis including `execution_analysis`
-- `winning_template` shows which execution template won (or 'custom' if custom script won)
+- `winning_template` shows which execution template performed best
+- In discovery mode, `execution_script` is empty (templates used instead)
 
 **Example Queries:**
 ```sql
