@@ -76,7 +76,14 @@ export class LearningIterationService {
   /**
    * Run a complete learning iteration for an agent
    */
-  async runIteration(agentId: string, manualGuidance?: string, overrideScannerPrompt?: string): Promise<IterationResult> {
+  async runIteration(
+    agentId: string,
+    manualGuidance?: string,
+    overrideScannerPrompt?: string,
+    customDateRange?: { trainStart?: string; trainEnd?: string; testStart?: string; testEnd?: string },
+    customTickers?: string[],
+    customUniverse?: string
+  ): Promise<IterationResult> {
     const agent = await this.agentMgmt.getAgent(agentId);
     if (!agent) {
       throw new Error(`Agent not found: ${agentId}`);
@@ -105,7 +112,7 @@ export class LearningIterationService {
       this.performanceTracker.updatePhase(iterationId, 'scanner_generation');
 
       const strategyStartTime = Date.now();
-      const strategy = await this.generateStrategy(agent, iterationNumber, manualGuidance, overrideScannerPrompt);
+      const strategy = await this.generateStrategy(agent, iterationNumber, manualGuidance, overrideScannerPrompt, customDateRange);
       const strategyEndTime = Date.now();
 
       // Track scanner generation performance
@@ -127,7 +134,14 @@ export class LearningIterationService {
       this.performanceTracker.updatePhase(iterationId, 'scan_execution');
 
       const scanStartTime = Date.now();
-      const scanResults = await this.executeScan(strategy.scanScript, strategy.scannerTokenUsage);
+      const scanResults = await this.executeScan(
+        strategy.scanScript,
+        strategy.scannerTokenUsage,
+        customDateRange,
+        customTickers,
+        customUniverse,
+        agent
+      );
       const scanEndTime = Date.now();
 
       this.performanceTracker.updateMetrics(iterationId, {
@@ -425,7 +439,8 @@ export class LearningIterationService {
     agent: TradingAgent,
     iterationNumber: number,
     manualGuidance?: string,
-    overrideScannerPrompt?: string
+    overrideScannerPrompt?: string,
+    customDateRange?: { trainStart?: string; trainEnd?: string; testStart?: string; testEnd?: string }
   ): Promise<{
     scanScript: string;
     executionScript: string;
@@ -456,12 +471,16 @@ export class LearningIterationService {
       // User provided a custom scanner prompt - use it directly
       console.log(`   Using user-provided scanner prompt...`);
       scannerQuery = overrideScannerPrompt;
+      // Use training period dates for scanner generation (if walk-forward), otherwise use defaults
+      const scannerStartDate = customDateRange?.trainStart || this.getDateDaysAgo(20);
+      const scannerEndDate = customDateRange?.trainEnd || this.getDateDaysAgo(1);
+      
       scannerResult = await this.claude.generateScannerScript({
         query: scannerQuery,
         universe: agent.universe || 'Tech Sector',
         dateRange: {
-          start: this.getDateDaysAgo(20),
-          end: this.getDateDaysAgo(1)
+          start: scannerStartDate,
+          end: scannerEndDate
         }
       });
     } else {
@@ -492,12 +511,16 @@ export class LearningIterationService {
 
       console.log(`   Generating scanner with Claude...`);
       console.log(`   Scanner query: ${scannerQuery.substring(0, 100)}...`);
+      // Use training period dates for scanner generation (if walk-forward), otherwise use defaults
+      const scannerStartDate = customDateRange?.trainStart || this.getDateDaysAgo(20);
+      const scannerEndDate = customDateRange?.trainEnd || this.getDateDaysAgo(1);
+      
       scannerResult = await this.claude.generateScannerScript({
         query: scannerQuery,
         universe: agent.universe || 'Tech Sector', // Use agent's universe or default to Tech Sector
         dateRange: {
-          start: this.getDateDaysAgo(20),
-          end: this.getDateDaysAgo(1)
+          start: scannerStartDate,
+          end: scannerEndDate
         }
       });
     }
@@ -552,7 +575,14 @@ export class LearningIterationService {
    *
    * TODO: After Phase 3 validation, delete executeScanLegacy and always use real-time
    */
-  private async executeScan(scanScript: string, tokenUsage?: any): Promise<any[]> {
+  private async executeScan(
+    scanScript: string,
+    tokenUsage?: any,
+    customDateRange?: { trainStart?: string; trainEnd?: string; testStart?: string; testEnd?: string },
+    customTickers?: string[],
+    customUniverse?: string,
+    agent?: TradingAgent
+  ): Promise<any[]> {
     // Debug: Log the actual env variable value
     console.log(`🔍 DEBUG: USE_REALTIME_SIMULATION = "${process.env.USE_REALTIME_SIMULATION}"`);
     const useRealtimeMode = process.env.USE_REALTIME_SIMULATION === 'true';
@@ -560,7 +590,7 @@ export class LearningIterationService {
 
     if (useRealtimeMode) {
       console.log('🚀 Using REAL-TIME SIMULATION (Phase 3)');
-      return this.executeScanRealtime(scanScript, tokenUsage);
+      return this.executeScanRealtime(scanScript, tokenUsage, customDateRange, customTickers, customUniverse, agent);
     } else {
       console.log('⚠️  Using LEGACY MODE (has lookahead bias vulnerability)');
       return this.executeScanLegacy(scanScript, tokenUsage);
@@ -575,15 +605,46 @@ export class LearningIterationService {
    * 2. Only providing bars available up to current moment
    * 3. Early termination after first signal per ticker/date
    */
-  private async executeScanRealtime(scanScript: string, tokenUsage?: any): Promise<any[]> {
+  private async executeScanRealtime(
+    scanScript: string,
+    tokenUsage?: any,
+    customDateRange?: { trainStart?: string; trainEnd?: string; testStart?: string; testEnd?: string },
+    customTickers?: string[],
+    customUniverse?: string,
+    agent?: TradingAgent
+  ): Promise<any[]> {
     console.log('   📊 Real-Time Backtest: Processing bars sequentially...');
 
     try {
       // Configure real-time backtest options
+      // Use custom date range if provided (for walk-forward analysis), otherwise use defaults
+      const startDate = customDateRange?.testStart || this.getDateDaysAgo(10);
+      const endDate = customDateRange?.testEnd || this.getDateDaysAgo(1);
+      
+      // Determine tickers: custom tickers > custom universe > agent universe > default
+      let tickers: string[];
+      if (customTickers && customTickers.length > 0) {
+        tickers = customTickers;
+      } else if (customUniverse) {
+        tickers = await this.getUniverseTickers(customUniverse);
+      } else if (agent) {
+        // Use agent's universe or default to Tech Sector
+        const agentUniverse = agent.universe || 'Tech Sector';
+        tickers = await this.getUniverseTickers(agentUniverse);
+      } else {
+        // Fallback to Tech Sector if no agent provided
+        tickers = await this.getUniverseTickers('Tech Sector');
+      }
+      
+      // Limit to 20 tickers for performance (unless custom tickers specified)
+      if (!customTickers && tickers.length > 20) {
+        tickers = tickers.slice(0, 20);
+      }
+      
       const options: RealtimeBacktestOptions = {
-        startDate: this.getDateDaysAgo(10), // 10 days of data (reduced for performance)
-        endDate: this.getDateDaysAgo(1),     // Up to yesterday
-        tickers: (await this.getUniverseTickers('Tech Sector')).slice(0, 20), // Expanded to 20 tickers for better signal discovery
+        startDate, // Use test period for walk-forward, or default to recent data
+        endDate,   // Use test period for walk-forward, or default to yesterday
+        tickers,
         warmupBars: 30,                      // Need 30 bars for indicators
         timeframe: '5min',
         maxSignalsPerIteration: 200,

@@ -13,6 +13,7 @@ import { PerformanceMonitorService } from '../../services/performance-monitor.se
 import { GraduationService } from '../../services/graduation.service';
 import { AgentActivityLogService } from '../../services/agent-activity-log.service';
 import { IterationPerformanceService } from '../../services/iteration-performance.service';
+import { WalkForwardAnalysisService } from '../../services/walk-forward-analysis.service';
 import { getDatabase } from '../../database/db';
 import {
   CreateAgentRequest,
@@ -30,6 +31,7 @@ const performanceMonitor = new PerformanceMonitorService();
 const graduation = new GraduationService();
 const activityLog = new AgentActivityLogService();
 const iterationPerformance = new IterationPerformanceService();
+const walkForwardAnalysis = new WalkForwardAnalysisService();
 
 /**
  * Helper function to format expert analysis JSON for display
@@ -281,6 +283,94 @@ router.post('/:id/iterations/start', async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Error running iteration:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/agents/:id/walk-forward
+ * Run walk-forward analysis to prevent overfitting
+ * 
+ * Body (optional):
+ * - trainMonths: number (default: 3) - Months of training data per period
+ * - testMonths: number (default: 3) - Months of test data per period
+ * - overlapMonths: number (default: 0) - 0 = expanding window, >0 = rolling window
+ * - overallStartDate: string (optional) - Override start date
+ * - overallEndDate: string (optional) - Override end date
+ * - manualGuidance: string (optional) - Manual guidance for iterations
+ * - tickers: string[] (optional) - Custom list of tickers to use (overrides universe)
+ * - universe: string (optional) - Universe name to use (overrides agent's universe)
+ */
+router.post('/:id/walk-forward', async (req: Request, res: Response) => {
+  try {
+    const agentId = req.params.id;
+    const { 
+      trainMonths = 3, 
+      testMonths = 3, 
+      overlapMonths = 0, 
+      overallStartDate, 
+      overallEndDate, 
+      manualGuidance,
+      tickers,
+      universe
+    } = req.body;
+
+    console.log(`\n🚀 Starting Walk-Forward Analysis for Agent ${agentId}`);
+    console.log(`   Train Months: ${trainMonths}, Test Months: ${testMonths}, Overlap: ${overlapMonths}`);
+    if (tickers && Array.isArray(tickers)) {
+      console.log(`   📊 Using ${tickers.length} custom tickers: ${tickers.slice(0, 5).join(', ')}${tickers.length > 5 ? '...' : ''}`);
+    } else if (universe) {
+      console.log(`   📊 Using universe: ${universe}`);
+    }
+
+    // Get available date range if not provided
+    let startDate = overallStartDate;
+    let endDate = overallEndDate;
+
+    if (!startDate || !endDate) {
+      const dateRange = await walkForwardAnalysis.getAvailableDateRange('5min');
+      startDate = startDate || dateRange.startDate;
+      endDate = endDate || dateRange.endDate;
+      console.log(`   Using available data: ${startDate} to ${endDate}`);
+    }
+
+    // Generate walk-forward periods
+    const periods = walkForwardAnalysis.generateWalkForwardPeriods(
+      startDate,
+      endDate,
+      trainMonths,
+      testMonths,
+      overlapMonths
+    );
+
+    if (periods.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Not enough data for walk-forward analysis. Need at least one train+test period.'
+      });
+    }
+
+    console.log(`   Generated ${periods.length} walk-forward periods\n`);
+
+    // Run walk-forward analysis (this will take a while - runs async)
+    // For now, run synchronously, but we could make it async with a job queue
+    const result = await walkForwardAnalysis.runWalkForwardAnalysis(
+      agentId,
+      periods,
+      manualGuidance,
+      tickers && Array.isArray(tickers) ? tickers : undefined,
+      universe
+    );
+
+    res.json({
+      success: true,
+      result
+    });
+  } catch (error: any) {
+    console.error('Error running walk-forward analysis:', error);
     res.status(500).json({
       success: false,
       error: error.message,

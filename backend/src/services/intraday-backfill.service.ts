@@ -26,6 +26,8 @@ interface BackfillOptions {
   tickers?: string[];
   delayMs?: number;
   batchSize?: number;
+  startDate?: string; // Custom start date (YYYY-MM-DD) for walk-forward
+  endDate?: string;   // Custom end date (YYYY-MM-DD) for walk-forward
 }
 
 class IntradayBackfillService {
@@ -46,9 +48,15 @@ class IntradayBackfillService {
     logger.info(`🚀 Starting intraday backfill for ${universe}...`);
 
     // Calculate date range
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - months);
+    // Support custom date ranges for walk-forward analysis
+    const endDate = options.endDate ? new Date(options.endDate) : new Date();
+    const startDate = options.startDate 
+      ? new Date(options.startDate)
+      : (() => {
+          const d = new Date();
+          d.setMonth(d.getMonth() - months);
+          return d;
+        })();
 
     const startDateStr = this.formatDate(startDate);
     const endDateStr = this.formatDate(endDate);
