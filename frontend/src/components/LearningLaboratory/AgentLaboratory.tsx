@@ -129,7 +129,17 @@ export default function AgentLaboratory() {
         <div className="bg-white rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">{selectedAgent.name}</h2>
+              {(() => {
+                const nameMatch = selectedAgent.name.match(/^(\d+)\.\s*(.+)$/);
+                const displayId = nameMatch ? nameMatch[1] : '';
+                const displayName = nameMatch ? nameMatch[2] : selectedAgent.name;
+                return (
+                  <>
+                    {displayId && <span className="text-sm font-semibold text-gray-500 mr-2">{displayId}.</span>}
+                    <h2 className="text-xl font-bold text-gray-900 inline">{displayName}</h2>
+                  </>
+                );
+              })()}
               <p className="text-sm text-gray-600 mt-1">{selectedAgent.instructions}</p>
             </div>
             <button
@@ -202,7 +212,14 @@ export default function AgentLaboratory() {
             </div>
           ) : (
             <div className="grid gap-4">
-              {agents.map(agent => (
+              {agents.map((agent, index) => {
+                // Extract ID number from agent name (e.g., "1. Momentum Surfer" -> "1")
+                // Or use index + 1 if no number in name
+                const nameMatch = agent.name.match(/^(\d+)\.\s*(.+)$/);
+                const displayId = nameMatch ? nameMatch[1] : (index + 1).toString();
+                const displayName = nameMatch ? nameMatch[2] : agent.name;
+                
+                return (
                 <div
                   key={agent.id}
                   className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
@@ -210,7 +227,8 @@ export default function AgentLaboratory() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3">
-                        <h3 className="text-lg font-bold text-gray-900">{agent.name}</h3>
+                        <span className="text-sm font-semibold text-gray-500">{displayId}.</span>
+                        <h3 className="text-lg font-bold text-gray-900">{displayName}</h3>
                         <span className={`px-2 py-1 text-xs rounded-full ${
                           agent.status === 'learning' ? 'bg-blue-100 text-blue-800' :
                           agent.status === 'paper_trading' ? 'bg-green-100 text-green-800' :
@@ -278,7 +296,7 @@ export default function AgentLaboratory() {
                     </div>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           )}
         </div>
