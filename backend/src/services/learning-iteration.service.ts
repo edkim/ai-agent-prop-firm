@@ -80,7 +80,7 @@ export class LearningIterationService {
     agentId: string,
     manualGuidance?: string,
     overrideScannerPrompt?: string,
-    customDateRange?: { trainStart?: string; trainEnd?: string; testStart?: string; testEnd?: string },
+    customDateRange?: { startDate?: string; endDate?: string },
     customTickers?: string[],
     customUniverse?: string
   ): Promise<IterationResult> {
@@ -440,7 +440,7 @@ export class LearningIterationService {
     iterationNumber: number,
     manualGuidance?: string,
     overrideScannerPrompt?: string,
-    customDateRange?: { trainStart?: string; trainEnd?: string; testStart?: string; testEnd?: string }
+    customDateRange?: { startDate?: string; endDate?: string }
   ): Promise<{
     scanScript: string;
     executionScript: string;
@@ -471,9 +471,9 @@ export class LearningIterationService {
       // User provided a custom scanner prompt - use it directly
       console.log(`   Using user-provided scanner prompt...`);
       scannerQuery = overrideScannerPrompt;
-      // Use training period dates for scanner generation (if walk-forward), otherwise use defaults
-      const scannerStartDate = customDateRange?.trainStart || this.getDateDaysAgo(20);
-      const scannerEndDate = customDateRange?.trainEnd || this.getDateDaysAgo(1);
+      // Use custom date range if provided, otherwise use defaults
+      const scannerStartDate = customDateRange?.startDate || this.getDateDaysAgo(20);
+      const scannerEndDate = customDateRange?.endDate || this.getDateDaysAgo(1);
       
       scannerResult = await this.claude.generateScannerScript({
         query: scannerQuery,
@@ -511,9 +511,9 @@ export class LearningIterationService {
 
       console.log(`   Generating scanner with Claude...`);
       console.log(`   Scanner query: ${scannerQuery.substring(0, 100)}...`);
-      // Use training period dates for scanner generation (if walk-forward), otherwise use defaults
-      const scannerStartDate = customDateRange?.trainStart || this.getDateDaysAgo(20);
-      const scannerEndDate = customDateRange?.trainEnd || this.getDateDaysAgo(1);
+      // Use custom date range if provided, otherwise use defaults
+      const scannerStartDate = customDateRange?.startDate || this.getDateDaysAgo(20);
+      const scannerEndDate = customDateRange?.endDate || this.getDateDaysAgo(1);
       
       scannerResult = await this.claude.generateScannerScript({
         query: scannerQuery,
@@ -578,7 +578,7 @@ export class LearningIterationService {
   private async executeScan(
     scanScript: string,
     tokenUsage?: any,
-    customDateRange?: { trainStart?: string; trainEnd?: string; testStart?: string; testEnd?: string },
+    customDateRange?: { startDate?: string; endDate?: string },
     customTickers?: string[],
     customUniverse?: string,
     agent?: TradingAgent
@@ -608,7 +608,7 @@ export class LearningIterationService {
   private async executeScanRealtime(
     scanScript: string,
     tokenUsage?: any,
-    customDateRange?: { trainStart?: string; trainEnd?: string; testStart?: string; testEnd?: string },
+    customDateRange?: { startDate?: string; endDate?: string },
     customTickers?: string[],
     customUniverse?: string,
     agent?: TradingAgent
@@ -617,9 +617,9 @@ export class LearningIterationService {
 
     try {
       // Configure real-time backtest options
-      // Use custom date range if provided (for walk-forward analysis), otherwise use defaults
-      const startDate = customDateRange?.testStart || this.getDateDaysAgo(10);
-      const endDate = customDateRange?.testEnd || this.getDateDaysAgo(1);
+      // Use custom date range if provided, otherwise use defaults
+      const startDate = customDateRange?.startDate || this.getDateDaysAgo(10);
+      const endDate = customDateRange?.endDate || this.getDateDaysAgo(1);
       
       // Determine tickers: custom tickers > custom universe > agent universe > default
       let tickers: string[];

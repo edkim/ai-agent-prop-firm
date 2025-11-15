@@ -274,8 +274,31 @@ router.get('/:id/iterations/preview', async (req: Request, res: Response) => {
 router.post('/:id/iterations/start', async (req: Request, res: Response) => {
   try {
     const agentId = req.params.id;
-    const { manualGuidance, overrideScannerPrompt } = req.body;
-    const result = await agentLearning.runIteration(agentId, manualGuidance, overrideScannerPrompt);
+    const { manualGuidance, overrideScannerPrompt, customDateRange, customTickers, customUniverse } = req.body;
+    
+    // Convert old format (trainStart/trainEnd/testStart/testEnd) to new format (startDate/endDate)
+    let dateRange: { startDate?: string; endDate?: string } | undefined;
+    if (customDateRange) {
+      if (customDateRange.startDate && customDateRange.endDate) {
+        // New format
+        dateRange = { startDate: customDateRange.startDate, endDate: customDateRange.endDate };
+      } else if (customDateRange.testStart && customDateRange.testEnd) {
+        // Old format - use test dates
+        dateRange = { startDate: customDateRange.testStart, endDate: customDateRange.testEnd };
+      } else if (customDateRange.trainStart && customDateRange.trainEnd) {
+        // Old format - use train dates (for backward compatibility)
+        dateRange = { startDate: customDateRange.trainStart, endDate: customDateRange.trainEnd };
+      }
+    }
+    
+    const result = await agentLearning.runIteration(
+      agentId,
+      manualGuidance,
+      overrideScannerPrompt,
+      dateRange,
+      customTickers,
+      customUniverse
+    );
 
     res.json({
       success: true,
