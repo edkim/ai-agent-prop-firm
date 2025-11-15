@@ -70,7 +70,8 @@ export const timeBasedTemplate: ExecutionTemplate = {
         continue;
       }
 
-      const side = 'SHORT' as 'LONG' | 'SHORT';  // Type assertion to allow comparisons
+      // Determine side from signal direction, or derive from price action if not specified
+      const side = signal.direction || (bars[signalBarIndex + 1].close > bars[signalBarIndex].close ? 'LONG' : 'SHORT');
 
       const entryBar = bars[signalBarIndex + 1];
       let position = {
