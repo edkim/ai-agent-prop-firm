@@ -96,7 +96,7 @@ export async function runRealtimeBacktest(
 
         const signalArrays = await Promise.all(
           batch.map(ticker =>
-            scanTickerRealtime(ticker, startDate, endDate, warmupBars, timeframe, scannerScriptPath, tickers)
+            scanTickerRealtime(ticker, startDate, endDate, warmupBars, timeframe, scannerScriptPath, tickers, startDate, endDate)
           )
         );
 
@@ -118,7 +118,9 @@ export async function runRealtimeBacktest(
           warmupBars,
           timeframe,
           scannerScriptPath,
-          tickers
+          tickers,
+          startDate,
+          endDate
         );
         allSignals.push(...signals);
 
@@ -163,7 +165,9 @@ async function scanTickerRealtime(
   warmupBars: number,
   timeframe: string,
   scannerScriptPath: string,
-  allTickers: string[] // Pass full ticker list for scanner env var
+  allTickers: string[], // Pass full ticker list for scanner env var
+  scanStartDate: string,
+  scanEndDate: string
 ): Promise<Signal[]> {
   const db = getDatabase();
   const signals: Signal[] = [];
@@ -263,7 +267,9 @@ async function scanTickerRealtime(
             availableBars,
             currentBarIndex,
             persistentScanner,
-            allTickers
+            allTickers,
+            startDate,
+            endDate
           );
           const scannerTime = Date.now() - scannerStart;
           perfMetrics.totalScannerTime += scannerTime;
@@ -418,12 +424,14 @@ async function runScannerAtBarPersistentOptimized(
   availableBars: Bar[],
   currentIndex: number,
   persistentScanner: PersistentScannerProcess,
-  allTickers: string[]
+  allTickers: string[],
+  startDate: string,
+  endDate: string
 ): Promise<Signal | null> {
   try {
     // Execute scanner using persistent process with existing temp DB
     // Temp DB already contains all available bars (maintained incrementally)
-    const response = await persistentScanner.scan(tempDbPath, allTickers);
+    const response = await persistentScanner.scan(tempDbPath, allTickers, startDate, endDate);
 
     if (!response.success || !response.data) {
       return null;
@@ -460,7 +468,9 @@ async function runScannerAtBarPersistent(
   availableBars: Bar[],
   currentIndex: number,
   persistentScanner: PersistentScannerProcess,
-  allTickers: string[]
+  allTickers: string[],
+  startDate: string,
+  endDate: string
 ): Promise<Signal | null> {
   const tempDbPath = path.join('/tmp', `realtime-db-${ticker}-${date}-${Date.now()}.db`);
 
@@ -469,7 +479,7 @@ async function runScannerAtBarPersistent(
     await createTempDatabase(tempDbPath, ticker, availableBars, '5min');
 
     // Execute scanner using persistent process (NO process spawn!)
-    const response = await persistentScanner.scan(tempDbPath, allTickers);
+    const response = await persistentScanner.scan(tempDbPath, allTickers, startDate, endDate);
 
     if (!response.success || !response.data) {
       return null;
@@ -782,11 +792,13 @@ async function main() {
       try {
         // Parse scan request
         const request = JSON.parse(line);
-        const { databasePath, tickers, requestId } = request;
+        const { databasePath, tickers, startDate, endDate, requestId } = request;
 
         // Set environment variables for scanner
         process.env.DATABASE_PATH = databasePath;
         process.env.SCAN_TICKERS = tickers.join(',');
+        process.env.SCAN_START_DATE = startDate;
+        process.env.SCAN_END_DATE = endDate;
 
         // Execute scanner logic
         const result = await executeScannerLogic();

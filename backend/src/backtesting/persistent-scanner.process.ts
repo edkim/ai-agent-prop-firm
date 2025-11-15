@@ -21,6 +21,8 @@ import * as readline from 'readline';
 export interface ScanRequest {
   databasePath: string;
   tickers: string[];
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
   requestId: string; // For debugging/tracking
 }
 
@@ -107,7 +109,7 @@ export class PersistentScannerProcess {
   /**
    * Execute a scan request
    */
-  async scan(databasePath: string, tickers: string[]): Promise<ScanResponse> {
+  async scan(databasePath: string, tickers: string[], startDate: string, endDate: string): Promise<ScanResponse> {
     if (!this.process || !this.process.stdin) {
       throw new Error('Scanner process not initialized');
     }
@@ -121,6 +123,8 @@ export class PersistentScannerProcess {
       const request: ScanRequest = {
         databasePath,
         tickers,
+        startDate,
+        endDate,
         requestId
       };
 

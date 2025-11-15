@@ -193,7 +193,6 @@ Based on the strategy complexity and any explicit date mentions, what dates shou
   async generateScannerScript(params: {
     query: string;
     universe: string;
-    dateRange?: { start: string; end: string };
   }): Promise<{ script: string; explanation: string; tokenUsage?: any }> {
     console.log('🔍 Claude generating scanner script for query:', params.query);
 
@@ -1194,13 +1193,7 @@ runScan().then(results => {
   private buildScannerUserMessage(params: {
     query: string;
     universe: string;
-    dateRange?: { start: string; end: string };
   }): string {
-    const today = new Date().toISOString().split('T')[0];
-    const defaultStart = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-    const startDate = params.dateRange?.start || defaultStart;
-    const endDate = params.dateRange?.end || today;
 
     // Check if query contains intraday keywords
     const queryLower = params.query.toLowerCase();
@@ -1220,13 +1213,24 @@ USER QUERY: ${params.query}
 ${tableInstruction}
 PARAMETERS:
 - Universe: ${params.universe}
-- Date Range: ${startDate} to ${endDate}
 
 IMPORTANT REQUIREMENTS:
 1. The scanner MUST read the ticker list from the SCAN_TICKERS environment variable (comma-separated)
-2. Use ticker filtering in SQL queries: WHERE ticker IN (placeholders) - DO NOT query all tickers in the database
-3. This makes scanning efficient by only processing the specific tickers we care about
-4. Throw an error if SCAN_TICKERS is not set or empty
+2. The scanner MUST read the date range from SCAN_START_DATE and SCAN_END_DATE environment variables (YYYY-MM-DD format)
+3. Use ticker filtering in SQL queries: WHERE ticker IN (placeholders) - DO NOT query all tickers in the database
+4. Use date filtering: WHERE date(timestamp/1000, 'unixepoch') >= process.env.SCAN_START_DATE AND date(timestamp/1000, 'unixepoch') <= process.env.SCAN_END_DATE
+5. Throw an error if SCAN_TICKERS, SCAN_START_DATE, or SCAN_END_DATE are not set or empty
+6. DO NOT hardcode dates in the script - always use the environment variables
+
+Example:
+const startDate = process.env.SCAN_START_DATE;
+const endDate = process.env.SCAN_END_DATE;
+if (!startDate || !endDate) {
+  throw new Error('SCAN_START_DATE and SCAN_END_DATE environment variables must be set');
+}
+
+// Then use in SQL queries:
+WHERE date(timestamp/1000, 'unixepoch') >= ? AND date(timestamp/1000, 'unixepoch') <= ?
 
 Please generate a complete, runnable TypeScript scanner script that finds stocks matching the user's criteria.`;
   }

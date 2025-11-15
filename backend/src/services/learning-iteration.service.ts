@@ -471,17 +471,10 @@ export class LearningIterationService {
       // User provided a custom scanner prompt - use it directly
       console.log(`   Using user-provided scanner prompt...`);
       scannerQuery = overrideScannerPrompt;
-      // Use custom date range if provided, otherwise use defaults
-      const scannerStartDate = customDateRange?.startDate || this.getDateDaysAgo(20);
-      const scannerEndDate = customDateRange?.endDate || this.getDateDaysAgo(1);
-      
+      // Don't pass date range to Claude - it will be injected via environment variables at execution time
       scannerResult = await this.claude.generateScannerScript({
         query: scannerQuery,
-        universe: agent.universe || 'Tech Sector',
-        dateRange: {
-          start: scannerStartDate,
-          end: scannerEndDate
-        }
+        universe: agent.universe || 'Tech Sector'
       });
     } else {
       // Generate scanner query automatically
@@ -511,17 +504,10 @@ export class LearningIterationService {
 
       console.log(`   Generating scanner with Claude...`);
       console.log(`   Scanner query: ${scannerQuery.substring(0, 100)}...`);
-      // Use custom date range if provided, otherwise use defaults
-      const scannerStartDate = customDateRange?.startDate || this.getDateDaysAgo(20);
-      const scannerEndDate = customDateRange?.endDate || this.getDateDaysAgo(1);
-      
+      // Don't pass date range to Claude - it will be injected via environment variables at execution time
       scannerResult = await this.claude.generateScannerScript({
         query: scannerQuery,
-        universe: agent.universe || 'Tech Sector', // Use agent's universe or default to Tech Sector
-        dateRange: {
-          start: scannerStartDate,
-          end: scannerEndDate
-        }
+        universe: agent.universe || 'Tech Sector' // Use agent's universe or default to Tech Sector
       });
     }
 
