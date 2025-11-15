@@ -583,7 +583,7 @@ export class LearningIterationService {
       const options: RealtimeBacktestOptions = {
         startDate: this.getDateDaysAgo(10), // 10 days of data (reduced for performance)
         endDate: this.getDateDaysAgo(1),     // Up to yesterday
-        tickers: (await this.getUniverseTickers('Tech Sector')).slice(0, 5), // Reduced to 5 tickers for faster testing
+        tickers: (await this.getUniverseTickers('Tech Sector')).slice(0, 20), // Expanded to 20 tickers for better signal discovery
         warmupBars: 30,                      // Need 30 bars for indicators
         timeframe: '5min',
         maxSignalsPerIteration: 200,

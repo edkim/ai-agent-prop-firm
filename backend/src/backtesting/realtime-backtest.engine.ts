@@ -462,19 +462,29 @@ async function createRealtimeScannerScript(originalScannerCode: string): Promise
     `path.resolve(__dirname, '../.env')`
   );
 
-  // Extract imports and separate them from executable code
+  // Strip 'export' keywords - they're invalid when code is wrapped in a function
+  // This fixes: "error TS1184: Modifiers cannot appear here"
+  fixedCode = fixedCode.replace(/^export\s+/gm, '');
+
+  // Extract imports (everything else stays together as executable code)
   const lines = fixedCode.split('\n');
   const imports: string[] = [];
-  const executableCode: string[] = [];
+  const nonImportCode: string[] = [];
 
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed.startsWith('import ') || trimmed.startsWith('require(')) {
       imports.push(line);
     } else {
-      executableCode.push(line);
+      nonImportCode.push(line);
     }
   }
+
+  // Join non-import code back together preserving multi-line structures
+  const executableCode = nonImportCode.join('\n');
+
+  // Note: Scanner code should end with "return await runScan();" to work with the wrapper
+  // The wrapper will capture this return value and send it via stdout in persistent mode
 
   // Wrap scanner code with persistent mode handler
   const wrappedCode = `
@@ -483,7 +493,7 @@ ${imports.join('\n')}
 
 // ========== ORIGINAL SCANNER CODE (wrapped as async function) ==========
 async function executeScannerLogic(): Promise<any> {
-${executableCode.map(line => '  ' + line).join('\n')}
+${executableCode.split('\n').map(line => '  ' + line).join('\n')}
 }
 
 // ========== PERSISTENT MODE HANDLER ==========
