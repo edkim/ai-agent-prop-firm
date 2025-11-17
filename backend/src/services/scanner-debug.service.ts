@@ -52,6 +52,9 @@ export interface DebugResponse {
 
   // Error information (if any)
   error?: string;
+
+  // Data quality warnings (always check these first!)
+  dataQualityWarnings?: string[];
 }
 
 export class ScannerDebugService {
@@ -82,6 +85,38 @@ export class ScannerDebugService {
           debugLogs: [`No bars found for ${ticker} on ${date}. Check if data exists.`],
           error: `No OHLCV data found for ${ticker} on ${date}`
         };
+      }
+
+      // Data quality checks - catch incomplete data before debugging scanner logic
+      const dataQualityWarnings: string[] = [];
+
+      // Check 1: Sufficient bars for a full trading day (expect ~78 bars for 5min data)
+      if (sampleBars.length < 50) {
+        dataQualityWarnings.push(
+          `⚠️  DATA ISSUE: Only ${sampleBars.length} bars found (expected ~78). Data may be incomplete - backfill needed.`
+        );
+      }
+
+      // Check 2: Check previous day's data availability
+      const prevDate = this.getPreviousTradingDate(date);
+      const prevDayBars = await this.getSampleBars(ticker, prevDate);
+      if (prevDayBars.length === 0) {
+        dataQualityWarnings.push(
+          `⚠️  DATA ISSUE: No data for previous day (${prevDate}). Scanner can't calculate gap.`
+        );
+      } else if (prevDayBars.length < 50) {
+        dataQualityWarnings.push(
+          `⚠️  DATA ISSUE: Previous day (${prevDate}) only has ${prevDayBars.length} bars (expected ~78). Gap calculation may fail.`
+        );
+      }
+
+      // Check 3: Market open data present (should start around 9:30 AM ET = various UTC depending on DST)
+      const firstBar = sampleBars[0];
+      const firstTime = firstBar.time_of_day;
+      if (firstTime > '10:00:00') {
+        dataQualityWarnings.push(
+          `⚠️  DATA ISSUE: First bar at ${firstTime}, missing market open data (expected ~09:30 ET).`
+        );
       }
 
       // Run scanner directly using ScriptExecutionService
@@ -123,6 +158,12 @@ export class ScannerDebugService {
         // Extract conditions from debug logs if explain mode
         const conditions = explain ? this.extractConditions(debugLogs) : undefined;
 
+        // Combine data quality warnings with debug logs
+        const allLogs = [
+          ...dataQualityWarnings,
+          ...(result.error ? [result.error] : ['Scanner executed successfully'])
+        ];
+
         return {
           ticker,
           date,
@@ -130,9 +171,10 @@ export class ScannerDebugService {
           signalsFound: signals.length,
           sampleBars: sampleBars.slice(0, 10), // First 10 bars
           conditions,
-          debugLogs: result.error ? [result.error] : ['Scanner executed successfully'],
+          debugLogs: allLogs,
           signals: signals.length > 0 ? signals : undefined,
-          error: result.error
+          error: result.error,
+          dataQualityWarnings: dataQualityWarnings.length > 0 ? dataQualityWarnings : undefined
         };
 
       } finally {
@@ -202,6 +244,15 @@ export class ScannerDebugService {
     fs.writeFileSync(tempPath, enhancedCode);
 
     return tempPath;
+  }
+
+  /**
+   * Get previous trading date (simple version - goes back 1 day, should be enhanced)
+   */
+  private getPreviousTradingDate(dateStr: string): string {
+    const date = new Date(dateStr);
+    date.setDate(date.getDate() - 1);
+    return date.toISOString().split('T')[0];
   }
 
   /**
