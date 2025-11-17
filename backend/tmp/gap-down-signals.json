@@ -1,0 +1,2467 @@
+[
+  {
+    "ticker": "AAPL",
+    "signal_date": "2025-10-31",
+    "signal_time": "14:20:00",
+    "direction": "LONG",
+    "pattern_strength": 48,
+    "entry_price": 270.4445,
+    "gap_percent": -3,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.61,
+    "metrics": {
+      "gap_percent": -3,
+      "vwap_at_signal": 270.06,
+      "volume_ratio": 0.61,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ABBV",
+    "signal_date": "2025-10-31",
+    "signal_time": "14:30:00",
+    "direction": "LONG",
+    "pattern_strength": 48,
+    "entry_price": 219.1453,
+    "gap_percent": -3,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.62,
+    "metrics": {
+      "gap_percent": -3,
+      "vwap_at_signal": 218.61,
+      "volume_ratio": 0.62,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ABT",
+    "signal_date": "2025-10-15",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 55,
+    "entry_price": 129.395,
+    "gap_percent": -3.37,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.91,
+    "metrics": {
+      "gap_percent": -3.37,
+      "vwap_at_signal": 129.28,
+      "volume_ratio": 0.91,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ABT",
+    "signal_date": "2025-10-21",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 46,
+    "entry_price": 128.43,
+    "gap_percent": -1.08,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.14,
+    "metrics": {
+      "gap_percent": -1.08,
+      "vwap_at_signal": 128.38,
+      "volume_ratio": 1.14,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ABT",
+    "signal_date": "2025-10-29",
+    "signal_time": "14:45:00",
+    "direction": "LONG",
+    "pattern_strength": 44,
+    "entry_price": 124.835,
+    "gap_percent": -1.37,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.94,
+    "metrics": {
+      "gap_percent": -1.37,
+      "vwap_at_signal": 124.81,
+      "volume_ratio": 0.94,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ADBE",
+    "signal_date": "2025-10-29",
+    "signal_time": "16:25:00",
+    "direction": "LONG",
+    "pattern_strength": 70,
+    "entry_price": 341.95,
+    "gap_percent": -3.61,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.73,
+    "metrics": {
+      "gap_percent": -3.61,
+      "vwap_at_signal": 341.14,
+      "volume_ratio": 1.73,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AMD",
+    "signal_date": "2025-10-21",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 41,
+    "entry_price": 237.465,
+    "gap_percent": -1.11,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.86,
+    "metrics": {
+      "gap_percent": -1.11,
+      "vwap_at_signal": 237.29,
+      "volume_ratio": 0.86,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AMD",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:15:00",
+    "direction": "LONG",
+    "pattern_strength": 80,
+    "entry_price": 250.5303,
+    "gap_percent": -3.52,
+    "vwap_crosses": 1,
+    "volume_ratio": 2.32,
+    "metrics": {
+      "gap_percent": -3.52,
+      "vwap_at_signal": 250.38,
+      "volume_ratio": 2.32,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AMD",
+    "signal_date": "2025-11-07",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 55,
+    "entry_price": 231.62,
+    "gap_percent": -3.13,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.96,
+    "metrics": {
+      "gap_percent": -3.13,
+      "vwap_at_signal": 231.11,
+      "volume_ratio": 0.96,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AMD",
+    "signal_date": "2025-11-13",
+    "signal_time": "14:30:00",
+    "direction": "LONG",
+    "pattern_strength": 83,
+    "entry_price": 252.94,
+    "gap_percent": -2.14,
+    "vwap_crosses": 1,
+    "volume_ratio": 29.92,
+    "metrics": {
+      "gap_percent": -2.14,
+      "vwap_at_signal": 252.55,
+      "volume_ratio": 29.92,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AMD",
+    "signal_date": "2025-11-14",
+    "signal_time": "14:15:00",
+    "direction": "LONG",
+    "pattern_strength": 54,
+    "entry_price": 240.62,
+    "gap_percent": -2.61,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.08,
+    "metrics": {
+      "gap_percent": -2.61,
+      "vwap_at_signal": 240.25,
+      "volume_ratio": 1.08,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AMZN",
+    "signal_date": "2025-10-14",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 53,
+    "entry_price": 215.5,
+    "gap_percent": -2.19,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.2,
+    "metrics": {
+      "gap_percent": -2.19,
+      "vwap_at_signal": 215.36,
+      "volume_ratio": 1.2,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AMZN",
+    "signal_date": "2025-10-31",
+    "signal_time": "14:40:00",
+    "direction": "LONG",
+    "pattern_strength": 45,
+    "entry_price": 247.2326,
+    "gap_percent": -2.01,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.76,
+    "metrics": {
+      "gap_percent": -2.01,
+      "vwap_at_signal": 247,
+      "volume_ratio": 0.76,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AMZN",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:15:00",
+    "direction": "LONG",
+    "pattern_strength": 52,
+    "entry_price": 249.23,
+    "gap_percent": -1.92,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.25,
+    "metrics": {
+      "gap_percent": -1.92,
+      "vwap_at_signal": 248.91,
+      "volume_ratio": 1.25,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AMZN",
+    "signal_date": "2025-11-07",
+    "signal_time": "14:25:00",
+    "direction": "LONG",
+    "pattern_strength": 76,
+    "entry_price": 242.99,
+    "gap_percent": -1.03,
+    "vwap_crosses": 1,
+    "volume_ratio": 3.88,
+    "metrics": {
+      "gap_percent": -1.03,
+      "vwap_at_signal": 241.76,
+      "volume_ratio": 3.88,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AMZN",
+    "signal_date": "2025-11-14",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 49,
+    "entry_price": 233.75,
+    "gap_percent": -1.98,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.06,
+    "metrics": {
+      "gap_percent": -1.98,
+      "vwap_at_signal": 233.47,
+      "volume_ratio": 1.06,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AVGO",
+    "signal_date": "2025-10-14",
+    "signal_time": "15:00:00",
+    "direction": "LONG",
+    "pattern_strength": 55,
+    "entry_price": 344.01,
+    "gap_percent": -3.98,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.64,
+    "metrics": {
+      "gap_percent": -3.98,
+      "vwap_at_signal": 343.69,
+      "volume_ratio": 0.64,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AVGO",
+    "signal_date": "2025-10-21",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 45,
+    "entry_price": 344.3003,
+    "gap_percent": -1.52,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.96,
+    "metrics": {
+      "gap_percent": -1.52,
+      "vwap_at_signal": 343.67,
+      "volume_ratio": 0.96,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AVGO",
+    "signal_date": "2025-10-30",
+    "signal_time": "16:25:00",
+    "direction": "LONG",
+    "pattern_strength": 48,
+    "entry_price": 374.76,
+    "gap_percent": -1.71,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.07,
+    "metrics": {
+      "gap_percent": -1.71,
+      "vwap_at_signal": 374.75,
+      "volume_ratio": 1.07,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AVGO",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 72,
+    "entry_price": 357.6,
+    "gap_percent": -2.15,
+    "vwap_crosses": 1,
+    "volume_ratio": 2.37,
+    "metrics": {
+      "gap_percent": -2.15,
+      "vwap_at_signal": 357.1,
+      "volume_ratio": 2.37,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AVGO",
+    "signal_date": "2025-11-13",
+    "signal_time": "14:25:00",
+    "direction": "LONG",
+    "pattern_strength": 55,
+    "entry_price": 351.11,
+    "gap_percent": -1.35,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.61,
+    "metrics": {
+      "gap_percent": -1.35,
+      "vwap_at_signal": 351.08,
+      "volume_ratio": 1.61,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AVGO",
+    "signal_date": "2025-11-14",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 43,
+    "entry_price": 332.3,
+    "gap_percent": -1.44,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.87,
+    "metrics": {
+      "gap_percent": -1.44,
+      "vwap_at_signal": 332.06,
+      "volume_ratio": 0.87,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "BAC",
+    "signal_date": "2025-11-05",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 77,
+    "entry_price": 52.9491,
+    "gap_percent": -1.1,
+    "vwap_crosses": 1,
+    "volume_ratio": 3.09,
+    "metrics": {
+      "gap_percent": -1.1,
+      "vwap_at_signal": 52.92,
+      "volume_ratio": 3.09,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "BRK.B",
+    "signal_date": "2025-10-29",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 39,
+    "entry_price": 476.5,
+    "gap_percent": -1.04,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.74,
+    "metrics": {
+      "gap_percent": -1.04,
+      "vwap_at_signal": 476.2,
+      "volume_ratio": 0.74,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "CAT",
+    "signal_date": "2025-10-21",
+    "signal_time": "16:20:00",
+    "direction": "LONG",
+    "pattern_strength": 50,
+    "entry_price": 530.485,
+    "gap_percent": -1.33,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.34,
+    "metrics": {
+      "gap_percent": -1.33,
+      "vwap_at_signal": 530.15,
+      "volume_ratio": 1.34,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "CAT",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:40:00",
+    "direction": "LONG",
+    "pattern_strength": 58,
+    "entry_price": 558.01,
+    "gap_percent": -1.34,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.79,
+    "metrics": {
+      "gap_percent": -1.34,
+      "vwap_at_signal": 557.88,
+      "volume_ratio": 1.79,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "CAT",
+    "signal_date": "2025-11-07",
+    "signal_time": "14:25:00",
+    "direction": "LONG",
+    "pattern_strength": 37,
+    "entry_price": 564.64,
+    "gap_percent": -1.3,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.58,
+    "metrics": {
+      "gap_percent": -1.3,
+      "vwap_at_signal": 563.42,
+      "volume_ratio": 0.58,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "CRM",
+    "signal_date": "2025-10-14",
+    "signal_time": "14:15:00",
+    "direction": "LONG",
+    "pattern_strength": 42,
+    "entry_price": 244.0774,
+    "gap_percent": -2.01,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.59,
+    "metrics": {
+      "gap_percent": -2.01,
+      "vwap_at_signal": 244.02,
+      "volume_ratio": 0.59,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "CRM",
+    "signal_date": "2025-10-22",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 50,
+    "entry_price": 260,
+    "gap_percent": -2.02,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.08,
+    "metrics": {
+      "gap_percent": -2.02,
+      "vwap_at_signal": 259.72,
+      "volume_ratio": 1.08,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "CRM",
+    "signal_date": "2025-10-29",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 41,
+    "entry_price": 251.58,
+    "gap_percent": -1.36,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.8,
+    "metrics": {
+      "gap_percent": -1.36,
+      "vwap_at_signal": 251.36,
+      "volume_ratio": 0.8,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "CRM",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:15:00",
+    "direction": "LONG",
+    "pattern_strength": 77,
+    "entry_price": 258.5,
+    "gap_percent": -1.19,
+    "vwap_crosses": 1,
+    "volume_ratio": 3.41,
+    "metrics": {
+      "gap_percent": -1.19,
+      "vwap_at_signal": 258.2,
+      "volume_ratio": 3.41,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "CRM",
+    "signal_date": "2025-11-07",
+    "signal_time": "14:20:00",
+    "direction": "LONG",
+    "pattern_strength": 77,
+    "entry_price": 237,
+    "gap_percent": -1.12,
+    "vwap_crosses": 1,
+    "volume_ratio": 3.98,
+    "metrics": {
+      "gap_percent": -1.12,
+      "vwap_at_signal": 236.78,
+      "volume_ratio": 3.98,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "DIS",
+    "signal_date": "2025-10-29",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 39,
+    "entry_price": 110.59,
+    "gap_percent": -1.08,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.74,
+    "metrics": {
+      "gap_percent": -1.08,
+      "vwap_at_signal": 110.49,
+      "volume_ratio": 0.74,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "GOOGL",
+    "signal_date": "2025-10-21",
+    "signal_time": "14:35:00",
+    "direction": "LONG",
+    "pattern_strength": 40,
+    "entry_price": 252.28,
+    "gap_percent": -1.68,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.61,
+    "metrics": {
+      "gap_percent": -1.68,
+      "vwap_at_signal": 252.25,
+      "volume_ratio": 0.61,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "GOOGL",
+    "signal_date": "2025-10-22",
+    "signal_time": "14:15:00",
+    "direction": "LONG",
+    "pattern_strength": 43,
+    "entry_price": 254.38,
+    "gap_percent": -1.25,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.9,
+    "metrics": {
+      "gap_percent": -1.25,
+      "vwap_at_signal": 254.16,
+      "volume_ratio": 0.9,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "GOOGL",
+    "signal_date": "2025-10-28",
+    "signal_time": "15:05:00",
+    "direction": "LONG",
+    "pattern_strength": 37,
+    "entry_price": 267.61,
+    "gap_percent": -1.04,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.64,
+    "metrics": {
+      "gap_percent": -1.04,
+      "vwap_at_signal": 267.33,
+      "volume_ratio": 0.64,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "GOOGL",
+    "signal_date": "2025-10-31",
+    "signal_time": "16:30:00",
+    "direction": "LONG",
+    "pattern_strength": 45,
+    "entry_price": 279.895,
+    "gap_percent": -2.11,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.77,
+    "metrics": {
+      "gap_percent": -2.11,
+      "vwap_at_signal": 279.67,
+      "volume_ratio": 0.77,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "GOOGL",
+    "signal_date": "2025-11-04",
+    "signal_time": "16:00:00",
+    "direction": "LONG",
+    "pattern_strength": 46,
+    "entry_price": 279.23,
+    "gap_percent": -2.52,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.64,
+    "metrics": {
+      "gap_percent": -2.52,
+      "vwap_at_signal": 279.13,
+      "volume_ratio": 0.64,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "IBM",
+    "signal_date": "2025-10-31",
+    "signal_time": "14:40:00",
+    "direction": "LONG",
+    "pattern_strength": 37,
+    "entry_price": 304.485,
+    "gap_percent": -1.22,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.61,
+    "metrics": {
+      "gap_percent": -1.22,
+      "vwap_at_signal": 304.11,
+      "volume_ratio": 0.61,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "IBM",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 43,
+    "entry_price": 300.65,
+    "gap_percent": -1.33,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.93,
+    "metrics": {
+      "gap_percent": -1.33,
+      "vwap_at_signal": 300.57,
+      "volume_ratio": 0.93,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "INTC",
+    "signal_date": "2025-10-14",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 71,
+    "entry_price": 35.475,
+    "gap_percent": -5.07,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.21,
+    "metrics": {
+      "gap_percent": -5.07,
+      "vwap_at_signal": 35.31,
+      "volume_ratio": 1.21,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "INTC",
+    "signal_date": "2025-10-21",
+    "signal_time": "14:50:00",
+    "direction": "LONG",
+    "pattern_strength": 35,
+    "entry_price": 37.91,
+    "gap_percent": -1.02,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.54,
+    "metrics": {
+      "gap_percent": -1.02,
+      "vwap_at_signal": 37.89,
+      "volume_ratio": 0.54,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "INTC",
+    "signal_date": "2025-10-24",
+    "signal_time": "14:35:00",
+    "direction": "LONG",
+    "pattern_strength": 59,
+    "entry_price": 38.9599,
+    "gap_percent": -3.65,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.04,
+    "metrics": {
+      "gap_percent": -3.65,
+      "vwap_at_signal": 38.87,
+      "volume_ratio": 1.04,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "INTC",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 47,
+    "entry_price": 38.12,
+    "gap_percent": -2.83,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.59,
+    "metrics": {
+      "gap_percent": -2.83,
+      "vwap_at_signal": 38.09,
+      "volume_ratio": 0.59,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "META",
+    "signal_date": "2025-10-30",
+    "signal_time": "15:20:00",
+    "direction": "LONG",
+    "pattern_strength": 56,
+    "entry_price": 663.2128,
+    "gap_percent": -3.07,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.04,
+    "metrics": {
+      "gap_percent": -3.07,
+      "vwap_at_signal": 661.11,
+      "volume_ratio": 1.04,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "META",
+    "signal_date": "2025-10-31",
+    "signal_time": "14:30:00",
+    "direction": "LONG",
+    "pattern_strength": 41,
+    "entry_price": 660,
+    "gap_percent": -1.84,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.61,
+    "metrics": {
+      "gap_percent": -1.84,
+      "vwap_at_signal": 659.78,
+      "volume_ratio": 0.61,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "META",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 54,
+    "entry_price": 629.99,
+    "gap_percent": -1.32,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.56,
+    "metrics": {
+      "gap_percent": -1.32,
+      "vwap_at_signal": 629.94,
+      "volume_ratio": 1.56,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "META",
+    "signal_date": "2025-11-11",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 48,
+    "entry_price": 626.25,
+    "gap_percent": -1.02,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.31,
+    "metrics": {
+      "gap_percent": -1.02,
+      "vwap_at_signal": 626.04,
+      "volume_ratio": 1.31,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "MSFT",
+    "signal_date": "2025-10-31",
+    "signal_time": "14:15:00",
+    "direction": "LONG",
+    "pattern_strength": 43,
+    "entry_price": 517.5399,
+    "gap_percent": -1.65,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.8,
+    "metrics": {
+      "gap_percent": -1.65,
+      "vwap_at_signal": 516.66,
+      "volume_ratio": 0.8,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "NFLX",
+    "signal_date": "2025-10-22",
+    "signal_time": "18:20:00",
+    "direction": "LONG",
+    "pattern_strength": 55,
+    "entry_price": 1122.995,
+    "gap_percent": -2.6,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.15,
+    "metrics": {
+      "gap_percent": -2.6,
+      "vwap_at_signal": 1122.28,
+      "volume_ratio": 1.15,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "NVDA",
+    "signal_date": "2025-10-14",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 56,
+    "entry_price": 181.5755,
+    "gap_percent": -3.81,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.8,
+    "metrics": {
+      "gap_percent": -3.81,
+      "vwap_at_signal": 181.52,
+      "volume_ratio": 0.8,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "NVDA",
+    "signal_date": "2025-10-21",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 47,
+    "entry_price": 180.5799,
+    "gap_percent": -1.09,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.2,
+    "metrics": {
+      "gap_percent": -1.09,
+      "vwap_at_signal": 180.41,
+      "volume_ratio": 1.2,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "NVDA",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 66,
+    "entry_price": 202.47,
+    "gap_percent": -2.35,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.89,
+    "metrics": {
+      "gap_percent": -2.35,
+      "vwap_at_signal": 202.32,
+      "volume_ratio": 1.89,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "NVDA",
+    "signal_date": "2025-11-07",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 46,
+    "entry_price": 184.94,
+    "gap_percent": -2.29,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.76,
+    "metrics": {
+      "gap_percent": -2.29,
+      "vwap_at_signal": 184.88,
+      "volume_ratio": 0.76,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "NVDA",
+    "signal_date": "2025-11-11",
+    "signal_time": "14:15:00",
+    "direction": "LONG",
+    "pattern_strength": 51,
+    "entry_price": 195.2299,
+    "gap_percent": -1.95,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.18,
+    "metrics": {
+      "gap_percent": -1.95,
+      "vwap_at_signal": 195.07,
+      "volume_ratio": 1.18,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ORCL",
+    "signal_date": "2025-10-14",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 58,
+    "entry_price": 296.5,
+    "gap_percent": -4.27,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.73,
+    "metrics": {
+      "gap_percent": -4.27,
+      "vwap_at_signal": 295.87,
+      "volume_ratio": 0.73,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ORCL",
+    "signal_date": "2025-10-17",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 59,
+    "entry_price": 295.395,
+    "gap_percent": -3.9,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.91,
+    "metrics": {
+      "gap_percent": -3.9,
+      "vwap_at_signal": 294.76,
+      "volume_ratio": 0.91,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ORCL",
+    "signal_date": "2025-10-29",
+    "signal_time": "15:20:00",
+    "direction": "LONG",
+    "pattern_strength": 48,
+    "entry_price": 275.06,
+    "gap_percent": -2.95,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.62,
+    "metrics": {
+      "gap_percent": -2.95,
+      "vwap_at_signal": 273.29,
+      "volume_ratio": 0.62,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ORCL",
+    "signal_date": "2025-10-30",
+    "signal_time": "17:20:00",
+    "direction": "LONG",
+    "pattern_strength": 39,
+    "entry_price": 261.97,
+    "gap_percent": -1.25,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.67,
+    "metrics": {
+      "gap_percent": -1.25,
+      "vwap_at_signal": 261.88,
+      "volume_ratio": 0.67,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ORCL",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 52,
+    "entry_price": 249.88,
+    "gap_percent": -2.9,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.9,
+    "metrics": {
+      "gap_percent": -2.9,
+      "vwap_at_signal": 249.61,
+      "volume_ratio": 0.9,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ORCL",
+    "signal_date": "2025-11-07",
+    "signal_time": "14:30:00",
+    "direction": "LONG",
+    "pattern_strength": 78,
+    "entry_price": 239.63,
+    "gap_percent": -1.36,
+    "vwap_crosses": 1,
+    "volume_ratio": 6.85,
+    "metrics": {
+      "gap_percent": -1.36,
+      "vwap_at_signal": 239.58,
+      "volume_ratio": 6.85,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ORCL",
+    "signal_date": "2025-11-11",
+    "signal_time": "14:35:00",
+    "direction": "LONG",
+    "pattern_strength": 78,
+    "entry_price": 235.7,
+    "gap_percent": -1.27,
+    "vwap_crosses": 1,
+    "volume_ratio": 3.25,
+    "metrics": {
+      "gap_percent": -1.27,
+      "vwap_at_signal": 235.27,
+      "volume_ratio": 3.25,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "QCOM",
+    "signal_date": "2025-10-22",
+    "signal_time": "14:15:00",
+    "direction": "LONG",
+    "pattern_strength": 41,
+    "entry_price": 167.22,
+    "gap_percent": -1.16,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.84,
+    "metrics": {
+      "gap_percent": -1.16,
+      "vwap_at_signal": 167.04,
+      "volume_ratio": 0.84,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "QCOM",
+    "signal_date": "2025-10-28",
+    "signal_time": "15:00:00",
+    "direction": "LONG",
+    "pattern_strength": 53,
+    "entry_price": 181.39,
+    "gap_percent": -3.51,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.74,
+    "metrics": {
+      "gap_percent": -3.51,
+      "vwap_at_signal": 180.94,
+      "volume_ratio": 0.74,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "QCOM",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 47,
+    "entry_price": 177.04,
+    "gap_percent": -2.03,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.92,
+    "metrics": {
+      "gap_percent": -2.03,
+      "vwap_at_signal": 176.99,
+      "volume_ratio": 0.92,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "TSLA",
+    "signal_date": "2025-10-14",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 55,
+    "entry_price": 422.15,
+    "gap_percent": -3.49,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.86,
+    "metrics": {
+      "gap_percent": -3.49,
+      "vwap_at_signal": 420.95,
+      "volume_ratio": 0.86,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "TSLA",
+    "signal_date": "2025-10-24",
+    "signal_time": "15:20:00",
+    "direction": "LONG",
+    "pattern_strength": 42,
+    "entry_price": 441.113086,
+    "gap_percent": -1.33,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.83,
+    "metrics": {
+      "gap_percent": -1.33,
+      "vwap_at_signal": 440.57,
+      "volume_ratio": 0.83,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "TSLA",
+    "signal_date": "2025-10-30",
+    "signal_time": "16:10:00",
+    "direction": "LONG",
+    "pattern_strength": 46,
+    "entry_price": 444.63,
+    "gap_percent": -1.63,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.99,
+    "metrics": {
+      "gap_percent": -1.63,
+      "vwap_at_signal": 444.32,
+      "volume_ratio": 0.99,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "TSLA",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 52,
+    "entry_price": 454.16,
+    "gap_percent": -3.04,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.81,
+    "metrics": {
+      "gap_percent": -3.04,
+      "vwap_at_signal": 453.76,
+      "volume_ratio": 0.81,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "TSLA",
+    "signal_date": "2025-11-07",
+    "signal_time": "14:55:00",
+    "direction": "LONG",
+    "pattern_strength": 64,
+    "entry_price": 431.94,
+    "gap_percent": -3.34,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.41,
+    "metrics": {
+      "gap_percent": -3.34,
+      "vwap_at_signal": 429.52,
+      "volume_ratio": 1.41,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "TXN",
+    "signal_date": "2025-10-29",
+    "signal_time": "16:10:00",
+    "direction": "LONG",
+    "pattern_strength": 46,
+    "entry_price": 163.53,
+    "gap_percent": -1.1,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.16,
+    "metrics": {
+      "gap_percent": -1.1,
+      "vwap_at_signal": 163.53,
+      "volume_ratio": 1.16,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AMAT",
+    "signal_date": "2025-10-28",
+    "signal_time": "14:30:00",
+    "direction": "LONG",
+    "pattern_strength": 79,
+    "entry_price": 228.37,
+    "gap_percent": -1.48,
+    "vwap_crosses": 1,
+    "volume_ratio": 11.23,
+    "metrics": {
+      "gap_percent": -1.48,
+      "vwap_at_signal": 228.03,
+      "volume_ratio": 11.23,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AMAT",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:25:00",
+    "direction": "LONG",
+    "pattern_strength": 73,
+    "entry_price": 232.04,
+    "gap_percent": -2.33,
+    "vwap_crosses": 1,
+    "volume_ratio": 2.33,
+    "metrics": {
+      "gap_percent": -2.33,
+      "vwap_at_signal": 231.89,
+      "volume_ratio": 2.33,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AMAT",
+    "signal_date": "2025-11-07",
+    "signal_time": "14:20:00",
+    "direction": "LONG",
+    "pattern_strength": 38,
+    "entry_price": 230.89,
+    "gap_percent": -1.36,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.57,
+    "metrics": {
+      "gap_percent": -1.36,
+      "vwap_at_signal": 230.72,
+      "volume_ratio": 0.57,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AMAT",
+    "signal_date": "2025-11-14",
+    "signal_time": "14:30:00",
+    "direction": "LONG",
+    "pattern_strength": 100,
+    "entry_price": 210.46,
+    "gap_percent": -5.46,
+    "vwap_crosses": 1,
+    "volume_ratio": 66.99,
+    "metrics": {
+      "gap_percent": -5.46,
+      "vwap_at_signal": 207.93,
+      "volume_ratio": 66.99,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AMT",
+    "signal_date": "2025-10-17",
+    "signal_time": "14:20:00",
+    "direction": "LONG",
+    "pattern_strength": 41,
+    "entry_price": 189.23,
+    "gap_percent": -1.16,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.82,
+    "metrics": {
+      "gap_percent": -1.16,
+      "vwap_at_signal": 188.83,
+      "volume_ratio": 0.82,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AMT",
+    "signal_date": "2025-10-23",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 42,
+    "entry_price": 189.12,
+    "gap_percent": -1.61,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.75,
+    "metrics": {
+      "gap_percent": -1.61,
+      "vwap_at_signal": 188.41,
+      "volume_ratio": 0.75,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AMT",
+    "signal_date": "2025-10-28",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 71,
+    "entry_price": 181.245,
+    "gap_percent": -5.65,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.01,
+    "metrics": {
+      "gap_percent": -5.65,
+      "vwap_at_signal": 180.84,
+      "volume_ratio": 1.01,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "BLK",
+    "signal_date": "2025-10-29",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 76,
+    "entry_price": 1116.57,
+    "gap_percent": -1.02,
+    "vwap_crosses": 1,
+    "volume_ratio": 4.93,
+    "metrics": {
+      "gap_percent": -1.02,
+      "vwap_at_signal": 1115.29,
+      "volume_ratio": 4.93,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "BMY",
+    "signal_date": "2025-10-28",
+    "signal_time": "14:25:00",
+    "direction": "LONG",
+    "pattern_strength": 44,
+    "entry_price": 43.045,
+    "gap_percent": -1.11,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.05,
+    "metrics": {
+      "gap_percent": -1.11,
+      "vwap_at_signal": 42.99,
+      "volume_ratio": 1.05,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "INTU",
+    "signal_date": "2025-10-29",
+    "signal_time": "14:20:00",
+    "direction": "LONG",
+    "pattern_strength": 47,
+    "entry_price": 657.66,
+    "gap_percent": -3.02,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.53,
+    "metrics": {
+      "gap_percent": -3.02,
+      "vwap_at_signal": 657.21,
+      "volume_ratio": 0.53,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "NOW",
+    "signal_date": "2025-10-14",
+    "signal_time": "14:20:00",
+    "direction": "LONG",
+    "pattern_strength": 46,
+    "entry_price": 910.24,
+    "gap_percent": -1.4,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.08,
+    "metrics": {
+      "gap_percent": -1.4,
+      "vwap_at_signal": 910.24,
+      "volume_ratio": 1.08,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "NOW",
+    "signal_date": "2025-10-29",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 44,
+    "entry_price": 921.9753,
+    "gap_percent": -1.74,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.83,
+    "metrics": {
+      "gap_percent": -1.74,
+      "vwap_at_signal": 920.53,
+      "volume_ratio": 0.83,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "NOW",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:30:00",
+    "direction": "LONG",
+    "pattern_strength": 82,
+    "entry_price": 907.46,
+    "gap_percent": -1.95,
+    "vwap_crosses": 1,
+    "volume_ratio": 252.7,
+    "metrics": {
+      "gap_percent": -1.95,
+      "vwap_at_signal": 904.22,
+      "volume_ratio": 252.7,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ABNB",
+    "signal_date": "2025-10-29",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 48,
+    "entry_price": 127.995,
+    "gap_percent": -1.64,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.06,
+    "metrics": {
+      "gap_percent": -1.64,
+      "vwap_at_signal": 127.88,
+      "volume_ratio": 1.06,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "CRWD",
+    "signal_date": "2025-10-14",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 52,
+    "entry_price": 498.895,
+    "gap_percent": -2.47,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.03,
+    "metrics": {
+      "gap_percent": -2.47,
+      "vwap_at_signal": 498.01,
+      "volume_ratio": 1.03,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "CRWD",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:30:00",
+    "direction": "LONG",
+    "pattern_strength": 82,
+    "entry_price": 539.72,
+    "gap_percent": -1.92,
+    "vwap_crosses": 1,
+    "volume_ratio": 137.84,
+    "metrics": {
+      "gap_percent": -1.92,
+      "vwap_at_signal": 538.27,
+      "volume_ratio": 137.84,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "CRWD",
+    "signal_date": "2025-11-07",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 50,
+    "entry_price": 526.7286,
+    "gap_percent": -1.57,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.24,
+    "metrics": {
+      "gap_percent": -1.57,
+      "vwap_at_signal": 525.48,
+      "volume_ratio": 1.24,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "DDOG",
+    "signal_date": "2025-10-14",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 51,
+    "entry_price": 160.31,
+    "gap_percent": -2.32,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.04,
+    "metrics": {
+      "gap_percent": -2.32,
+      "vwap_at_signal": 160.22,
+      "volume_ratio": 1.04,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "DDOG",
+    "signal_date": "2025-10-29",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 76,
+    "entry_price": 156.325,
+    "gap_percent": -1.01,
+    "vwap_crosses": 1,
+    "volume_ratio": 3.71,
+    "metrics": {
+      "gap_percent": -1.01,
+      "vwap_at_signal": 156.21,
+      "volume_ratio": 3.71,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "DDOG",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:15:00",
+    "direction": "LONG",
+    "pattern_strength": 87,
+    "entry_price": 158.36,
+    "gap_percent": -2.85,
+    "vwap_crosses": 1,
+    "volume_ratio": 18.31,
+    "metrics": {
+      "gap_percent": -2.85,
+      "vwap_at_signal": 158.17,
+      "volume_ratio": 18.31,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "DDOG",
+    "signal_date": "2025-11-07",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 56,
+    "entry_price": 188.09,
+    "gap_percent": -1.64,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.6,
+    "metrics": {
+      "gap_percent": -1.64,
+      "vwap_at_signal": 187.8,
+      "volume_ratio": 1.6,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "MDB",
+    "signal_date": "2025-10-14",
+    "signal_time": "14:20:00",
+    "direction": "LONG",
+    "pattern_strength": 44,
+    "entry_price": 312.95,
+    "gap_percent": -2.17,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.68,
+    "metrics": {
+      "gap_percent": -2.17,
+      "vwap_at_signal": 312.19,
+      "volume_ratio": 0.68,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "MDB",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:20:00",
+    "direction": "LONG",
+    "pattern_strength": 48,
+    "entry_price": 358.99,
+    "gap_percent": -2.24,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.85,
+    "metrics": {
+      "gap_percent": -2.24,
+      "vwap_at_signal": 357.74,
+      "volume_ratio": 0.85,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "MDB",
+    "signal_date": "2025-11-07",
+    "signal_time": "14:30:00",
+    "direction": "LONG",
+    "pattern_strength": 82,
+    "entry_price": 348.46,
+    "gap_percent": -2.07,
+    "vwap_crosses": 1,
+    "volume_ratio": 125.35,
+    "metrics": {
+      "gap_percent": -2.07,
+      "vwap_at_signal": 347.81,
+      "volume_ratio": 125.35,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "NET",
+    "signal_date": "2025-10-14",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 51,
+    "entry_price": 214.795,
+    "gap_percent": -3.55,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.6,
+    "metrics": {
+      "gap_percent": -3.55,
+      "vwap_at_signal": 214.6,
+      "volume_ratio": 0.6,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "NET",
+    "signal_date": "2025-10-17",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 80,
+    "entry_price": 208.615,
+    "gap_percent": -1.7,
+    "vwap_crosses": 1,
+    "volume_ratio": 3.25,
+    "metrics": {
+      "gap_percent": -1.7,
+      "vwap_at_signal": 208.19,
+      "volume_ratio": 3.25,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "NET",
+    "signal_date": "2025-10-21",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 42,
+    "entry_price": 209.83,
+    "gap_percent": -2.12,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.58,
+    "metrics": {
+      "gap_percent": -2.12,
+      "vwap_at_signal": 209.16,
+      "volume_ratio": 0.58,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "NET",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:25:00",
+    "direction": "LONG",
+    "pattern_strength": 63,
+    "entry_price": 240.39,
+    "gap_percent": -3.62,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.26,
+    "metrics": {
+      "gap_percent": -3.62,
+      "vwap_at_signal": 240.13,
+      "volume_ratio": 1.26,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "NET",
+    "signal_date": "2025-11-07",
+    "signal_time": "14:40:00",
+    "direction": "LONG",
+    "pattern_strength": 43,
+    "entry_price": 221.845,
+    "gap_percent": -1.26,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.94,
+    "metrics": {
+      "gap_percent": -1.26,
+      "vwap_at_signal": 221.37,
+      "volume_ratio": 0.94,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "NET",
+    "signal_date": "2025-11-11",
+    "signal_time": "14:40:00",
+    "direction": "LONG",
+    "pattern_strength": 54,
+    "entry_price": 239.395,
+    "gap_percent": -1.58,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.45,
+    "metrics": {
+      "gap_percent": -1.58,
+      "vwap_at_signal": 239.47,
+      "volume_ratio": 1.45,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "OKTA",
+    "signal_date": "2025-10-14",
+    "signal_time": "14:20:00",
+    "direction": "LONG",
+    "pattern_strength": 44,
+    "entry_price": 88.93,
+    "gap_percent": -1.5,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.88,
+    "metrics": {
+      "gap_percent": -1.5,
+      "vwap_at_signal": 88.9,
+      "volume_ratio": 0.88,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "OKTA",
+    "signal_date": "2025-10-22",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 49,
+    "entry_price": 88.3,
+    "gap_percent": -1.55,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.17,
+    "metrics": {
+      "gap_percent": -1.55,
+      "vwap_at_signal": 88.17,
+      "volume_ratio": 1.17,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "OKTA",
+    "signal_date": "2025-10-29",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 55,
+    "entry_price": 88.215,
+    "gap_percent": -2.74,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.1,
+    "metrics": {
+      "gap_percent": -2.74,
+      "vwap_at_signal": 88.13,
+      "volume_ratio": 1.1,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "OKTA",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:30:00",
+    "direction": "LONG",
+    "pattern_strength": 79,
+    "entry_price": 88.88,
+    "gap_percent": -1.44,
+    "vwap_crosses": 1,
+    "volume_ratio": 26.59,
+    "metrics": {
+      "gap_percent": -1.44,
+      "vwap_at_signal": 88.81,
+      "volume_ratio": 26.59,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "QQQ",
+    "signal_date": "2025-09-25",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 41,
+    "entry_price": 591.99,
+    "gap_percent": -1.18,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.84,
+    "metrics": {
+      "gap_percent": -1.18,
+      "vwap_at_signal": 590.87,
+      "volume_ratio": 0.84,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "QQQ",
+    "signal_date": "2025-10-14",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 41,
+    "entry_price": 594.9878,
+    "gap_percent": -1.33,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.79,
+    "metrics": {
+      "gap_percent": -1.33,
+      "vwap_at_signal": 594.33,
+      "volume_ratio": 0.79,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "QQQ",
+    "signal_date": "2025-11-14",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 47,
+    "entry_price": 599.96,
+    "gap_percent": -1.42,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.1,
+    "metrics": {
+      "gap_percent": -1.42,
+      "vwap_at_signal": 599.88,
+      "volume_ratio": 1.1,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "SHOP",
+    "signal_date": "2025-10-14",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 52,
+    "entry_price": 149.685,
+    "gap_percent": -3.24,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.75,
+    "metrics": {
+      "gap_percent": -3.24,
+      "vwap_at_signal": 149.37,
+      "volume_ratio": 0.75,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "SHOP",
+    "signal_date": "2025-10-21",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 48,
+    "entry_price": 161.9075,
+    "gap_percent": -1.87,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.98,
+    "metrics": {
+      "gap_percent": -1.87,
+      "vwap_at_signal": 161.65,
+      "volume_ratio": 0.98,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "SHOP",
+    "signal_date": "2025-10-30",
+    "signal_time": "15:00:00",
+    "direction": "LONG",
+    "pattern_strength": 63,
+    "entry_price": 176.49,
+    "gap_percent": -1.12,
+    "vwap_crosses": 1,
+    "volume_ratio": 2.19,
+    "metrics": {
+      "gap_percent": -1.12,
+      "vwap_at_signal": 176.18,
+      "volume_ratio": 2.19,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "SHOP",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:30:00",
+    "direction": "LONG",
+    "pattern_strength": 99,
+    "entry_price": 165.5176,
+    "gap_percent": -4.85,
+    "vwap_crosses": 1,
+    "volume_ratio": 34.67,
+    "metrics": {
+      "gap_percent": -4.85,
+      "vwap_at_signal": 164.96,
+      "volume_ratio": 34.67,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "SHOP",
+    "signal_date": "2025-11-07",
+    "signal_time": "14:15:00",
+    "direction": "LONG",
+    "pattern_strength": 62,
+    "entry_price": 154.3313,
+    "gap_percent": -1.27,
+    "vwap_crosses": 1,
+    "volume_ratio": 2.05,
+    "metrics": {
+      "gap_percent": -1.27,
+      "vwap_at_signal": 154.36,
+      "volume_ratio": 2.05,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "SNOW",
+    "signal_date": "2025-10-14",
+    "signal_time": "14:15:00",
+    "direction": "LONG",
+    "pattern_strength": 58,
+    "entry_price": 239.9,
+    "gap_percent": -2.19,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.48,
+    "metrics": {
+      "gap_percent": -2.19,
+      "vwap_at_signal": 239.74,
+      "volume_ratio": 1.48,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "SNOW",
+    "signal_date": "2025-10-21",
+    "signal_time": "14:45:00",
+    "direction": "LONG",
+    "pattern_strength": 60,
+    "entry_price": 246.5316,
+    "gap_percent": -1.22,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.98,
+    "metrics": {
+      "gap_percent": -1.22,
+      "vwap_at_signal": 244.88,
+      "volume_ratio": 1.98,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "SNOW",
+    "signal_date": "2025-11-07",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 58,
+    "entry_price": 260.44,
+    "gap_percent": -2.11,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.51,
+    "metrics": {
+      "gap_percent": -2.11,
+      "vwap_at_signal": 260.15,
+      "volume_ratio": 1.51,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "SNOW",
+    "signal_date": "2025-11-11",
+    "signal_time": "14:35:00",
+    "direction": "LONG",
+    "pattern_strength": 44,
+    "entry_price": 267.55,
+    "gap_percent": -1.83,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.8,
+    "metrics": {
+      "gap_percent": -1.83,
+      "vwap_at_signal": 266.95,
+      "volume_ratio": 0.8,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ZM",
+    "signal_date": "2025-10-14",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 46,
+    "entry_price": 78.81,
+    "gap_percent": -1.7,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.97,
+    "metrics": {
+      "gap_percent": -1.7,
+      "vwap_at_signal": 78.63,
+      "volume_ratio": 0.97,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ZM",
+    "signal_date": "2025-10-29",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 46,
+    "entry_price": 83.79,
+    "gap_percent": -1.77,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.94,
+    "metrics": {
+      "gap_percent": -1.77,
+      "vwap_at_signal": 83.68,
+      "volume_ratio": 0.94,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ZM",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:15:00",
+    "direction": "LONG",
+    "pattern_strength": 60,
+    "entry_price": 85.35,
+    "gap_percent": -1.23,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.93,
+    "metrics": {
+      "gap_percent": -1.23,
+      "vwap_at_signal": 85.27,
+      "volume_ratio": 1.93,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ZM",
+    "signal_date": "2025-11-07",
+    "signal_time": "14:50:00",
+    "direction": "LONG",
+    "pattern_strength": 44,
+    "entry_price": 81.93,
+    "gap_percent": -1.73,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.82,
+    "metrics": {
+      "gap_percent": -1.73,
+      "vwap_at_signal": 81.76,
+      "volume_ratio": 0.82,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ZS",
+    "signal_date": "2025-10-14",
+    "signal_time": "14:25:00",
+    "direction": "LONG",
+    "pattern_strength": 51,
+    "entry_price": 305.05,
+    "gap_percent": -2.57,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.91,
+    "metrics": {
+      "gap_percent": -2.57,
+      "vwap_at_signal": 304.25,
+      "volume_ratio": 0.91,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ZS",
+    "signal_date": "2025-10-29",
+    "signal_time": "14:35:00",
+    "direction": "LONG",
+    "pattern_strength": 39,
+    "entry_price": 319.6,
+    "gap_percent": -1.81,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.5,
+    "metrics": {
+      "gap_percent": -1.81,
+      "vwap_at_signal": 318.78,
+      "volume_ratio": 0.5,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ZS",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:30:00",
+    "direction": "LONG",
+    "pattern_strength": 77,
+    "entry_price": 329.79,
+    "gap_percent": -1.19,
+    "vwap_crosses": 1,
+    "volume_ratio": 130.72,
+    "metrics": {
+      "gap_percent": -1.19,
+      "vwap_at_signal": 328.6,
+      "volume_ratio": 130.72,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "BA",
+    "signal_date": "2025-10-29",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 61,
+    "entry_price": 216.8601,
+    "gap_percent": -3.43,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.22,
+    "metrics": {
+      "gap_percent": -3.43,
+      "vwap_at_signal": 216.52,
+      "volume_ratio": 1.22,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "BA",
+    "signal_date": "2025-10-30",
+    "signal_time": "14:15:00",
+    "direction": "LONG",
+    "pattern_strength": 64,
+    "entry_price": 206.5725,
+    "gap_percent": -3.26,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.47,
+    "metrics": {
+      "gap_percent": -3.26,
+      "vwap_at_signal": 206.05,
+      "volume_ratio": 1.47,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "BABA",
+    "signal_date": "2025-10-21",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 55,
+    "entry_price": 168.77,
+    "gap_percent": -3.27,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.93,
+    "metrics": {
+      "gap_percent": -3.27,
+      "vwap_at_signal": 168.27,
+      "volume_ratio": 0.93,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "BABA",
+    "signal_date": "2025-10-30",
+    "signal_time": "14:20:00",
+    "direction": "LONG",
+    "pattern_strength": 48,
+    "entry_price": 175.5,
+    "gap_percent": -1.75,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.07,
+    "metrics": {
+      "gap_percent": -1.75,
+      "vwap_at_signal": 175.59,
+      "volume_ratio": 1.07,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "BABA",
+    "signal_date": "2025-10-31",
+    "signal_time": "14:30:00",
+    "direction": "LONG",
+    "pattern_strength": 60,
+    "entry_price": 169.1856,
+    "gap_percent": -3.67,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.11,
+    "metrics": {
+      "gap_percent": -3.67,
+      "vwap_at_signal": 168.79,
+      "volume_ratio": 1.11,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "BABA",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 48,
+    "entry_price": 162.58,
+    "gap_percent": -3.2,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.52,
+    "metrics": {
+      "gap_percent": -3.2,
+      "vwap_at_signal": 162.44,
+      "volume_ratio": 0.52,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "BABA",
+    "signal_date": "2025-11-07",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 87,
+    "entry_price": 163.26,
+    "gap_percent": -3.03,
+    "vwap_crosses": 1,
+    "volume_ratio": 2.91,
+    "metrics": {
+      "gap_percent": -3.03,
+      "vwap_at_signal": 163.16,
+      "volume_ratio": 2.91,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "BABA",
+    "signal_date": "2025-11-11",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 76,
+    "entry_price": 164.28,
+    "gap_percent": -1,
+    "vwap_crosses": 1,
+    "volume_ratio": 6.89,
+    "metrics": {
+      "gap_percent": -1,
+      "vwap_at_signal": 164.25,
+      "volume_ratio": 6.89,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AA",
+    "signal_date": "2025-10-17",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 55,
+    "entry_price": 36.29,
+    "gap_percent": -2.48,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.21,
+    "metrics": {
+      "gap_percent": -2.48,
+      "vwap_at_signal": 36.2,
+      "volume_ratio": 1.21,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AA",
+    "signal_date": "2025-10-21",
+    "signal_time": "14:15:00",
+    "direction": "LONG",
+    "pattern_strength": 95,
+    "entry_price": 36.42,
+    "gap_percent": -7.24,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.9,
+    "metrics": {
+      "gap_percent": -7.24,
+      "vwap_at_signal": 36.33,
+      "volume_ratio": 1.9,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AA",
+    "signal_date": "2025-10-24",
+    "signal_time": "14:45:00",
+    "direction": "LONG",
+    "pattern_strength": 55,
+    "entry_price": 39.09,
+    "gap_percent": -3.11,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.99,
+    "metrics": {
+      "gap_percent": -3.11,
+      "vwap_at_signal": 38.95,
+      "volume_ratio": 0.99,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AA",
+    "signal_date": "2025-10-28",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 38,
+    "entry_price": 39.335,
+    "gap_percent": -1.1,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.68,
+    "metrics": {
+      "gap_percent": -1.1,
+      "vwap_at_signal": 39.31,
+      "volume_ratio": 0.68,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AA",
+    "signal_date": "2025-10-30",
+    "signal_time": "14:20:00",
+    "direction": "LONG",
+    "pattern_strength": 49,
+    "entry_price": 37.24,
+    "gap_percent": -3.36,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.52,
+    "metrics": {
+      "gap_percent": -3.36,
+      "vwap_at_signal": 37.21,
+      "volume_ratio": 0.52,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AA",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:20:00",
+    "direction": "LONG",
+    "pattern_strength": 72,
+    "entry_price": 35.98,
+    "gap_percent": -3.41,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.9,
+    "metrics": {
+      "gap_percent": -3.41,
+      "vwap_at_signal": 35.92,
+      "volume_ratio": 1.9,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "AA",
+    "signal_date": "2025-11-07",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 79,
+    "entry_price": 36.28,
+    "gap_percent": -1.66,
+    "vwap_crosses": 1,
+    "volume_ratio": 2.92,
+    "metrics": {
+      "gap_percent": -1.66,
+      "vwap_at_signal": 36.25,
+      "volume_ratio": 2.92,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "MU",
+    "signal_date": "2025-10-14",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 45,
+    "entry_price": 189.15,
+    "gap_percent": -2.26,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.68,
+    "metrics": {
+      "gap_percent": -2.26,
+      "vwap_at_signal": 188.44,
+      "volume_ratio": 0.68,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "MU",
+    "signal_date": "2025-10-21",
+    "signal_time": "14:05:00",
+    "direction": "LONG",
+    "pattern_strength": 54,
+    "entry_price": 202.595,
+    "gap_percent": -2.71,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.05,
+    "metrics": {
+      "gap_percent": -2.71,
+      "vwap_at_signal": 202.47,
+      "volume_ratio": 1.05,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "MU",
+    "signal_date": "2025-10-28",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 41,
+    "entry_price": 218.9,
+    "gap_percent": -1.22,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.85,
+    "metrics": {
+      "gap_percent": -1.22,
+      "vwap_at_signal": 218.63,
+      "volume_ratio": 0.85,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "MU",
+    "signal_date": "2025-11-04",
+    "signal_time": "14:10:00",
+    "direction": "LONG",
+    "pattern_strength": 57,
+    "entry_price": 224.8,
+    "gap_percent": -3.85,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.84,
+    "metrics": {
+      "gap_percent": -3.85,
+      "vwap_at_signal": 224.66,
+      "volume_ratio": 0.84,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "MU",
+    "signal_date": "2025-11-07",
+    "signal_time": "14:40:00",
+    "direction": "LONG",
+    "pattern_strength": 88,
+    "entry_price": 234.82,
+    "gap_percent": -3.79,
+    "vwap_crosses": 1,
+    "volume_ratio": 2.72,
+    "metrics": {
+      "gap_percent": -3.79,
+      "vwap_at_signal": 232.34,
+      "volume_ratio": 2.72,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "MU",
+    "signal_date": "2025-11-11",
+    "signal_time": "14:15:00",
+    "direction": "LONG",
+    "pattern_strength": 79,
+    "entry_price": 249.139,
+    "gap_percent": -1.5,
+    "vwap_crosses": 1,
+    "volume_ratio": 3.91,
+    "metrics": {
+      "gap_percent": -1.5,
+      "vwap_at_signal": 249.12,
+      "volume_ratio": 3.91,
+      "vwap_crosses": 1
+    }
+  }
+]

@@ -1,0 +1,3831 @@
+[
+  {
+    "date": "2025-10-31",
+    "ticker": "AAPL",
+    "side": "LONG",
+    "entryTime": "14:25:00",
+    "entryPrice": 270.46,
+    "exitTime": "14:30:00",
+    "exitPrice": 271.3636340757856,
+    "quantity": 36,
+    "pnl": 32.53082672828327,
+    "pnlPercent": 0.33411006277662003,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 270.79,
+    "lowestPrice": 270.1001,
+    "gapSize": 3,
+    "prevClose": 277.75,
+    "exitDetails": [
+      {
+        "time": "14:30:00",
+        "price": 271.3636340757856,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-31",
+    "ticker": "ABBV",
+    "side": "LONG",
+    "entryTime": "14:35:00",
+    "entryPrice": 219.165,
+    "exitTime": "14:40:00",
+    "exitPrice": 218.57437323475884,
+    "quantity": 45,
+    "pnl": -26.578204435851944,
+    "pnlPercent": -0.2694895467986012,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 219.165,
+    "lowestPrice": 217.92,
+    "gapSize": 3,
+    "prevClose": 227,
+    "exitDetails": [
+      {
+        "time": "14:40:00",
+        "price": 218.57437323475884,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-15",
+    "ticker": "ABT",
+    "side": "LONG",
+    "entryTime": "14:10:00",
+    "entryPrice": 129.35,
+    "exitTime": "14:15:00",
+    "exitPrice": 128.871002937792,
+    "quantity": 77,
+    "pnl": -36.88277379001451,
+    "pnlPercent": -0.37031083278545085,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 130.01,
+    "lowestPrice": 128.86,
+    "gapSize": 3.37,
+    "prevClose": 133.5,
+    "exitDetails": [
+      {
+        "time": "14:15:00",
+        "price": 128.871002937792,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "ABT",
+    "side": "LONG",
+    "entryTime": "14:10:00",
+    "entryPrice": 128.5069,
+    "exitTime": "14:15:00",
+    "exitPrice": 128.21532784052158,
+    "quantity": 77,
+    "pnl": -22.451056279838355,
+    "pnlPercent": -0.22689222094566144,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 128.59,
+    "lowestPrice": 128.07,
+    "gapSize": 1.08,
+    "prevClose": 129.4893,
+    "exitDetails": [
+      {
+        "time": "14:15:00",
+        "price": 128.21532784052158,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-29",
+    "ticker": "ABT",
+    "side": "LONG",
+    "entryTime": "14:50:00",
+    "entryPrice": 124.82,
+    "exitTime": "14:55:00",
+    "exitPrice": 124.6593973279766,
+    "quantity": 80,
+    "pnl": -12.848213761870966,
+    "pnlPercent": -0.12866741870164003,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 124.8694,
+    "lowestPrice": 124.54,
+    "gapSize": 1.37,
+    "prevClose": 126.86,
+    "exitDetails": [
+      {
+        "time": "14:55:00",
+        "price": 124.6593973279766,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-29",
+    "ticker": "ADBE",
+    "side": "LONG",
+    "entryTime": "16:30:00",
+    "entryPrice": 341.97,
+    "exitTime": "16:35:00",
+    "exitPrice": 341.78463943174546,
+    "quantity": 29,
+    "pnl": -5.3754564793824215,
+    "pnlPercent": -0.054203751280687267,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 342.33,
+    "lowestPrice": 341.54,
+    "gapSize": 3.61,
+    "prevClose": 357.0001,
+    "exitDetails": [
+      {
+        "time": "16:35:00",
+        "price": 341.78463943174546,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "AMD",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 237.44,
+    "exitTime": "14:20:00",
+    "exitPrice": 238.28515666428683,
+    "quantity": 42,
+    "pnl": 35.49657990004698,
+    "pnlPercent": 0.35594536063293164,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 238.3,
+    "lowestPrice": 236.86,
+    "gapSize": 1.11,
+    "prevClose": 240.87,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 238.28515666428683,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "AMD",
+    "side": "LONG",
+    "entryTime": "14:20:00",
+    "entryPrice": 250.53,
+    "exitTime": "14:25:00",
+    "exitPrice": 251.95939235262034,
+    "quantity": 39,
+    "pnl": 55.74630175219326,
+    "pnlPercent": 0.5705473806012613,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 250.78,
+    "lowestPrice": 249.8,
+    "gapSize": 3.52,
+    "prevClose": 259.03,
+    "exitDetails": [
+      {
+        "time": "14:25:00",
+        "price": 251.95939235262034,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-07",
+    "ticker": "AMD",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 231.7859,
+    "exitTime": "14:20:00",
+    "exitPrice": 233.20588754684638,
+    "quantity": 43,
+    "pnl": 61.05946451439459,
+    "pnlPercent": 0.6126289592448833,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 231.8,
+    "lowestPrice": 230.65,
+    "gapSize": 3.13,
+    "prevClose": 238.5004,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 233.20588754684638,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-13",
+    "ticker": "AMD",
+    "side": "LONG",
+    "entryTime": "14:35:00",
+    "entryPrice": 252.96,
+    "exitTime": "14:40:00",
+    "exitPrice": 251.7279823995332,
+    "quantity": 39,
+    "pnl": -48.048686418205364,
+    "pnlPercent": -0.4870404808929491,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 254.28,
+    "lowestPrice": 249.03,
+    "gapSize": 2.14,
+    "prevClose": 257.2,
+    "exitDetails": [
+      {
+        "time": "14:40:00",
+        "price": 251.7279823995332,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-14",
+    "ticker": "AMD",
+    "side": "LONG",
+    "entryTime": "14:20:00",
+    "entryPrice": 248.43,
+    "exitTime": "15:45:00",
+    "exitPrice": 246.2299610777904,
+    "quantity": 40,
+    "pnl": -88.00155688838458,
+    "pnlPercent": -0.8855769923960933,
+    "exitReason": "VWAP breakdown (scaled exit)",
+    "highestPrice": 250,
+    "lowestPrice": 245.35,
+    "gapSize": 2.61,
+    "prevClose": 246.439,
+    "exitDetails": [
+      {
+        "time": "14:25:00",
+        "price": 246.3451,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "15:45:00",
+        "price": 245.96130359263464,
+        "reason": "VWAP breakdown",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-10-14",
+    "ticker": "AMZN",
+    "side": "LONG",
+    "entryTime": "14:10:00",
+    "entryPrice": 215.58,
+    "exitTime": "15:55:00",
+    "exitPrice": 217.78,
+    "quantity": 46,
+    "pnl": 101.19999999999948,
+    "pnlPercent": 1.0205028295760221,
+    "exitReason": "Market close",
+    "highestPrice": 218.22,
+    "lowestPrice": 215.17,
+    "gapSize": 2.19,
+    "prevClose": 219.81,
+    "exitDetails": [
+      {
+        "time": "15:55:00",
+        "price": 217.78,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-31",
+    "ticker": "AMZN",
+    "side": "LONG",
+    "entryTime": "14:45:00",
+    "entryPrice": 247.24,
+    "exitTime": "14:50:00",
+    "exitPrice": 247.6672538855999,
+    "quantity": 40,
+    "pnl": 17.09015542399584,
+    "pnlPercent": 0.17280936968123928,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 247.98,
+    "lowestPrice": 246.92,
+    "gapSize": 2.01,
+    "prevClose": 252.1799,
+    "exitDetails": [
+      {
+        "time": "14:50:00",
+        "price": 247.6672538855999,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "AMZN",
+    "side": "LONG",
+    "entryTime": "14:20:00",
+    "entryPrice": 249.22,
+    "exitTime": "14:25:00",
+    "exitPrice": 249.12230829684646,
+    "quantity": 40,
+    "pnl": -3.9076681261417434,
+    "pnlPercent": -0.03919898208552427,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 250.81,
+    "lowestPrice": 248.8,
+    "gapSize": 1.92,
+    "prevClose": 253.35,
+    "exitDetails": [
+      {
+        "time": "14:25:00",
+        "price": 249.12230829684646,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-07",
+    "ticker": "AMZN",
+    "side": "LONG",
+    "entryTime": "14:30:00",
+    "entryPrice": 242.9,
+    "exitTime": "14:35:00",
+    "exitPrice": 240.58679451071765,
+    "quantity": 41,
+    "pnl": -94.84142506057648,
+    "pnlPercent": -0.9523283200009688,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 243.22,
+    "lowestPrice": 239.75,
+    "gapSize": 1.03,
+    "prevClose": 243.8174,
+    "exitDetails": [
+      {
+        "time": "14:35:00",
+        "price": 240.58679451071765,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-14",
+    "ticker": "AMZN",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 236,
+    "exitTime": "14:40:00",
+    "exitPrice": 235.73125723862995,
+    "quantity": 42,
+    "pnl": -11.28719597754207,
+    "pnlPercent": -0.11387405142798698,
+    "exitReason": "VWAP breakdown (scaled exit)",
+    "highestPrice": 236.5,
+    "lowestPrice": 235.36,
+    "gapSize": 1.98,
+    "prevClose": 237.79,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 236.445,
+        "reason": "Partial target (50% gap fill)",
+        "size": 0.3
+      },
+      {
+        "time": "14:40:00",
+        "price": 235.4253674837571,
+        "reason": "VWAP breakdown",
+        "size": 0.7
+      }
+    ]
+  },
+  {
+    "date": "2025-10-14",
+    "ticker": "AVGO",
+    "side": "LONG",
+    "entryTime": "15:05:00",
+    "entryPrice": 343.985,
+    "exitTime": "15:10:00",
+    "exitPrice": 343.68016018149996,
+    "quantity": 29,
+    "pnl": -8.840354736501638,
+    "pnlPercent": -0.08862009055629068,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 345.07,
+    "lowestPrice": 343.3,
+    "gapSize": 3.98,
+    "prevClose": 357.12,
+    "exitDetails": [
+      {
+        "time": "15:10:00",
+        "price": 343.68016018149996,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "AVGO",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 344.3699,
+    "exitTime": "14:20:00",
+    "exitPrice": 344.2929179492763,
+    "quantity": 29,
+    "pnl": -2.2324794709873004,
+    "pnlPercent": -0.02235446556847739,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 345.21,
+    "lowestPrice": 343.34,
+    "gapSize": 1.52,
+    "prevClose": 350.2,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 344.2929179492763,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-30",
+    "ticker": "AVGO",
+    "side": "LONG",
+    "entryTime": "16:30:00",
+    "entryPrice": 374.76,
+    "exitTime": "16:35:00",
+    "exitPrice": 374.81505303915446,
+    "quantity": 26,
+    "pnl": 1.4313790180162869,
+    "pnlPercent": 0.014690212176985958,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 375.58,
+    "lowestPrice": 374.13,
+    "gapSize": 1.71,
+    "prevClose": 386.98,
+    "exitDetails": [
+      {
+        "time": "16:35:00",
+        "price": 374.81505303915446,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "AVGO",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 357.93,
+    "exitTime": "14:30:00",
+    "exitPrice": 357.1563229046301,
+    "quantity": 27,
+    "pnl": -20.88928157498782,
+    "pnlPercent": -0.216153185083653,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 361.5,
+    "lowestPrice": 356.55,
+    "gapSize": 2.15,
+    "prevClose": 363.86,
+    "exitDetails": [
+      {
+        "time": "14:30:00",
+        "price": 357.1563229046301,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-13",
+    "ticker": "AVGO",
+    "side": "LONG",
+    "entryTime": "14:30:00",
+    "entryPrice": 351.58,
+    "exitTime": "14:35:00",
+    "exitPrice": 347.6396997067642,
+    "quantity": 28,
+    "pnl": -110.32840821060222,
+    "pnlPercent": -1.1207407398702411,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 353.55,
+    "lowestPrice": 343.9,
+    "gapSize": 1.35,
+    "prevClose": 353.2,
+    "exitDetails": [
+      {
+        "time": "14:35:00",
+        "price": 347.6396997067642,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-14",
+    "ticker": "AVGO",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 341.765,
+    "exitTime": "15:55:00",
+    "exitPrice": 338.76604999999995,
+    "quantity": 29,
+    "pnl": -86.96955000000105,
+    "pnlPercent": -0.8774889178236613,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 344.6799,
+    "lowestPrice": 341,
+    "gapSize": 1.44,
+    "prevClose": 337.185,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 337.1015,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "15:55:00",
+        "price": 342.65,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-11-05",
+    "ticker": "BAC",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 52.94,
+    "exitTime": "14:30:00",
+    "exitPrice": 52.579347092010174,
+    "quantity": 188,
+    "pnl": -67.80274670208686,
+    "pnlPercent": -0.6812484095009894,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 53.19,
+    "lowestPrice": 52.51,
+    "gapSize": 1.1,
+    "prevClose": 53.57,
+    "exitDetails": [
+      {
+        "time": "14:30:00",
+        "price": 52.579347092010174,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-29",
+    "ticker": "BRK.B",
+    "side": "LONG",
+    "entryTime": "14:10:00",
+    "entryPrice": 476.41,
+    "exitTime": "15:55:00",
+    "exitPrice": 475.585,
+    "quantity": 20,
+    "pnl": -16.50000000000091,
+    "pnlPercent": -0.17317016855230694,
+    "exitReason": "Market close",
+    "highestPrice": 477.517077,
+    "lowestPrice": 475.21,
+    "gapSize": 1.04,
+    "prevClose": 481.01,
+    "exitDetails": [
+      {
+        "time": "15:55:00",
+        "price": 475.585,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "CAT",
+    "side": "LONG",
+    "entryTime": "16:25:00",
+    "entryPrice": 530.485,
+    "exitTime": "16:35:00",
+    "exitPrice": 529.9499999999999,
+    "quantity": 18,
+    "pnl": -9.630000000001473,
+    "pnlPercent": -0.10085110794840228,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 531.4999,
+    "lowestPrice": 529.54,
+    "gapSize": 1.33,
+    "prevClose": 531.16,
+    "exitDetails": [
+      {
+        "time": "16:30:00",
+        "price": 530.5799999999999,
+        "reason": "Partial target (50% gap fill)",
+        "size": 0.3
+      },
+      {
+        "time": "16:35:00",
+        "price": 529.68,
+        "reason": "Market close",
+        "size": 0.7
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "CAT",
+    "side": "LONG",
+    "entryTime": "14:45:00",
+    "entryPrice": 558.275,
+    "exitTime": "15:05:00",
+    "exitPrice": 557.5919060882234,
+    "quantity": 17,
+    "pnl": -11.612596500202358,
+    "pnlPercent": -0.12235796189630724,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 564.09,
+    "lowestPrice": 557.05,
+    "gapSize": 1.34,
+    "prevClose": 570,
+    "exitDetails": [
+      {
+        "time": "15:05:00",
+        "price": 557.5919060882234,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-07",
+    "ticker": "CAT",
+    "side": "LONG",
+    "entryTime": "14:30:00",
+    "entryPrice": 563.55,
+    "exitTime": "14:35:00",
+    "exitPrice": 553.1304940177248,
+    "quantity": 17,
+    "pnl": -177.13160169867763,
+    "pnlPercent": -1.8489053291234416,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 565,
+    "lowestPrice": 550.33,
+    "gapSize": 1.3,
+    "prevClose": 571.125,
+    "exitDetails": [
+      {
+        "time": "14:35:00",
+        "price": 553.1304940177248,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-14",
+    "ticker": "CRM",
+    "side": "LONG",
+    "entryTime": "14:20:00",
+    "entryPrice": 243.825,
+    "exitTime": "14:25:00",
+    "exitPrice": 243.8130050774789,
+    "quantity": 41,
+    "pnl": -0.4917918233649914,
+    "pnlPercent": -0.004919480168603446,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 244.0302,
+    "lowestPrice": 243.67,
+    "gapSize": 2.01,
+    "prevClose": 248.6323,
+    "exitDetails": [
+      {
+        "time": "14:25:00",
+        "price": 243.8130050774789,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-22",
+    "ticker": "CRM",
+    "side": "LONG",
+    "entryTime": "14:10:00",
+    "entryPrice": 257.64,
+    "exitTime": "14:15:00",
+    "exitPrice": 258.75864353628276,
+    "quantity": 38,
+    "pnl": 42.508454378745455,
+    "pnlPercent": 0.4341886105739695,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 258.1,
+    "lowestPrice": 257.28,
+    "gapSize": 2.02,
+    "prevClose": 263.5,
+    "exitDetails": [
+      {
+        "time": "14:15:00",
+        "price": 258.75864353628276,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-29",
+    "ticker": "CRM",
+    "side": "LONG",
+    "entryTime": "14:10:00",
+    "entryPrice": 252.27,
+    "exitTime": "15:55:00",
+    "exitPrice": 251.59,
+    "quantity": 39,
+    "pnl": -26.520000000000266,
+    "pnlPercent": -0.26955246363024016,
+    "exitReason": "Market close",
+    "highestPrice": 253.57,
+    "lowestPrice": 251.22,
+    "gapSize": 1.36,
+    "prevClose": 254.06,
+    "exitDetails": [
+      {
+        "time": "15:55:00",
+        "price": 251.59,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "CRM",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 260.81,
+    "exitTime": "19:30:00",
+    "exitPrice": 260.72625999999997,
+    "quantity": 38,
+    "pnl": -3.182120000001305,
+    "pnlPercent": -0.03210766458342638,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 260.99,
+    "lowestPrice": 260.65,
+    "gapSize": 1.19,
+    "prevClose": 261.2984,
+    "exitDetails": [
+      {
+        "time": "19:15:00",
+        "price": 260.9042,
+        "reason": "Partial target (50% gap fill)",
+        "size": 0.3
+      },
+      {
+        "time": "19:30:00",
+        "price": 260.65,
+        "reason": "Market close",
+        "size": 0.7
+      }
+    ]
+  },
+  {
+    "date": "2025-11-07",
+    "ticker": "CRM",
+    "side": "LONG",
+    "entryTime": "19:10:00",
+    "entryPrice": 239.27,
+    "exitTime": "19:35:00",
+    "exitPrice": 239.48,
+    "quantity": 41,
+    "pnl": 8.609999999999161,
+    "pnlPercent": 0.08776695783005789,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 239.9868,
+    "lowestPrice": 239.27,
+    "gapSize": 1.12,
+    "prevClose": 239.5,
+    "exitDetails": [
+      {
+        "time": "19:25:00",
+        "price": 239.51,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "19:35:00",
+        "price": 239.41,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-10-29",
+    "ticker": "DIS",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 110.9324,
+    "exitTime": "14:35:00",
+    "exitPrice": 110.55733948567445,
+    "quantity": 90,
+    "pnl": -33.75544628929987,
+    "pnlPercent": -0.3380982601345992,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 111,
+    "lowestPrice": 110.26,
+    "gapSize": 1.08,
+    "prevClose": 111.5,
+    "exitDetails": [
+      {
+        "time": "14:35:00",
+        "price": 110.55733948567445,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "GOOGL",
+    "side": "LONG",
+    "entryTime": "14:40:00",
+    "entryPrice": 251.925,
+    "exitTime": "15:55:00",
+    "exitPrice": 250.43,
+    "quantity": 39,
+    "pnl": -58.30500000000018,
+    "pnlPercent": -0.5934305844993567,
+    "exitReason": "Market close",
+    "highestPrice": 251.97,
+    "lowestPrice": 250.23,
+    "gapSize": 1.68,
+    "prevClose": 256.87,
+    "exitDetails": [
+      {
+        "time": "15:55:00",
+        "price": 250.43,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-22",
+    "ticker": "GOOGL",
+    "side": "LONG",
+    "entryTime": "14:20:00",
+    "entryPrice": 250.51,
+    "exitTime": "14:25:00",
+    "exitPrice": 252.3944353260568,
+    "quantity": 39,
+    "pnl": 73.49297771621531,
+    "pnlPercent": 0.7522395617168188,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 251.27,
+    "lowestPrice": 250.5017,
+    "gapSize": 1.25,
+    "prevClose": 255.34,
+    "exitDetails": [
+      {
+        "time": "14:25:00",
+        "price": 252.3944353260568,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-28",
+    "ticker": "GOOGL",
+    "side": "LONG",
+    "entryTime": "15:10:00",
+    "entryPrice": 267.9082,
+    "exitTime": "15:55:00",
+    "exitPrice": 267.08075792444725,
+    "quantity": 37,
+    "pnl": -30.615356795452385,
+    "pnlPercent": -0.30885283673764635,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 268.11,
+    "lowestPrice": 266.85,
+    "gapSize": 1.04,
+    "prevClose": 270.4699,
+    "exitDetails": [
+      {
+        "time": "15:55:00",
+        "price": 267.08075792444725,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-31",
+    "ticker": "GOOGL",
+    "side": "LONG",
+    "entryTime": "16:35:00",
+    "entryPrice": 280.76,
+    "exitTime": "16:45:00",
+    "exitPrice": 280.75,
+    "quantity": 35,
+    "pnl": -0.3499999999996817,
+    "pnlPercent": -0.00356176093460283,
+    "exitReason": "Market close",
+    "highestPrice": 281.19,
+    "lowestPrice": 280.57,
+    "gapSize": 2.11,
+    "prevClose": 284,
+    "exitDetails": [
+      {
+        "time": "16:45:00",
+        "price": 280.75,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "GOOGL",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 283.35,
+    "exitTime": "19:15:00",
+    "exitPrice": 282.77764999999994,
+    "quantity": 35,
+    "pnl": -20.03225000000299,
+    "pnlPercent": -0.20199400035295054,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 283.49,
+    "lowestPrice": 282.53,
+    "gapSize": 2.52,
+    "prevClose": 283.55,
+    "exitDetails": [
+      {
+        "time": "19:10:00",
+        "price": 283.3555,
+        "reason": "Partial target (50% gap fill)",
+        "size": 0.3
+      },
+      {
+        "time": "19:15:00",
+        "price": 282.53,
+        "reason": "Market close",
+        "size": 0.7
+      }
+    ]
+  },
+  {
+    "date": "2025-10-31",
+    "ticker": "IBM",
+    "side": "LONG",
+    "entryTime": "14:45:00",
+    "entryPrice": 306.52,
+    "exitTime": "15:55:00",
+    "exitPrice": 308.82120000000003,
+    "quantity": 32,
+    "pnl": 73.63840000000164,
+    "pnlPercent": 0.7507503588673011,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 309.66,
+    "lowestPrice": 306.21,
+    "gapSize": 1.22,
+    "prevClose": 309.49,
+    "exitDetails": [
+      {
+        "time": "15:45:00",
+        "price": 309.516,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "15:55:00",
+        "price": 307.2,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "IBM",
+    "side": "LONG",
+    "entryTime": "19:20:00",
+    "entryPrice": 304.4,
+    "exitTime": "19:25:00",
+    "exitPrice": 304.1577,
+    "quantity": 32,
+    "pnl": -7.753600000000006,
+    "pnlPercent": -0.079599211563732,
+    "exitReason": "Market close",
+    "highestPrice": 304.4,
+    "lowestPrice": 304.1577,
+    "gapSize": 1.33,
+    "prevClose": 304.7,
+    "exitDetails": [
+      {
+        "time": "19:25:00",
+        "price": 304.1577,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-14",
+    "ticker": "INTC",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 36.225,
+    "exitTime": "15:50:00",
+    "exitPrice": 35.53711630217546,
+    "quantity": 276,
+    "pnl": -189.85590059957272,
+    "pnlPercent": -1.8989198007578711,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 36.545,
+    "lowestPrice": 35.48,
+    "gapSize": 5.07,
+    "prevClose": 37.2701,
+    "exitDetails": [
+      {
+        "time": "15:50:00",
+        "price": 35.53711630217546,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "INTC",
+    "side": "LONG",
+    "entryTime": "14:55:00",
+    "entryPrice": 38.175,
+    "exitTime": "15:55:00",
+    "exitPrice": 38.196799999999996,
+    "quantity": 261,
+    "pnl": 5.689799999999721,
+    "pnlPercent": 0.057105435494430735,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 38.27,
+    "lowestPrice": 38.03,
+    "gapSize": 1.02,
+    "prevClose": 38.23,
+    "exitDetails": [
+      {
+        "time": "15:45:00",
+        "price": 38.233999999999995,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "15:55:00",
+        "price": 38.11,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-10-24",
+    "ticker": "INTC",
+    "side": "LONG",
+    "entryTime": "14:40:00",
+    "entryPrice": 38.22,
+    "exitTime": "14:45:00",
+    "exitPrice": 39.020185175757106,
+    "quantity": 261,
+    "pnl": 208.84833087260506,
+    "pnlPercent": 2.093629449913939,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 38.25,
+    "lowestPrice": 37.99,
+    "gapSize": 3.65,
+    "prevClose": 41.1025,
+    "exitDetails": [
+      {
+        "time": "14:45:00",
+        "price": 39.020185175757106,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "INTC",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 39.2,
+    "exitTime": "19:15:00",
+    "exitPrice": 39.2137,
+    "quantity": 255,
+    "pnl": 3.4935000000000116,
+    "pnlPercent": 0.03494897959183685,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 39.23,
+    "lowestPrice": 39.2,
+    "gapSize": 2.83,
+    "prevClose": 39.21,
+    "exitDetails": [
+      {
+        "time": "19:10:00",
+        "price": 39.211,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "19:15:00",
+        "price": 39.22,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-10-30",
+    "ticker": "META",
+    "side": "LONG",
+    "entryTime": "15:25:00",
+    "entryPrice": 667.2,
+    "exitTime": "15:55:00",
+    "exitPrice": 666.08,
+    "quantity": 14,
+    "pnl": -15.680000000000064,
+    "pnlPercent": -0.16786570743405343,
+    "exitReason": "Market close",
+    "highestPrice": 671.55,
+    "lowestPrice": 665.21,
+    "gapSize": 3.07,
+    "prevClose": 696.3004,
+    "exitDetails": [
+      {
+        "time": "15:55:00",
+        "price": 666.08,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-31",
+    "ticker": "META",
+    "side": "LONG",
+    "entryTime": "14:35:00",
+    "entryPrice": 646.3558,
+    "exitTime": "14:40:00",
+    "exitPrice": 654.8381973578769,
+    "quantity": 15,
+    "pnl": 127.23596036815252,
+    "pnlPercent": 1.312341802746542,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 648.4,
+    "lowestPrice": 646.04,
+    "gapSize": 1.84,
+    "prevClose": 674.4501,
+    "exitDetails": [
+      {
+        "time": "14:40:00",
+        "price": 654.8381973578769,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "META",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 638.26,
+    "exitTime": "19:10:00",
+    "exitPrice": 638.04,
+    "quantity": 15,
+    "pnl": -3.3000000000004093,
+    "pnlPercent": -0.03446871181023835,
+    "exitReason": "Market close",
+    "highestPrice": 638.35,
+    "lowestPrice": 638,
+    "gapSize": 1.32,
+    "prevClose": 638.42,
+    "exitDetails": [
+      {
+        "time": "19:10:00",
+        "price": 638.04,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-11",
+    "ticker": "META",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 633.591,
+    "exitTime": "19:15:00",
+    "exitPrice": 633.47386,
+    "quantity": 15,
+    "pnl": -1.7571000000009462,
+    "pnlPercent": -0.01848826766795347,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 633.6462,
+    "lowestPrice": 633.3,
+    "gapSize": 1.02,
+    "prevClose": 633.4,
+    "exitDetails": [
+      {
+        "time": "19:10:00",
+        "price": 633.4,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "19:15:00",
+        "price": 633.6462,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-10-31",
+    "ticker": "MSFT",
+    "side": "LONG",
+    "entryTime": "14:20:00",
+    "entryPrice": 517.45,
+    "exitTime": "14:25:00",
+    "exitPrice": 517.6108537849808,
+    "quantity": 19,
+    "pnl": 3.0562219146344205,
+    "pnlPercent": 0.031085860465892158,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 517.72,
+    "lowestPrice": 517,
+    "gapSize": 1.65,
+    "prevClose": 525.96,
+    "exitDetails": [
+      {
+        "time": "14:25:00",
+        "price": 517.6108537849808,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-22",
+    "ticker": "NFLX",
+    "side": "LONG",
+    "entryTime": "18:25:00",
+    "entryPrice": 1116,
+    "exitTime": "18:30:00",
+    "exitPrice": 1124.1812250215282,
+    "quantity": 8,
+    "pnl": 65.44980017222588,
+    "pnlPercent": 0.7330846793484082,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 1119.76,
+    "lowestPrice": 1115.9999,
+    "gapSize": 2.6,
+    "prevClose": 1160.94,
+    "exitDetails": [
+      {
+        "time": "18:30:00",
+        "price": 1124.1812250215282,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-14",
+    "ticker": "NVDA",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 181.87,
+    "exitTime": "14:20:00",
+    "exitPrice": 181.64290557289294,
+    "quantity": 54,
+    "pnl": -12.26309906378134,
+    "pnlPercent": -0.12486634799970409,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 181.99,
+    "lowestPrice": 181.54,
+    "gapSize": 3.81,
+    "prevClose": 188.53,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 181.64290557289294,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "NVDA",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 181.315,
+    "exitTime": "15:55:00",
+    "exitPrice": 181.16,
+    "quantity": 55,
+    "pnl": -8.525000000000063,
+    "pnlPercent": -0.08548658412155703,
+    "exitReason": "Market close",
+    "highestPrice": 181.6199,
+    "lowestPrice": 180.93,
+    "gapSize": 1.09,
+    "prevClose": 182.78,
+    "exitDetails": [
+      {
+        "time": "15:55:00",
+        "price": 181.16,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "NVDA",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 207.19,
+    "exitTime": "19:10:00",
+    "exitPrice": 207.1,
+    "quantity": 48,
+    "pnl": -4.320000000000164,
+    "pnlPercent": -0.043438389883683294,
+    "exitReason": "Market close",
+    "highestPrice": 207.2,
+    "lowestPrice": 207.09,
+    "gapSize": 2.35,
+    "prevClose": 207.22,
+    "exitDetails": [
+      {
+        "time": "19:10:00",
+        "price": 207.1,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-07",
+    "ticker": "NVDA",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 188.97,
+    "exitTime": "19:15:00",
+    "exitPrice": 188.92643200000003,
+    "quantity": 52,
+    "pnl": -2.2655359999981783,
+    "pnlPercent": -0.023055511456826463,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 189.2,
+    "lowestPrice": 188.76,
+    "gapSize": 2.29,
+    "prevClose": 188.9697,
+    "exitDetails": [
+      {
+        "time": "19:10:00",
+        "price": 188.96776,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "19:15:00",
+        "price": 188.83,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-11-11",
+    "ticker": "NVDA",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 199.74,
+    "exitTime": "19:15:00",
+    "exitPrice": 199.648148,
+    "quantity": 50,
+    "pnl": -4.592600000000857,
+    "pnlPercent": -0.045985781515979346,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 200,
+    "lowestPrice": 199.68,
+    "gapSize": 1.95,
+    "prevClose": 199.53,
+    "exitDetails": [
+      {
+        "time": "19:10:00",
+        "price": 199.53164,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "19:15:00",
+        "price": 199.92,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-10-14",
+    "ticker": "ORCL",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 301.68,
+    "exitTime": "15:40:00",
+    "exitPrice": 298.1470775913599,
+    "quantity": 33,
+    "pnl": -116.58643948512344,
+    "pnlPercent": -1.1710827395386183,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 302.27,
+    "lowestPrice": 297.6,
+    "gapSize": 4.27,
+    "prevClose": 309.0945,
+    "exitDetails": [
+      {
+        "time": "15:40:00",
+        "price": 298.1470775913599,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-17",
+    "ticker": "ORCL",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 291.305,
+    "exitTime": "14:20:00",
+    "exitPrice": 292.50342545630076,
+    "quantity": 34,
+    "pnl": 40.74646551422563,
+    "pnlPercent": 0.4113988624639996,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 292.9116,
+    "lowestPrice": 291.1,
+    "gapSize": 3.9,
+    "prevClose": 305.55,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 292.50342545630076,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-29",
+    "ticker": "ORCL",
+    "side": "LONG",
+    "entryTime": "15:25:00",
+    "entryPrice": 274.7725,
+    "exitTime": "15:35:00",
+    "exitPrice": 273.8933898568115,
+    "quantity": 36,
+    "pnl": -31.647965154785425,
+    "pnlPercent": -0.31994109424650724,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 275.2,
+    "lowestPrice": 273.74,
+    "gapSize": 2.95,
+    "prevClose": 281.4,
+    "exitDetails": [
+      {
+        "time": "15:35:00",
+        "price": 273.8933898568115,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-30",
+    "ticker": "ORCL",
+    "side": "LONG",
+    "entryTime": "17:25:00",
+    "entryPrice": 262.4497,
+    "exitTime": "17:30:00",
+    "exitPrice": 262.15,
+    "quantity": 38,
+    "pnl": -11.388600000001134,
+    "pnlPercent": -0.114193310184782,
+    "exitReason": "Market close",
+    "highestPrice": 263.1,
+    "lowestPrice": 262.15,
+    "gapSize": 1.25,
+    "prevClose": 272.99,
+    "exitDetails": [
+      {
+        "time": "17:30:00",
+        "price": 262.15,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "ORCL",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 256.9208,
+    "exitTime": "19:15:00",
+    "exitPrice": 256.8746,
+    "quantity": 38,
+    "pnl": -1.7555999999999585,
+    "pnlPercent": -0.017982195291311138,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 257,
+    "lowestPrice": 256.75,
+    "gapSize": 2.9,
+    "prevClose": 256.92,
+    "exitDetails": [
+      {
+        "time": "19:10:00",
+        "price": 256.928,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "19:15:00",
+        "price": 256.75,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-11-07",
+    "ticker": "ORCL",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 242.92,
+    "exitTime": "19:10:00",
+    "exitPrice": 242.73,
+    "quantity": 41,
+    "pnl": -7.789999999999907,
+    "pnlPercent": -0.07821505022229448,
+    "exitReason": "Market close",
+    "highestPrice": 243.2,
+    "lowestPrice": 242.73,
+    "gapSize": 1.36,
+    "prevClose": 242.92,
+    "exitDetails": [
+      {
+        "time": "19:10:00",
+        "price": 242.73,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-11",
+    "ticker": "ORCL",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 240.41,
+    "exitTime": "19:10:00",
+    "exitPrice": 240.37,
+    "quantity": 41,
+    "pnl": -1.6399999999996737,
+    "pnlPercent": -0.016638243001535727,
+    "exitReason": "Market close",
+    "highestPrice": 240.41,
+    "lowestPrice": 240.24,
+    "gapSize": 1.27,
+    "prevClose": 240.39,
+    "exitDetails": [
+      {
+        "time": "19:10:00",
+        "price": 240.37,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-22",
+    "ticker": "QCOM",
+    "side": "LONG",
+    "entryTime": "14:20:00",
+    "entryPrice": 167.395,
+    "exitTime": "14:30:00",
+    "exitPrice": 167.3479834759913,
+    "quantity": 59,
+    "pnl": -2.773974916513964,
+    "pnlPercent": -0.028087173457218707,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 167.96,
+    "lowestPrice": 167.285,
+    "gapSize": 1.16,
+    "prevClose": 168.47,
+    "exitDetails": [
+      {
+        "time": "14:30:00",
+        "price": 167.3479834759913,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-28",
+    "ticker": "QCOM",
+    "side": "LONG",
+    "entryTime": "15:05:00",
+    "entryPrice": 181.965,
+    "exitTime": "15:30:00",
+    "exitPrice": 181.44225965471415,
+    "quantity": 54,
+    "pnl": -28.22797864543611,
+    "pnlPercent": -0.2872752151709691,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 182.57,
+    "lowestPrice": 180.86,
+    "gapSize": 3.51,
+    "prevClose": 188.8644,
+    "exitDetails": [
+      {
+        "time": "15:30:00",
+        "price": 181.44225965471415,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "QCOM",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 180.6,
+    "exitTime": "19:10:00",
+    "exitPrice": 180.52,
+    "quantity": 55,
+    "pnl": -4.399999999999125,
+    "pnlPercent": -0.044296788482826185,
+    "exitReason": "Market close",
+    "highestPrice": 180.6,
+    "lowestPrice": 180.52,
+    "gapSize": 2.03,
+    "prevClose": 180.53,
+    "exitDetails": [
+      {
+        "time": "19:10:00",
+        "price": 180.52,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-14",
+    "ticker": "TSLA",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 433.12,
+    "exitTime": "15:55:00",
+    "exitPrice": 429.74649999999997,
+    "quantity": 23,
+    "pnl": -77.59050000000082,
+    "pnlPercent": -0.778883450314009,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 434.15,
+    "lowestPrice": 426.88,
+    "gapSize": 3.49,
+    "prevClose": 435.47,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 430.905,
+        "reason": "Partial target (50% gap fill)",
+        "size": 0.3
+      },
+      {
+        "time": "15:55:00",
+        "price": 429.25,
+        "reason": "Market close",
+        "size": 0.7
+      }
+    ]
+  },
+  {
+    "date": "2025-10-24",
+    "ticker": "TSLA",
+    "side": "LONG",
+    "entryTime": "15:25:00",
+    "entryPrice": 432.99,
+    "exitTime": "15:30:00",
+    "exitPrice": 437.35729744617316,
+    "quantity": 23,
+    "pnl": 100.44784126198255,
+    "pnlPercent": 1.0086370230659263,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 433.45,
+    "lowestPrice": 432.22,
+    "gapSize": 1.33,
+    "prevClose": 446.19,
+    "exitDetails": [
+      {
+        "time": "15:30:00",
+        "price": 437.35729744617316,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-30",
+    "ticker": "TSLA",
+    "side": "LONG",
+    "entryTime": "16:15:00",
+    "entryPrice": 440.05,
+    "exitTime": "16:20:00",
+    "exitPrice": 444.196063604936,
+    "quantity": 22,
+    "pnl": 91.21339930859176,
+    "pnlPercent": 0.9421801170176091,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 440.12,
+    "lowestPrice": 439.9,
+    "gapSize": 1.63,
+    "prevClose": 459.0001,
+    "exitDetails": [
+      {
+        "time": "16:20:00",
+        "price": 444.196063604936,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "TSLA",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 467.02,
+    "exitTime": "19:15:00",
+    "exitPrice": 466.91999999999996,
+    "quantity": 21,
+    "pnl": -2.1000000000004775,
+    "pnlPercent": -0.02141235921374304,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 467.2,
+    "lowestPrice": 466.24,
+    "gapSize": 3.04,
+    "prevClose": 467.1,
+    "exitDetails": [
+      {
+        "time": "19:10:00",
+        "price": 467.1,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "19:15:00",
+        "price": 466.5,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-11-07",
+    "ticker": "TSLA",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 447.24,
+    "exitTime": "19:15:00",
+    "exitPrice": 447.2478,
+    "quantity": 22,
+    "pnl": 0.17159999999944375,
+    "pnlPercent": 0.0017440300509736866,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 448.77,
+    "lowestPrice": 446.87,
+    "gapSize": 3.34,
+    "prevClose": 446.74,
+    "exitDetails": [
+      {
+        "time": "19:10:00",
+        "price": 446.754,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "19:15:00",
+        "price": 448.4,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-10-29",
+    "ticker": "TXN",
+    "side": "LONG",
+    "entryTime": "16:15:00",
+    "entryPrice": 160.47,
+    "exitTime": "16:20:00",
+    "exitPrice": 161.93195458070474,
+    "quantity": 62,
+    "pnl": 90.64118400369398,
+    "pnlPercent": 0.9110454170279438,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 160.5,
+    "lowestPrice": 160.35,
+    "gapSize": 1.1,
+    "prevClose": 166.83,
+    "exitDetails": [
+      {
+        "time": "16:20:00",
+        "price": 161.93195458070474,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-28",
+    "ticker": "AMAT",
+    "side": "LONG",
+    "entryTime": "14:35:00",
+    "entryPrice": 228.375,
+    "exitTime": "14:45:00",
+    "exitPrice": 227.91091050844602,
+    "quantity": 43,
+    "pnl": -19.955848136821032,
+    "pnlPercent": -0.20321378940513518,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 228.77,
+    "lowestPrice": 227.71,
+    "gapSize": 1.48,
+    "prevClose": 232.14,
+    "exitDetails": [
+      {
+        "time": "14:45:00",
+        "price": 227.91091050844602,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "AMAT",
+    "side": "LONG",
+    "entryTime": "14:30:00",
+    "entryPrice": 231.42,
+    "exitTime": "15:55:00",
+    "exitPrice": 234.86849999999998,
+    "quantity": 43,
+    "pnl": 148.28549999999981,
+    "pnlPercent": 1.4901477832512298,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 236.9699,
+    "lowestPrice": 230.5,
+    "gapSize": 2.33,
+    "prevClose": 237.15,
+    "exitDetails": [
+      {
+        "time": "14:40:00",
+        "price": 233.85000000000002,
+        "reason": "Partial target (50% gap fill)",
+        "size": 0.3
+      },
+      {
+        "time": "15:55:00",
+        "price": 235.305,
+        "reason": "Market close",
+        "size": 0.7
+      }
+    ]
+  },
+  {
+    "date": "2025-11-07",
+    "ticker": "AMAT",
+    "side": "LONG",
+    "entryTime": "14:30:00",
+    "entryPrice": 232.265,
+    "exitTime": "14:35:00",
+    "exitPrice": 226.458375,
+    "quantity": 43,
+    "pnl": -249.68487499999986,
+    "pnlPercent": -2.4999999999999987,
+    "exitReason": "Hard stop loss",
+    "highestPrice": 232.52,
+    "lowestPrice": 226.12,
+    "gapSize": 1.36,
+    "prevClose": 233.89,
+    "exitDetails": [
+      {
+        "time": "14:35:00",
+        "price": 226.458375,
+        "reason": "Hard stop loss",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-14",
+    "ticker": "AMAT",
+    "side": "LONG",
+    "entryTime": "14:35:00",
+    "entryPrice": 224.45,
+    "exitTime": "15:55:00",
+    "exitPrice": 221.6317,
+    "quantity": 44,
+    "pnl": -124.00519999999972,
+    "pnlPercent": -1.2556471374470901,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 226.16,
+    "lowestPrice": 223.8,
+    "gapSize": 5.46,
+    "prevClose": 220.54,
+    "exitDetails": [
+      {
+        "time": "14:40:00",
+        "price": 219.736,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "15:55:00",
+        "price": 226.055,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-10-17",
+    "ticker": "AMT",
+    "side": "LONG",
+    "entryTime": "14:25:00",
+    "entryPrice": 189.31,
+    "exitTime": "14:30:00",
+    "exitPrice": 189.97774138169734,
+    "quantity": 52,
+    "pnl": 34.72255184826167,
+    "pnlPercent": 0.3527237767140351,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 189.3999,
+    "lowestPrice": 188.655,
+    "gapSize": 1.16,
+    "prevClose": 191.5,
+    "exitDetails": [
+      {
+        "time": "14:30:00",
+        "price": 189.97774138169734,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-23",
+    "ticker": "AMT",
+    "side": "LONG",
+    "entryTime": "14:10:00",
+    "entryPrice": 189.12,
+    "exitTime": "14:15:00",
+    "exitPrice": 188.7027972872292,
+    "quantity": 52,
+    "pnl": -21.694541064081704,
+    "pnlPercent": -0.2206021112366762,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 189.62,
+    "lowestPrice": 188,
+    "gapSize": 1.61,
+    "prevClose": 191.19,
+    "exitDetails": [
+      {
+        "time": "14:15:00",
+        "price": 188.7027972872292,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-28",
+    "ticker": "AMT",
+    "side": "LONG",
+    "entryTime": "14:10:00",
+    "entryPrice": 181.245,
+    "exitTime": "15:55:00",
+    "exitPrice": 185.81,
+    "quantity": 55,
+    "pnl": 251.07499999999987,
+    "pnlPercent": 2.51869017076333,
+    "exitReason": "Market close",
+    "highestPrice": 186.34,
+    "lowestPrice": 180.64,
+    "gapSize": 5.65,
+    "prevClose": 191.25,
+    "exitDetails": [
+      {
+        "time": "15:55:00",
+        "price": 185.81,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-29",
+    "ticker": "BLK",
+    "side": "LONG",
+    "entryTime": "14:10:00",
+    "entryPrice": 1115.73,
+    "exitTime": "14:30:00",
+    "exitPrice": 1113.302249263008,
+    "quantity": 8,
+    "pnl": -19.42200589593631,
+    "pnlPercent": -0.21759303209486514,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 1121.36,
+    "lowestPrice": 1112.96,
+    "gapSize": 1.02,
+    "prevClose": 1124.95,
+    "exitDetails": [
+      {
+        "time": "14:30:00",
+        "price": 1113.302249263008,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-28",
+    "ticker": "BMY",
+    "side": "LONG",
+    "entryTime": "14:30:00",
+    "entryPrice": 43.045,
+    "exitTime": "15:55:00",
+    "exitPrice": 43.025,
+    "quantity": 232,
+    "pnl": -4.640000000000725,
+    "pnlPercent": -0.04646300383320508,
+    "exitReason": "Market close",
+    "highestPrice": 43.2199,
+    "lowestPrice": 42.97,
+    "gapSize": 1.11,
+    "prevClose": 43.41,
+    "exitDetails": [
+      {
+        "time": "15:55:00",
+        "price": 43.025,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-29",
+    "ticker": "INTU",
+    "side": "LONG",
+    "entryTime": "14:25:00",
+    "entryPrice": 653.7,
+    "exitTime": "14:30:00",
+    "exitPrice": 653.8951902723051,
+    "quantity": 15,
+    "pnl": 2.9278540845751877,
+    "pnlPercent": 0.02985930431467225,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 653.845,
+    "lowestPrice": 652.63,
+    "gapSize": 3.02,
+    "prevClose": 678.0397,
+    "exitDetails": [
+      {
+        "time": "14:30:00",
+        "price": 653.8951902723051,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-14",
+    "ticker": "NOW",
+    "side": "LONG",
+    "entryTime": "14:25:00",
+    "entryPrice": 918.37,
+    "exitTime": "15:55:00",
+    "exitPrice": 912.843,
+    "quantity": 10,
+    "pnl": -55.27000000000044,
+    "pnlPercent": -0.6018271502771262,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 924.27,
+    "lowestPrice": 911.2,
+    "gapSize": 1.4,
+    "prevClose": 923.7,
+    "exitDetails": [
+      {
+        "time": "14:30:00",
+        "price": 916.35,
+        "reason": "Partial target (50% gap fill)",
+        "size": 0.3
+      },
+      {
+        "time": "15:55:00",
+        "price": 911.34,
+        "reason": "Market close",
+        "size": 0.7
+      }
+    ]
+  },
+  {
+    "date": "2025-10-29",
+    "ticker": "NOW",
+    "side": "LONG",
+    "entryTime": "14:10:00",
+    "entryPrice": 921.35,
+    "exitTime": "14:35:00",
+    "exitPrice": 919.5816351462789,
+    "quantity": 10,
+    "pnl": -17.683648537210956,
+    "pnlPercent": -0.1919319318088778,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 922.655,
+    "lowestPrice": 916.83,
+    "gapSize": 1.74,
+    "prevClose": 937.9,
+    "exitDetails": [
+      {
+        "time": "14:35:00",
+        "price": 919.5816351462789,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "NOW",
+    "side": "LONG",
+    "entryTime": "14:35:00",
+    "entryPrice": 880.21,
+    "exitTime": "14:40:00",
+    "exitPrice": 887.5262823890856,
+    "quantity": 11,
+    "pnl": 80.47910627994145,
+    "pnlPercent": 0.8311973721141076,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 880.6,
+    "lowestPrice": 878.45,
+    "gapSize": 1.95,
+    "prevClose": 915.4,
+    "exitDetails": [
+      {
+        "time": "14:40:00",
+        "price": 887.5262823890856,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-29",
+    "ticker": "ABNB",
+    "side": "LONG",
+    "entryTime": "14:10:00",
+    "entryPrice": 128,
+    "exitTime": "15:55:00",
+    "exitPrice": 127.81,
+    "quantity": 78,
+    "pnl": -14.819999999999823,
+    "pnlPercent": -0.14843749999999822,
+    "exitReason": "Market close",
+    "highestPrice": 128.1,
+    "lowestPrice": 127.34,
+    "gapSize": 1.64,
+    "prevClose": 129.5,
+    "exitDetails": [
+      {
+        "time": "15:55:00",
+        "price": 127.81,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-14",
+    "ticker": "CRWD",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 493.37,
+    "exitTime": "15:35:00",
+    "exitPrice": 492.77580197612764,
+    "quantity": 20,
+    "pnl": -11.883960477447317,
+    "pnlPercent": -0.12043659401105983,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 496.3,
+    "lowestPrice": 491.3601,
+    "gapSize": 2.47,
+    "prevClose": 508.31,
+    "exitDetails": [
+      {
+        "time": "15:35:00",
+        "price": 492.77580197612764,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "CRWD",
+    "side": "LONG",
+    "entryTime": "19:35:00",
+    "entryPrice": 549.14,
+    "exitTime": "19:40:00",
+    "exitPrice": 549,
+    "quantity": 18,
+    "pnl": -2.5199999999997544,
+    "pnlPercent": -0.025494409440213125,
+    "exitReason": "Market close",
+    "highestPrice": 549.14,
+    "lowestPrice": 549,
+    "gapSize": 1.92,
+    "prevClose": 550,
+    "exitDetails": [
+      {
+        "time": "19:40:00",
+        "price": 549,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-07",
+    "ticker": "CRWD",
+    "side": "LONG",
+    "entryTime": "19:15:00",
+    "entryPrice": 535.5225,
+    "exitTime": "19:50:00",
+    "exitPrice": 532.78,
+    "quantity": 18,
+    "pnl": -49.365000000001146,
+    "pnlPercent": -0.5121166711015995,
+    "exitReason": "Market close",
+    "highestPrice": 535.5225,
+    "lowestPrice": 532.78,
+    "gapSize": 1.57,
+    "prevClose": 534.04,
+    "exitDetails": [
+      {
+        "time": "19:50:00",
+        "price": 532.78,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-14",
+    "ticker": "DDOG",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 161.31,
+    "exitTime": "15:55:00",
+    "exitPrice": 160.88,
+    "quantity": 61,
+    "pnl": -26.230000000000416,
+    "pnlPercent": -0.2665674787675946,
+    "exitReason": "Market close",
+    "highestPrice": 162.14,
+    "lowestPrice": 160.33,
+    "gapSize": 2.32,
+    "prevClose": 164.3,
+    "exitDetails": [
+      {
+        "time": "15:55:00",
+        "price": 160.88,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-29",
+    "ticker": "DDOG",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 156.115,
+    "exitTime": "14:35:00",
+    "exitPrice": 155.61581357442643,
+    "quantity": 64,
+    "pnl": -31.947931236709337,
+    "pnlPercent": -0.31975558118924086,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 156.6,
+    "lowestPrice": 155.105,
+    "gapSize": 1.01,
+    "prevClose": 156.57,
+    "exitDetails": [
+      {
+        "time": "14:35:00",
+        "price": 155.61581357442643,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "DDOG",
+    "side": "LONG",
+    "entryTime": "14:20:00",
+    "entryPrice": 157.47,
+    "exitTime": "14:25:00",
+    "exitPrice": 158.7255517186551,
+    "quantity": 63,
+    "pnl": 79.09975827527211,
+    "pnlPercent": 0.7973275663015894,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 157.71,
+    "lowestPrice": 157.42,
+    "gapSize": 2.85,
+    "prevClose": 163,
+    "exitDetails": [
+      {
+        "time": "14:25:00",
+        "price": 158.7255517186551,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-07",
+    "ticker": "DDOG",
+    "side": "LONG",
+    "entryTime": "19:15:00",
+    "entryPrice": 190.71,
+    "exitTime": "19:45:00",
+    "exitPrice": 190.725035,
+    "quantity": 52,
+    "pnl": 0.7818199999991293,
+    "pnlPercent": 0.007883697760989595,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 191.25,
+    "lowestPrice": 190.71,
+    "gapSize": 1.64,
+    "prevClose": 190.5,
+    "exitDetails": [
+      {
+        "time": "19:35:00",
+        "price": 190.50005,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "19:45:00",
+        "price": 191.25,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-10-14",
+    "ticker": "MDB",
+    "side": "LONG",
+    "entryTime": "14:25:00",
+    "entryPrice": 314.71,
+    "exitTime": "15:35:00",
+    "exitPrice": 312.30627382383466,
+    "quantity": 31,
+    "pnl": -74.51551146112496,
+    "pnlPercent": -0.7637908474993872,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 315.69,
+    "lowestPrice": 311.98,
+    "gapSize": 2.17,
+    "prevClose": 318.88,
+    "exitDetails": [
+      {
+        "time": "15:35:00",
+        "price": 312.30627382383466,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "MDB",
+    "side": "LONG",
+    "entryTime": "19:50:00",
+    "entryPrice": 367.2,
+    "exitTime": "19:55:00",
+    "exitPrice": 367.2545,
+    "quantity": 27,
+    "pnl": 1.4715000000005034,
+    "pnlPercent": 0.014842047930288302,
+    "exitReason": "Market close",
+    "highestPrice": 368.8,
+    "lowestPrice": 367.2,
+    "gapSize": 2.24,
+    "prevClose": 369.98,
+    "exitDetails": [
+      {
+        "time": "19:55:00",
+        "price": 367.2545,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-07",
+    "ticker": "MDB",
+    "side": "LONG",
+    "entryTime": "19:15:00",
+    "entryPrice": 358,
+    "exitTime": "19:45:00",
+    "exitPrice": 356.0464244444444,
+    "quantity": 27,
+    "pnl": -52.74654000000049,
+    "pnlPercent": -0.5456914959652441,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 358,
+    "lowestPrice": 356,
+    "gapSize": 2.07,
+    "prevClose": 355.92,
+    "exitDetails": [
+      {
+        "time": "19:45:00",
+        "price": 356.0464244444444,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-14",
+    "ticker": "NET",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 215.08,
+    "exitTime": "15:55:00",
+    "exitPrice": 217.56,
+    "quantity": 46,
+    "pnl": 114.07999999999953,
+    "pnlPercent": 1.1530593267621303,
+    "exitReason": "Market close",
+    "highestPrice": 217.96,
+    "lowestPrice": 214.89,
+    "gapSize": 3.55,
+    "prevClose": 222.5,
+    "exitDetails": [
+      {
+        "time": "15:55:00",
+        "price": 217.56,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-17",
+    "ticker": "NET",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 207.16,
+    "exitTime": "15:55:00",
+    "exitPrice": 209.73999999999998,
+    "quantity": 48,
+    "pnl": 123.83999999999924,
+    "pnlPercent": 1.2454141726201893,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 210.08,
+    "lowestPrice": 206.53,
+    "gapSize": 1.7,
+    "prevClose": 210.5,
+    "exitDetails": [
+      {
+        "time": "15:50:00",
+        "price": 209.25,
+        "reason": "Partial target (50% gap fill)",
+        "size": 0.3
+      },
+      {
+        "time": "15:55:00",
+        "price": 209.95,
+        "reason": "Market close",
+        "size": 0.7
+      }
+    ]
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "NET",
+    "side": "LONG",
+    "entryTime": "14:10:00",
+    "entryPrice": 212.349,
+    "exitTime": "15:55:00",
+    "exitPrice": 213.022,
+    "quantity": 47,
+    "pnl": 31.631000000000085,
+    "pnlPercent": 0.3169310898567932,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 213.474,
+    "lowestPrice": 212.17,
+    "gapSize": 2.12,
+    "prevClose": 213.26,
+    "exitDetails": [
+      {
+        "time": "14:25:00",
+        "price": 213.12,
+        "reason": "Partial target (50% gap fill)",
+        "size": 0.3
+      },
+      {
+        "time": "15:55:00",
+        "price": 212.98,
+        "reason": "Market close",
+        "size": 0.7
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "NET",
+    "side": "LONG",
+    "entryTime": "19:55:00",
+    "entryPrice": 245.5,
+    "exitTime": "04:00:00",
+    "exitPrice": 243.31406378055715,
+    "quantity": 40,
+    "pnl": -87.43744877771405,
+    "pnlPercent": -0.8904017187139923,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 245.5,
+    "lowestPrice": 243,
+    "gapSize": 3.62,
+    "prevClose": 249.65,
+    "exitDetails": [
+      {
+        "time": "04:00:00",
+        "price": 243.31406378055715,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-07",
+    "ticker": "NET",
+    "side": "LONG",
+    "entryTime": "06:10:00",
+    "entryPrice": 224.62,
+    "exitTime": "06:45:00",
+    "exitPrice": 224.3101172463768,
+    "quantity": 44,
+    "pnl": -13.634841159421399,
+    "pnlPercent": -0.13795866513365398,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 224.62,
+    "lowestPrice": 223.51,
+    "gapSize": 1.26,
+    "prevClose": 225.91,
+    "exitDetails": [
+      {
+        "time": "06:45:00",
+        "price": 224.3101172463768,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-11",
+    "ticker": "NET",
+    "side": "LONG",
+    "entryTime": "06:55:00",
+    "entryPrice": 238.99,
+    "exitTime": "07:40:00",
+    "exitPrice": 238.01615148931484,
+    "quantity": 41,
+    "pnl": -39.92778893809208,
+    "pnlPercent": -0.40748504568608424,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 239.58,
+    "lowestPrice": 237.5,
+    "gapSize": 1.58,
+    "prevClose": 240.53,
+    "exitDetails": [
+      {
+        "time": "07:40:00",
+        "price": 238.01615148931484,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-14",
+    "ticker": "OKTA",
+    "side": "LONG",
+    "entryTime": "14:25:00",
+    "entryPrice": 89.73,
+    "exitTime": "15:55:00",
+    "exitPrice": 89.237,
+    "quantity": 111,
+    "pnl": -54.72300000000102,
+    "pnlPercent": -0.5494260559456249,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 90.05,
+    "lowestPrice": 89,
+    "gapSize": 1.5,
+    "prevClose": 90.06,
+    "exitDetails": [
+      {
+        "time": "14:30:00",
+        "price": 89.58,
+        "reason": "Partial target (50% gap fill)",
+        "size": 0.3
+      },
+      {
+        "time": "15:55:00",
+        "price": 89.09,
+        "reason": "Market close",
+        "size": 0.7
+      }
+    ]
+  },
+  {
+    "date": "2025-10-22",
+    "ticker": "OKTA",
+    "side": "LONG",
+    "entryTime": "14:10:00",
+    "entryPrice": 87.01,
+    "exitTime": "14:15:00",
+    "exitPrice": 87.27951558953185,
+    "quantity": 114,
+    "pnl": 30.72477720663082,
+    "pnlPercent": 0.3097524302170432,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 87.175,
+    "lowestPrice": 86.84,
+    "gapSize": 1.55,
+    "prevClose": 89.4997,
+    "exitDetails": [
+      {
+        "time": "14:15:00",
+        "price": 87.27951558953185,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-29",
+    "ticker": "OKTA",
+    "side": "LONG",
+    "entryTime": "14:10:00",
+    "entryPrice": 88.675,
+    "exitTime": "14:35:00",
+    "exitPrice": 88.23515236759695,
+    "quantity": 112,
+    "pnl": -49.26293482914093,
+    "pnlPercent": -0.496022139727143,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 88.7333,
+    "lowestPrice": 87.61,
+    "gapSize": 2.74,
+    "prevClose": 90.3047,
+    "exitDetails": [
+      {
+        "time": "14:35:00",
+        "price": 88.23515236759695,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "OKTA",
+    "side": "LONG",
+    "entryTime": "19:40:00",
+    "entryPrice": 90.62,
+    "exitTime": "04:00:00",
+    "exitPrice": 90.17597762886598,
+    "quantity": 110,
+    "pnl": -48.84246082474277,
+    "pnlPercent": -0.48998275340325004,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 90.9,
+    "lowestPrice": 90.1,
+    "gapSize": 1.44,
+    "prevClose": 90.62,
+    "exitDetails": [
+      {
+        "time": "04:00:00",
+        "price": 90.17597762886598,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-09-25",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "entryTime": "14:10:00",
+    "entryPrice": 590.26,
+    "exitTime": "15:55:00",
+    "exitPrice": 593.55,
+    "quantity": 16,
+    "pnl": 52.63999999999942,
+    "pnlPercent": 0.557381492901427,
+    "exitReason": "Market close",
+    "highestPrice": 593.86,
+    "lowestPrice": 590.25,
+    "gapSize": 1.18,
+    "prevClose": 596.47,
+    "exitDetails": [
+      {
+        "time": "15:55:00",
+        "price": 593.55,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-14",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 601.59,
+    "exitTime": "15:55:00",
+    "exitPrice": 600.4503,
+    "quantity": 16,
+    "pnl": -18.235200000000987,
+    "pnlPercent": -0.1894479628983297,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 602.16,
+    "lowestPrice": 596.37,
+    "gapSize": 1.33,
+    "prevClose": 601.81,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 601.4789999999999,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "15:55:00",
+        "price": 598.05,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-11-14",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 608.65,
+    "exitTime": "19:15:00",
+    "exitPrice": 608.7709,
+    "quantity": 16,
+    "pnl": 1.934400000000096,
+    "pnlPercent": 0.019863632629591066,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 609.18,
+    "lowestPrice": 608.29,
+    "gapSize": 1.42,
+    "prevClose": 608.64,
+    "exitDetails": [
+      {
+        "time": "19:10:00",
+        "price": 608.6469999999999,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "19:15:00",
+        "price": 609.06,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-10-14",
+    "ticker": "SHOP",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 154.49,
+    "exitTime": "15:55:00",
+    "exitPrice": 153.2081,
+    "quantity": 64,
+    "pnl": -82.04160000000047,
+    "pnlPercent": -0.8297624441711485,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 154.9199,
+    "lowestPrice": 151.84,
+    "gapSize": 3.24,
+    "prevClose": 153.61,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 153.353,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "15:55:00",
+        "price": 152.87,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "SHOP",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 162.785,
+    "exitTime": "14:20:00",
+    "exitPrice": 162.665834607432,
+    "quantity": 61,
+    "pnl": -7.269088946647571,
+    "pnlPercent": -0.07320416043738243,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 162.82,
+    "lowestPrice": 162.57,
+    "gapSize": 1.87,
+    "prevClose": 165.5,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 162.665834607432,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-30",
+    "ticker": "SHOP",
+    "side": "LONG",
+    "entryTime": "15:05:00",
+    "entryPrice": 174.26,
+    "exitTime": "15:10:00",
+    "exitPrice": 175.2544016935676,
+    "quantity": 57,
+    "pnl": 56.68089653335298,
+    "pnlPercent": 0.570642541930217,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 174.281973,
+    "lowestPrice": 173.74,
+    "gapSize": 1.12,
+    "prevClose": 177.7832,
+    "exitDetails": [
+      {
+        "time": "15:10:00",
+        "price": 175.2544016935676,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "SHOP",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 172.55,
+    "exitTime": "19:10:00",
+    "exitPrice": 172.6,
+    "quantity": 57,
+    "pnl": 2.849999999999028,
+    "pnlPercent": 0.02897710808460327,
+    "exitReason": "Market close",
+    "highestPrice": 172.6,
+    "lowestPrice": 172.55,
+    "gapSize": 4.85,
+    "prevClose": 172.94,
+    "exitDetails": [
+      {
+        "time": "19:10:00",
+        "price": 172.6,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-07",
+    "ticker": "SHOP",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 156.93,
+    "exitTime": "19:20:00",
+    "exitPrice": 156.35730501300955,
+    "quantity": 63,
+    "pnl": -36.07978418039872,
+    "pnlPercent": -0.364936587644463,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 156.93,
+    "lowestPrice": 156.35,
+    "gapSize": 1.27,
+    "prevClose": 156.72,
+    "exitDetails": [
+      {
+        "time": "19:20:00",
+        "price": 156.35730501300955,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-14",
+    "ticker": "SNOW",
+    "side": "LONG",
+    "entryTime": "14:20:00",
+    "entryPrice": 241.35,
+    "exitTime": "15:55:00",
+    "exitPrice": 240.77,
+    "quantity": 41,
+    "pnl": -23.779999999999347,
+    "pnlPercent": -0.2403148953801467,
+    "exitReason": "Market close",
+    "highestPrice": 244.36,
+    "lowestPrice": 240.71,
+    "gapSize": 2.19,
+    "prevClose": 246.8,
+    "exitDetails": [
+      {
+        "time": "15:55:00",
+        "price": 240.77,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "SNOW",
+    "side": "LONG",
+    "entryTime": "14:50:00",
+    "entryPrice": 247.07,
+    "exitTime": "15:55:00",
+    "exitPrice": 246.757637,
+    "quantity": 40,
+    "pnl": -12.494520000000193,
+    "pnlPercent": -0.12642692354393686,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 247.72,
+    "lowestPrice": 246.28,
+    "gapSize": 1.22,
+    "prevClose": 246.5499,
+    "exitDetails": [
+      {
+        "time": "14:55:00",
+        "price": 246.43091,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "15:55:00",
+        "price": 247.52,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-11-07",
+    "ticker": "SNOW",
+    "side": "LONG",
+    "entryTime": "19:25:00",
+    "entryPrice": 265,
+    "exitTime": "19:35:00",
+    "exitPrice": 265.11,
+    "quantity": 37,
+    "pnl": 4.070000000000505,
+    "pnlPercent": 0.0415094339622693,
+    "exitReason": "Market close",
+    "highestPrice": 265.11,
+    "lowestPrice": 265,
+    "gapSize": 2.11,
+    "prevClose": 265.74,
+    "exitDetails": [
+      {
+        "time": "19:35:00",
+        "price": 265.11,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-11",
+    "ticker": "SNOW",
+    "side": "LONG",
+    "entryTime": "19:40:00",
+    "entryPrice": 268.5101,
+    "exitTime": "05:30:00",
+    "exitPrice": 267.7841188665138,
+    "quantity": 37,
+    "pnl": -26.861301938991005,
+    "pnlPercent": -0.27037386432996124,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 268.5101,
+    "lowestPrice": 267.43,
+    "gapSize": 1.83,
+    "prevClose": 271,
+    "exitDetails": [
+      {
+        "time": "05:30:00",
+        "price": 267.7841188665138,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-14",
+    "ticker": "ZM",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 79.305,
+    "exitTime": "15:55:00",
+    "exitPrice": 79.3583,
+    "quantity": 126,
+    "pnl": 6.7157999999991205,
+    "pnlPercent": 0.06720887711997102,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 80.11,
+    "lowestPrice": 79.29,
+    "gapSize": 1.7,
+    "prevClose": 79.5,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 79.379,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "15:55:00",
+        "price": 79.31,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-10-29",
+    "ticker": "ZM",
+    "side": "LONG",
+    "entryTime": "14:10:00",
+    "entryPrice": 83.6,
+    "exitTime": "14:15:00",
+    "exitPrice": 83.5459253326672,
+    "quantity": 119,
+    "pnl": -6.434885412603052,
+    "pnlPercent": -0.06468261642679277,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 83.63,
+    "lowestPrice": 83.45,
+    "gapSize": 1.77,
+    "prevClose": 84.9501,
+    "exitDetails": [
+      {
+        "time": "14:15:00",
+        "price": 83.5459253326672,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "ZM",
+    "side": "LONG",
+    "entryTime": "14:20:00",
+    "entryPrice": 83.77,
+    "exitTime": "14:25:00",
+    "exitPrice": 83.99683434069593,
+    "quantity": 119,
+    "pnl": 26.99328654281571,
+    "pnlPercent": 0.2707823095331627,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 83.81,
+    "lowestPrice": 83.72,
+    "gapSize": 1.23,
+    "prevClose": 85.1182,
+    "exitDetails": [
+      {
+        "time": "14:25:00",
+        "price": 83.99683434069593,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-07",
+    "ticker": "ZM",
+    "side": "LONG",
+    "entryTime": "14:55:00",
+    "entryPrice": 81.82,
+    "exitTime": "15:25:00",
+    "exitPrice": 81.12806581666733,
+    "quantity": 122,
+    "pnl": -84.41597036658484,
+    "pnlPercent": -0.8456785423278693,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 82.035,
+    "lowestPrice": 81.105,
+    "gapSize": 1.73,
+    "prevClose": 82.9615,
+    "exitDetails": [
+      {
+        "time": "15:25:00",
+        "price": 81.12806581666733,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-14",
+    "ticker": "ZS",
+    "side": "LONG",
+    "entryTime": "14:30:00",
+    "entryPrice": 302.93,
+    "exitTime": "14:35:00",
+    "exitPrice": 302.7578264935649,
+    "quantity": 33,
+    "pnl": -5.681725712358798,
+    "pnlPercent": -0.05683606986271254,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 303.26,
+    "lowestPrice": 302.7035,
+    "gapSize": 2.57,
+    "prevClose": 313.04,
+    "exitDetails": [
+      {
+        "time": "14:35:00",
+        "price": 302.7578264935649,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-29",
+    "ticker": "ZS",
+    "side": "LONG",
+    "entryTime": "14:40:00",
+    "entryPrice": 318.48,
+    "exitTime": "14:45:00",
+    "exitPrice": 319.4078210140253,
+    "quantity": 31,
+    "pnl": 28.762451434782918,
+    "pnlPercent": 0.2913278742857496,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 319.26,
+    "lowestPrice": 318,
+    "gapSize": 1.81,
+    "prevClose": 329.69,
+    "exitDetails": [
+      {
+        "time": "14:45:00",
+        "price": 319.4078210140253,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "ZS",
+    "side": "LONG",
+    "entryTime": "19:30:00",
+    "entryPrice": 335.98,
+    "exitTime": "04:25:00",
+    "exitPrice": 333.05785734082394,
+    "quantity": 29,
+    "pnl": -84.74213711610616,
+    "pnlPercent": -0.8697370852955754,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 335.98,
+    "lowestPrice": 330.99,
+    "gapSize": 1.19,
+    "prevClose": 335,
+    "exitDetails": [
+      {
+        "time": "04:25:00",
+        "price": 333.05785734082394,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-29",
+    "ticker": "BA",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 216.95,
+    "exitTime": "14:20:00",
+    "exitPrice": 217.16311605073116,
+    "quantity": 46,
+    "pnl": 9.803338333633974,
+    "pnlPercent": 0.09823279591204119,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 217.25,
+    "lowestPrice": 216.51,
+    "gapSize": 3.43,
+    "prevClose": 224.4999,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 217.16311605073116,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-30",
+    "ticker": "BA",
+    "side": "LONG",
+    "entryTime": "14:20:00",
+    "entryPrice": 206.55,
+    "exitTime": "14:25:00",
+    "exitPrice": 206.08274898217735,
+    "quantity": 48,
+    "pnl": -22.42804885548776,
+    "pnlPercent": -0.22621690526393687,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 206.88,
+    "lowestPrice": 205.1001,
+    "gapSize": 3.26,
+    "prevClose": 213.62,
+    "exitDetails": [
+      {
+        "time": "14:25:00",
+        "price": 206.08274898217735,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "BABA",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 168.7893,
+    "exitTime": "14:20:00",
+    "exitPrice": 168.8102486325281,
+    "quantity": 59,
+    "pnl": 1.2359693191581016,
+    "pnlPercent": 0.01241111405053722,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 169.35,
+    "lowestPrice": 168.6068,
+    "gapSize": 3.27,
+    "prevClose": 174.18,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 168.8102486325281,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-30",
+    "ticker": "BABA",
+    "side": "LONG",
+    "entryTime": "14:25:00",
+    "entryPrice": 175.51,
+    "exitTime": "14:35:00",
+    "exitPrice": 174.81033627339568,
+    "quantity": 56,
+    "pnl": -39.18116868984157,
+    "pnlPercent": -0.3986460752118477,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 175.755,
+    "lowestPrice": 174.7529,
+    "gapSize": 1.75,
+    "prevClose": 179.6,
+    "exitDetails": [
+      {
+        "time": "14:35:00",
+        "price": 174.81033627339568,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-31",
+    "ticker": "BABA",
+    "side": "LONG",
+    "entryTime": "14:35:00",
+    "entryPrice": 169.18,
+    "exitTime": "15:55:00",
+    "exitPrice": 170.4525,
+    "quantity": 59,
+    "pnl": 75.07749999999879,
+    "pnlPercent": 0.7521574654214325,
+    "exitReason": "Market close",
+    "highestPrice": 171.4,
+    "lowestPrice": 169.06,
+    "gapSize": 3.67,
+    "prevClose": 175.4,
+    "exitDetails": [
+      {
+        "time": "15:55:00",
+        "price": 170.4525,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "BABA",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 162.45,
+    "exitTime": "14:20:00",
+    "exitPrice": 162.8714715966397,
+    "quantity": 61,
+    "pnl": 25.70976739502288,
+    "pnlPercent": 0.25944696622943636,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 162.6,
+    "lowestPrice": 162.4044,
+    "gapSize": 3.2,
+    "prevClose": 167.65,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 162.8714715966397,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-07",
+    "ticker": "BABA",
+    "side": "LONG",
+    "entryTime": "14:10:00",
+    "entryPrice": 163.2,
+    "exitTime": "14:15:00",
+    "exitPrice": 163.19661473885233,
+    "quantity": 61,
+    "pnl": -0.2065009300070244,
+    "pnlPercent": -0.0020743021738089083,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 163.46,
+    "lowestPrice": 163.05,
+    "gapSize": 3.03,
+    "prevClose": 167.1277,
+    "exitDetails": [
+      {
+        "time": "14:15:00",
+        "price": 163.19661473885233,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-11",
+    "ticker": "BABA",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 164.3,
+    "exitTime": "14:30:00",
+    "exitPrice": 164.1379311435289,
+    "quantity": 60,
+    "pnl": -9.724131388266528,
+    "pnlPercent": -0.09864203071887329,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 164.96,
+    "lowestPrice": 164.09,
+    "gapSize": 1,
+    "prevClose": 165.95,
+    "exitDetails": [
+      {
+        "time": "14:30:00",
+        "price": 164.1379311435289,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-17",
+    "ticker": "AA",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 36.3,
+    "exitTime": "14:20:00",
+    "exitPrice": 36.17141787293616,
+    "quantity": 275,
+    "pnl": -35.36008494255505,
+    "pnlPercent": -0.35422073571304835,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 36.44,
+    "lowestPrice": 36.04,
+    "gapSize": 2.48,
+    "prevClose": 36.68,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 36.17141787293616,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "AA",
+    "side": "LONG",
+    "entryTime": "14:20:00",
+    "entryPrice": 36.4,
+    "exitTime": "14:25:00",
+    "exitPrice": 36.81649750363682,
+    "quantity": 274,
+    "pnl": 114.12031599648842,
+    "pnlPercent": 1.1442239110901622,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 36.41,
+    "lowestPrice": 36.12,
+    "gapSize": 7.24,
+    "prevClose": 39.12,
+    "exitDetails": [
+      {
+        "time": "14:25:00",
+        "price": 36.81649750363682,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-24",
+    "ticker": "AA",
+    "side": "LONG",
+    "entryTime": "14:50:00",
+    "entryPrice": 39.1,
+    "exitTime": "15:45:00",
+    "exitPrice": 39.4095,
+    "quantity": 255,
+    "pnl": 78.92249999999997,
+    "pnlPercent": 0.79156010230179,
+    "exitReason": "Trailing stop (scaled exit)",
+    "highestPrice": 39.8,
+    "lowestPrice": 38.875,
+    "gapSize": 3.11,
+    "prevClose": 39.89,
+    "exitDetails": [
+      {
+        "time": "15:05:00",
+        "price": 39.315,
+        "reason": "Partial target (50% gap fill)",
+        "size": 0.3
+      },
+      {
+        "time": "15:45:00",
+        "price": 39.45,
+        "reason": "Trailing stop",
+        "size": 0.7
+      }
+    ]
+  },
+  {
+    "date": "2025-10-28",
+    "ticker": "AA",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 39.3314,
+    "exitTime": "14:20:00",
+    "exitPrice": 39.304333758053,
+    "quantity": 254,
+    "pnl": -6.874825454539078,
+    "pnlPercent": -0.06881586200085489,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 39.46,
+    "lowestPrice": 39.17,
+    "gapSize": 1.1,
+    "prevClose": 39.9,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 39.304333758053,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-30",
+    "ticker": "AA",
+    "side": "LONG",
+    "entryTime": "14:25:00",
+    "entryPrice": 37.25,
+    "exitTime": "14:50:00",
+    "exitPrice": 36.987567214663,
+    "quantity": 268,
+    "pnl": -70.33198647031537,
+    "pnlPercent": -0.7045175445288527,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 37.4076,
+    "lowestPrice": 36.9102,
+    "gapSize": 3.36,
+    "prevClose": 39.2,
+    "exitDetails": [
+      {
+        "time": "14:50:00",
+        "price": 36.987567214663,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "AA",
+    "side": "LONG",
+    "entryTime": "14:30:00",
+    "entryPrice": 35.9,
+    "exitTime": "14:35:00",
+    "exitPrice": 35.880864899433526,
+    "quantity": 278,
+    "pnl": -5.3195579574794465,
+    "pnlPercent": -0.05330111578404688,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 36.2132,
+    "lowestPrice": 35.75,
+    "gapSize": 3.41,
+    "prevClose": 37.2,
+    "exitDetails": [
+      {
+        "time": "14:35:00",
+        "price": 35.880864899433526,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-07",
+    "ticker": "AA",
+    "side": "LONG",
+    "entryTime": "14:10:00",
+    "entryPrice": 36.24,
+    "exitTime": "14:20:00",
+    "exitPrice": 36.188513080766924,
+    "quantity": 275,
+    "pnl": -14.158902789096395,
+    "pnlPercent": -0.14207207293895638,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 36.24,
+    "lowestPrice": 36.11,
+    "gapSize": 1.66,
+    "prevClose": 36.5,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 36.188513080766924,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-14",
+    "ticker": "MU",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 191.77,
+    "exitTime": "15:40:00",
+    "exitPrice": 189.37206308556836,
+    "quantity": 52,
+    "pnl": -124.69271955044599,
+    "pnlPercent": -1.250423379272907,
+    "exitReason": "VWAP breakdown (scaled exit)",
+    "highestPrice": 191.889,
+    "lowestPrice": 188.76,
+    "gapSize": 2.26,
+    "prevClose": 193.3,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 190.15,
+        "reason": "Partial target (50% gap fill)",
+        "size": 0.3
+      },
+      {
+        "time": "15:40:00",
+        "price": 189.03866155081198,
+        "reason": "VWAP breakdown",
+        "size": 0.7
+      }
+    ]
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "MU",
+    "side": "LONG",
+    "entryTime": "14:10:00",
+    "entryPrice": 203.51,
+    "exitTime": "15:55:00",
+    "exitPrice": 202.55867515096298,
+    "quantity": 49,
+    "pnl": -46.614917602813364,
+    "pnlPercent": -0.46745852736327825,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 203.6099,
+    "lowestPrice": 202.16,
+    "gapSize": 2.71,
+    "prevClose": 207.95,
+    "exitDetails": [
+      {
+        "time": "15:55:00",
+        "price": 202.55867515096298,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-28",
+    "ticker": "MU",
+    "side": "LONG",
+    "entryTime": "14:15:00",
+    "entryPrice": 221.65,
+    "exitTime": "15:55:00",
+    "exitPrice": 220.23,
+    "quantity": 45,
+    "pnl": -63.900000000000716,
+    "pnlPercent": -0.6406496729077447,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 222.9,
+    "lowestPrice": 221.095,
+    "gapSize": 1.22,
+    "prevClose": 219.9,
+    "exitDetails": [
+      {
+        "time": "14:20:00",
+        "price": 219.51,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "15:55:00",
+        "price": 221.91,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "MU",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 234.43,
+    "exitTime": "19:10:00",
+    "exitPrice": 234.39,
+    "quantity": 42,
+    "pnl": -1.6800000000008595,
+    "pnlPercent": -0.017062662628511905,
+    "exitReason": "Market close",
+    "highestPrice": 234.43,
+    "lowestPrice": 234.39,
+    "gapSize": 3.85,
+    "prevClose": 234.65,
+    "exitDetails": [
+      {
+        "time": "19:10:00",
+        "price": 234.39,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-07",
+    "ticker": "MU",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 243.1,
+    "exitTime": "19:15:00",
+    "exitPrice": 243.30020000000002,
+    "quantity": 41,
+    "pnl": 8.208200000000971,
+    "pnlPercent": 0.08235294117648034,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 243.65,
+    "lowestPrice": 242.95,
+    "gapSize": 3.79,
+    "prevClose": 243.36,
+    "exitDetails": [
+      {
+        "time": "19:10:00",
+        "price": 243.35600000000002,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "19:15:00",
+        "price": 243.17,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-11-11",
+    "ticker": "MU",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 254.25,
+    "exitTime": "19:15:00",
+    "exitPrice": 253.8757,
+    "quantity": 39,
+    "pnl": -14.597700000000202,
+    "pnlPercent": -0.14721730580137862,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 254.25,
+    "lowestPrice": 254,
+    "gapSize": 1.5,
+    "prevClose": 253.8,
+    "exitDetails": [
+      {
+        "time": "19:10:00",
+        "price": 253.80100000000002,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "19:15:00",
+        "price": 254.05,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  }
+]

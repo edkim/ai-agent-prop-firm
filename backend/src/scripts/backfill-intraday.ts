@@ -55,6 +55,18 @@ function parseArgs() {
           i++;
         }
         break;
+      case '--startDate':
+        if (nextArg) {
+          options.startDate = nextArg;
+          i++;
+        }
+        break;
+      case '--endDate':
+        if (nextArg) {
+          options.endDate = nextArg;
+          i++;
+        }
+        break;
       case '--status':
         options.status = true;
         break;
@@ -97,6 +109,12 @@ OPTIONS:
                          Adjust based on your Polygon API tier
 
   --batch-size <number>  Number of tickers per batch (default: 50)
+
+  --startDate <date>     Custom start date (YYYY-MM-DD format)
+                         Overrides --months calculation
+
+  --endDate <date>       Custom end date (YYYY-MM-DD format)
+                         Use with --startDate for specific date ranges
 
   --status               Show current backfill progress and exit
 

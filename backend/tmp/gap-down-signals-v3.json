@@ -1,0 +1,121 @@
+[
+  {
+    "ticker": "GOOGL",
+    "signal_date": "2025-11-14",
+    "signal_time": "15:50:00",
+    "direction": "LONG",
+    "pattern_strength": 90,
+    "entry_price": 276.21,
+    "gap_percent": -5.12,
+    "vwap_crosses": 1,
+    "volume_ratio": 3.21,
+    "metrics": {
+      "gap_percent": -5.12,
+      "vwap_at_signal": 276.19,
+      "volume_ratio": 3.21,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "TSLA",
+    "signal_date": "2025-11-11",
+    "signal_time": "13:00:00",
+    "direction": "LONG",
+    "pattern_strength": 69,
+    "entry_price": 436.44,
+    "gap_percent": -1.27,
+    "vwap_crosses": 3,
+    "volume_ratio": 1.2,
+    "metrics": {
+      "gap_percent": -1.27,
+      "vwap_at_signal": 436.03,
+      "volume_ratio": 1.2,
+      "vwap_crosses": 3
+    }
+  },
+  {
+    "ticker": "DDOG",
+    "signal_date": "2025-11-07",
+    "signal_time": "11:20:00",
+    "direction": "LONG",
+    "pattern_strength": 87,
+    "entry_price": 183.8233,
+    "gap_percent": -3.51,
+    "vwap_crosses": 2,
+    "volume_ratio": 0.86,
+    "metrics": {
+      "gap_percent": -3.51,
+      "vwap_at_signal": 183.7,
+      "volume_ratio": 0.86,
+      "vwap_crosses": 2
+    }
+  },
+  {
+    "ticker": "DDOG",
+    "signal_date": "2025-11-14",
+    "signal_time": "15:55:00",
+    "direction": "LONG",
+    "pattern_strength": 90,
+    "entry_price": 185.01,
+    "gap_percent": -5.41,
+    "vwap_crosses": 1,
+    "volume_ratio": 7.74,
+    "metrics": {
+      "gap_percent": -5.41,
+      "vwap_at_signal": 184.94,
+      "volume_ratio": 7.74,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "MDB",
+    "signal_date": "2025-11-14",
+    "signal_time": "13:50:00",
+    "direction": "LONG",
+    "pattern_strength": 88,
+    "entry_price": 352.16,
+    "gap_percent": -8.23,
+    "vwap_crosses": 3,
+    "volume_ratio": 0.9,
+    "metrics": {
+      "gap_percent": -8.23,
+      "vwap_at_signal": 350.42,
+      "volume_ratio": 0.9,
+      "vwap_crosses": 3
+    }
+  },
+  {
+    "ticker": "QQQ",
+    "signal_date": "2025-09-02",
+    "signal_time": "13:20:00",
+    "direction": "LONG",
+    "pattern_strength": 53,
+    "entry_price": 562.43,
+    "gap_percent": -1.55,
+    "vwap_crosses": 1,
+    "volume_ratio": 0.64,
+    "metrics": {
+      "gap_percent": -1.55,
+      "vwap_at_signal": 562.39,
+      "volume_ratio": 0.64,
+      "vwap_crosses": 1
+    }
+  },
+  {
+    "ticker": "ZS",
+    "signal_date": "2025-11-04",
+    "signal_time": "11:25:00",
+    "direction": "LONG",
+    "pattern_strength": 77,
+    "entry_price": 332.35,
+    "gap_percent": -2.01,
+    "vwap_crosses": 1,
+    "volume_ratio": 1.36,
+    "metrics": {
+      "gap_percent": -2.01,
+      "vwap_at_signal": 331.69,
+      "volume_ratio": 1.36,
+      "vwap_crosses": 1
+    }
+  }
+]

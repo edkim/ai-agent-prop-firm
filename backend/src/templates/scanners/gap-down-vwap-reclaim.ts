@@ -17,9 +17,9 @@ const dbPath = process.env.DATABASE_PATH || '/Users/edwardkim/Code/ai-backtest/b
 const db = new Database(dbPath, { readonly: true });
 
 // === ADJUSTABLE PARAMETERS ===
-const MIN_GAP_PERCENT = 1.0;      // Minimum gap down % (try: 1.0, 1.5, 2.0, 3.0)
-const MIN_VOLUME_RATIO = 1.2;     // Minimum volume ratio (try: 1.0, 1.2, 1.5, 2.0)
-const MIN_VWAP_CROSSES = 1;       // Minimum VWAP recrosses (try: 1, 2)
+const MIN_GAP_PERCENT = 2.0;      // Minimum gap down % (try: 1.0, 1.5, 2.0, 3.0) - TIGHTENED
+const MIN_VOLUME_RATIO = 1.5;     // Minimum volume ratio (try: 1.0, 1.2, 1.5, 2.0) - TIGHTENED
+const MIN_VWAP_CROSSES = 2;       // Minimum VWAP recrosses (try: 1, 2) - TIGHTENED
 const LOOKBACK_BARS = 20;         // Bars for volume average (try: 10, 20, 30)
 
 interface Bar {
@@ -89,9 +89,16 @@ async function scan(): Promise<Signal[]> {
 
   const signals: Signal[] = [];
 
+  // Calculate one day before start date to get previous close for gap calculation
+  const startDateObj = new Date(startDate);
+  startDateObj.setDate(startDateObj.getDate() - 1);
+  const queryStartDate = startDateObj.toISOString().split('T')[0];
+
   for (const ticker of tickers) {
     try {
-      // Get all bars for this ticker in date range
+      // Get all bars for this ticker in date range (regular trading hours only)
+      // Query starts one day before to get previous close for gap calculation
+      // Filter for regular hours: 14:00-21:30 UTC covers 9:30 AM - 4:00 PM ET across DST changes
       const bars = db.prepare(`
         SELECT
           timestamp,
@@ -101,8 +108,10 @@ async function scan(): Promise<Signal[]> {
         WHERE ticker = ?
           AND date(timestamp/1000, 'unixepoch') >= date(?)
           AND date(timestamp/1000, 'unixepoch') <= date(?)
+          AND CAST(strftime('%H', datetime(timestamp/1000, 'unixepoch')) AS INTEGER) >= 14
+          AND CAST(strftime('%H', datetime(timestamp/1000, 'unixepoch')) AS INTEGER) <= 21
         ORDER BY timestamp ASC
-      `).all(ticker, startDate, endDate) as Bar[];
+      `).all(ticker, queryStartDate, endDate) as Bar[];
 
       if (bars.length === 0) continue;
 
@@ -114,13 +123,23 @@ async function scan(): Promise<Signal[]> {
         barsByDate[date].push(bar);
       }
 
-      // Process each date
+      // Process each date (only dates in the original scan range)
       for (const [date, dayBars] of Object.entries(barsByDate)) {
-        if (dayBars.length < 10) continue; // Need enough bars
+        // Skip dates before the original start date (we only fetched them for gap calculation)
+        if (date < startDate || date > endDate) {
+          continue;
+        }
+
+        if (dayBars.length < 10) {
+          continue; // Need enough bars
+        }
 
         // Get previous day's close for gap calculation
-        const prevDayBars = barsByDate[getPreviousDate(date)];
-        if (!prevDayBars || prevDayBars.length === 0) continue;
+        const prevDate = getPreviousDate(date);
+        const prevDayBars = barsByDate[prevDate];
+        if (!prevDayBars || prevDayBars.length === 0) {
+          continue;
+        }
 
         const prevClose = prevDayBars[prevDayBars.length - 1].close;
         const openPrice = dayBars[0].open;

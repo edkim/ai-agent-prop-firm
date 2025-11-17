@@ -1,0 +1,36 @@
+Finding top 100 volume tickers from 2025-10-07 to 2025-10-11...
+Filtering for stocks > $20 (to get more liquid, established names)
+Found 100 tickers with sufficient data
+
+Top 30 by volume:
+   1. QQQ     56.29M volume, $ 606.10 avg price
+   2. CERY     1.04M volume, $  28.89 avg price
+   3. BFLB     0.35M volume, $  49.88 avg price
+   4. CDIG     0.20M volume, $  24.84 avg price
+   5. ARESpB   0.20M volume, $  46.92 avg price
+   6. AGEM     0.18M volume, $  37.12 avg price
+   7. BGIG     0.14M volume, $  32.37 avg price
+   8. CAM      0.10M volume, $  25.03 avg price
+   9. CBK      0.09M volume, $  24.59 avg price
+  10. AGM      0.08M volume, $ 161.49 avg price
+  11. BAMG     0.08M volume, $  38.29 avg price
+  12. BACpK    0.08M volume, $  24.99 avg price
+  13. AMZA     0.08M volume, $  39.20 avg price
+  14. BULX     0.08M volume, $  20.45 avg price
+  15. BCD      0.08M volume, $  34.83 avg price
+  16. AGGH     0.08M volume, $  20.79 avg price
+  17. ACKY     0.07M volume, $  20.01 avg price
+  18. CAC      0.07M volume, $  38.18 avg price
+  19. ACV      0.06M volume, $  24.79 avg price
+  20. ALX      0.06M volume, $ 238.63 avg price
+  21. AVMC     0.06M volume, $  69.28 avg price
+  22. AFK      0.06M volume, $  24.56 avg price
+  23. BOCT     0.06M volume, $  48.47 avg price
+  24. APCB     0.06M volume, $  29.89 avg price
+  25. BMRC     0.06M volume, $  23.88 avg price
+  26. BANCpF   0.06M volume, $  25.05 avg price
+  27. BDEC     0.06M volume, $  48.03 avg price
+  28. AVUQ     0.05M volume, $  60.00 avg price
+  29. BDBT     0.05M volume, $  25.59 avg price
+  30. AFSM     0.05M volume, $  32.02 avg price
+QQQ,CERY,BFLB,CDIG,ARESpB,AGEM,BGIG,CAM,CBK,AGM,BAMG,BACpK,AMZA,BULX,BCD,AGGH,ACKY,CAC,ACV,ALX,AVMC,AFK,BOCT,APCB,BMRC,BANCpF,BDEC,AVUQ,BDBT,AFSM,APOpA,BUFS,BACpB,BIBL,BGLD,AVLC,BSMS,CFGpI,APIE,BFC,CAFX,BCIM,CGGG,CCBG,BLUX,AGIX,BWZ,ADAMH,BSCZ,BKTI,BYLD,BCCC,ATFV,AMJB,CATH,BAFE,BHB,BBAG,CET,AUBpA,CAPL,ACES,BFRZ,AVES,BSMR,BUFC,CEMB,AIZN,BETZ,BINT,AMYY,AVRE,BITK,BKpK,APOC,CGIB,BMLpH,AGNCL,AVGE,APOS,BCV,BSMP,BSMQ,AVNM,AOMN,ATMP,CFGpE,BMLpL,ALBpA,AGOX,BUSEP,AGNCP,ALLpJ,AQLT,CBNK,BSMT,CFBK,BSMV,BLUC,BKIE

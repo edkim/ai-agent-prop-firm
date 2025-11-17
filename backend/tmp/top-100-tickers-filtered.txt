@@ -1,0 +1,25 @@
+Finding top 100 volume tickers from 2025-10-07 to 2025-10-11...
+Filtering for stocks > $5
+Found 100 tickers with sufficient data
+Top 20 by volume:
+  1. QQQ: 56.3M volume, $606.10 avg price
+  2. CERY: 1.0M volume, $28.89 avg price
+  3. BDRX: 0.7M volume, $8.66 avg price
+  4. CEPF: 0.5M volume, $10.39 avg price
+  5. ANSC: 0.5M volume, $10.97 avg price
+  6. BNY: 0.4M volume, $10.19 avg price
+  7. BFLB: 0.4M volume, $49.88 avg price
+  8. CAEP: 0.3M volume, $10.50 avg price
+  9. CCIX: 0.3M volume, $10.62 avg price
+  10. CDIG: 0.2M volume, $24.84 avg price
+  11. ARESpB: 0.2M volume, $46.92 avg price
+  12. CGCT: 0.2M volume, $10.07 avg price
+  13. AGEM: 0.2M volume, $37.12 avg price
+  14. BRBI: 0.2M volume, $13.04 avg price
+  15. AQWA: 0.2M volume, $19.48 avg price
+  16. BHST: 0.1M volume, $11.63 avg price
+  17. AACB: 0.1M volume, $10.15 avg price
+  18. BGIG: 0.1M volume, $32.37 avg price
+  19. BDRY: 0.1M volume, $7.85 avg price
+  20. AGMH: 0.1M volume, $6.67 avg price
+QQQ,CERY,BDRX,CEPF,ANSC,BNY,BFLB,CAEP,CCIX,CDIG,ARESpB,CGCT,AGEM,BRBI,AQWA,BHST,AACB,BGIG,BDRY,AGMH,BEAG,ASTC,CAM,AOUT,CBK,AGM,BAMG,BACpK,AMZA,BULX,BCD,ADSE,AGGH,ACKY,CAC,BHFAM,AXIN,ACV,BWG,ALX,CCII,CARL,AVMC,AOHY,BOEG,AFK,BFIN,CDRO,BOCT,APCB,BMRC,BANCpF,BACC,BSAA,ALAR,AALG,BDEC,BCIC,AVUQ,BSL,BDBT,BSET,BPYPP,AVBC,AFSM,APOpA,BUFS,BACpB,BIBL,BGLD,AVLC,BSMS,CFGpI,BNH,BOLT,AEMS,BCAR,ACON,APIE,BFC,CAFX,ASEA,BACpP,BRT,AHT,BCIM,CGGG,BZQ,CEE,CCBG,AENT,AMAX,AFIF,BLUX,AGIX,BWZ,ADAMH,BSCZ,BKTI,BTA

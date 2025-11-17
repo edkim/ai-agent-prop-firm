@@ -11,6 +11,7 @@ import { aggressiveTemplate } from './aggressive';
 import { timeBasedTemplate } from './time-based';
 import { volatilityAdaptiveTemplate } from './volatility-adaptive';
 import { priceActionTemplate } from './price-action';
+import { gapFillVWAPTemplate } from './gap-fill-vwap';
 
 /**
  * Template registry - maps template names to template objects
@@ -20,7 +21,8 @@ export const executionTemplates: Record<string, ExecutionTemplate> = {
   'aggressive': aggressiveTemplate,
   'time_based': timeBasedTemplate,
   'volatility_adaptive': volatilityAdaptiveTemplate,
-  'price_action': priceActionTemplate
+  'price_action': priceActionTemplate,
+  'gap_fill_vwap': gapFillVWAPTemplate
 };
 
 /**
@@ -77,5 +79,6 @@ export {
   aggressiveTemplate,
   timeBasedTemplate,
   volatilityAdaptiveTemplate,
-  priceActionTemplate
+  priceActionTemplate,
+  gapFillVWAPTemplate
 };

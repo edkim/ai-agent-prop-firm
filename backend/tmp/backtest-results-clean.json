@@ -1,0 +1,89 @@
+[
+  {
+    "date": "2025-11-11",
+    "ticker": "TSLA",
+    "side": "LONG",
+    "entryTime": "19:05:00",
+    "entryPrice": 445.12,
+    "exitTime": "19:15:00",
+    "exitPrice": 444.804,
+    "quantity": 22,
+    "pnl": -6.95200000000068,
+    "pnlPercent": -0.07099209202013636,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 445.12,
+    "lowestPrice": 444.6,
+    "gapSize": 1.27,
+    "prevClose": 444.81,
+    "exitDetails": [
+      {
+        "time": "19:10:00",
+        "price": 444.81,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "19:15:00",
+        "price": 444.79,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-11-07",
+    "ticker": "DDOG",
+    "side": "LONG",
+    "entryTime": "19:15:00",
+    "entryPrice": 190.71,
+    "exitTime": "19:45:00",
+    "exitPrice": 190.725035,
+    "quantity": 52,
+    "pnl": 0.7818199999991293,
+    "pnlPercent": 0.007883697760989595,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 191.25,
+    "lowestPrice": 190.71,
+    "gapSize": 3.51,
+    "prevClose": 190.5,
+    "exitDetails": [
+      {
+        "time": "19:35:00",
+        "price": 190.50005,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "19:45:00",
+        "price": 191.25,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-11-04",
+    "ticker": "ZS",
+    "side": "LONG",
+    "entryTime": "19:30:00",
+    "entryPrice": 335.98,
+    "exitTime": "04:25:00",
+    "exitPrice": 333.05785734082394,
+    "quantity": 29,
+    "pnl": -84.74213711610616,
+    "pnlPercent": -0.8697370852955754,
+    "exitReason": "VWAP breakdown",
+    "highestPrice": 335.98,
+    "lowestPrice": 330.99,
+    "gapSize": 2.01,
+    "prevClose": 335,
+    "exitDetails": [
+      {
+        "time": "04:25:00",
+        "price": 333.05785734082394,
+        "reason": "VWAP breakdown",
+        "size": 1
+      }
+    ]
+  }
+]

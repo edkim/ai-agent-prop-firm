@@ -1,0 +1,415 @@
+Processing 14 tickers with 16 signals...
+[
+  {
+    "date": "2025-10-30",
+    "ticker": "AMD",
+    "side": "SHORT",
+    "entryTime": "12:05:00",
+    "entryPrice": 262.52,
+    "exitTime": "13:00:00",
+    "exitPrice": 262.02031827472723,
+    "quantity": 38,
+    "pnl": 18.98790556036454,
+    "pnlPercent": 0.1903404408322227,
+    "exitReason": "VWAP reclaim stop (scaled exit)",
+    "highestPrice": 264.33,
+    "lowestPrice": 258.15,
+    "gapSize": 1.64,
+    "prevClose": 258.285,
+    "exitDetails": [
+      {
+        "time": "12:30:00",
+        "price": 260.39750000000004,
+        "reason": "Partial target (50% gap fill)",
+        "size": 0.3
+      },
+      {
+        "time": "13:00:00",
+        "price": 262.71581182103887,
+        "reason": "VWAP reclaim stop",
+        "size": 0.7
+      }
+    ]
+  },
+  {
+    "date": "2025-10-24",
+    "ticker": "AVGO",
+    "side": "SHORT",
+    "entryTime": "14:20:00",
+    "entryPrice": 353.02,
+    "exitTime": "15:10:00",
+    "exitPrice": 354.19795522080017,
+    "quantity": 28,
+    "pnl": -32.98274618240521,
+    "pnlPercent": -0.33367945748121525,
+    "exitReason": "VWAP reclaim stop",
+    "highestPrice": 354.7399,
+    "lowestPrice": 351.48,
+    "gapSize": 1.63,
+    "prevClose": 345.86,
+    "exitDetails": [
+      {
+        "time": "15:10:00",
+        "price": 354.19795522080017,
+        "reason": "VWAP reclaim stop",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-24",
+    "ticker": "GOOGL",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Position not closed"
+  },
+  {
+    "date": "2025-10-27",
+    "ticker": "MSFT",
+    "side": "SHORT",
+    "entryTime": "12:20:00",
+    "entryPrice": 532.065,
+    "exitTime": "14:55:00",
+    "exitPrice": 533.5991258442283,
+    "quantity": 18,
+    "pnl": -27.614265196108363,
+    "pnlPercent": -0.28833429077805195,
+    "exitReason": "VWAP reclaim stop",
+    "highestPrice": 533.63,
+    "lowestPrice": 530.445,
+    "gapSize": 1.57,
+    "prevClose": 523.55,
+    "exitDetails": [
+      {
+        "time": "14:55:00",
+        "price": 533.5991258442283,
+        "reason": "VWAP reclaim stop",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-31",
+    "ticker": "NFLX",
+    "side": "SHORT",
+    "entryTime": "13:05:00",
+    "entryPrice": 1123.25,
+    "exitTime": "15:55:00",
+    "exitPrice": 1118.86,
+    "quantity": 8,
+    "pnl": 35.1200000000008,
+    "pnlPercent": 0.3908301802804452,
+    "exitReason": "Market close",
+    "highestPrice": 1126.4999,
+    "lowestPrice": 1117.25,
+    "gapSize": 1.51,
+    "prevClose": 1089,
+    "exitDetails": [
+      {
+        "time": "15:55:00",
+        "price": 1118.86,
+        "reason": "Market close",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-03",
+    "ticker": "NFLX",
+    "side": "SHORT",
+    "entryTime": "15:35:00",
+    "entryPrice": 1098.3401,
+    "exitTime": "15:55:00",
+    "exitPrice": 1114.1966,
+    "quantity": 9,
+    "pnl": -142.70850000000087,
+    "pnlPercent": -1.4436785108729162,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 1100.3,
+    "lowestPrice": 1096.07,
+    "gapSize": 1.29,
+    "prevClose": 1118.86,
+    "exitDetails": [
+      {
+        "time": "15:40:00",
+        "price": 1120.298,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "15:55:00",
+        "price": 1099.96,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-11-10",
+    "ticker": "QCOM",
+    "side": "SHORT",
+    "entryTime": "14:25:00",
+    "entryPrice": 171.25,
+    "exitTime": "14:30:00",
+    "exitPrice": 171.80403921261325,
+    "quantity": 58,
+    "pnl": -32.13427433156835,
+    "pnlPercent": -0.3235265475113853,
+    "exitReason": "VWAP reclaim stop",
+    "highestPrice": 171.83,
+    "lowestPrice": 171.03,
+    "gapSize": 1.78,
+    "prevClose": 170.71,
+    "exitDetails": [
+      {
+        "time": "14:30:00",
+        "price": 171.80403921261325,
+        "reason": "VWAP reclaim stop",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-27",
+    "ticker": "TSLA",
+    "side": "SHORT",
+    "entryTime": "15:20:00",
+    "entryPrice": 450.6726,
+    "exitTime": "15:50:00",
+    "exitPrice": 453.47119052158587,
+    "quantity": 22,
+    "pnl": -61.568991474889344,
+    "pnlPercent": -0.6209808454265645,
+    "exitReason": "VWAP reclaim stop",
+    "highestPrice": 453.9,
+    "lowestPrice": 447.26,
+    "gapSize": 1.34,
+    "prevClose": 434.15,
+    "exitDetails": [
+      {
+        "time": "15:50:00",
+        "price": 453.47119052158587,
+        "reason": "VWAP reclaim stop",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-11-10",
+    "ticker": "TXN",
+    "side": "SHORT",
+    "entryTime": "12:15:00",
+    "entryPrice": 159.6,
+    "exitTime": "15:00:00",
+    "exitPrice": 160.10535637615118,
+    "quantity": 62,
+    "pnl": -31.3320953213734,
+    "pnlPercent": -0.3166393334280601,
+    "exitReason": "VWAP reclaim stop (scaled exit)",
+    "highestPrice": 160.06,
+    "lowestPrice": 158.88,
+    "gapSize": 1.3,
+    "prevClose": 159.9236,
+    "exitDetails": [
+      {
+        "time": "12:20:00",
+        "price": 160.13124,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "15:00:00",
+        "price": 160.04496125383727,
+        "reason": "VWAP reclaim stop",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-10-15",
+    "ticker": "BMY",
+    "side": "SHORT",
+    "entryTime": "13:10:00",
+    "entryPrice": 43.72,
+    "exitTime": "14:00:00",
+    "exitPrice": 43.86448568980201,
+    "quantity": 228,
+    "pnl": -32.942737274858416,
+    "pnlPercent": -0.3304796198582127,
+    "exitReason": "VWAP reclaim stop (scaled exit)",
+    "highestPrice": 44.14,
+    "lowestPrice": 43.61,
+    "gapSize": 1.04,
+    "prevClose": 43.44,
+    "exitDetails": [
+      {
+        "time": "13:15:00",
+        "price": 43.665,
+        "reason": "Partial target (50% gap fill)",
+        "size": 0.3
+      },
+      {
+        "time": "14:00:00",
+        "price": 43.94997955686002,
+        "reason": "VWAP reclaim stop",
+        "size": 0.7
+      }
+    ]
+  },
+  {
+    "date": "2025-10-30",
+    "ticker": "NOW",
+    "side": "SHORT",
+    "entryTime": "13:10:00",
+    "entryPrice": 940.66,
+    "exitTime": "13:20:00",
+    "exitPrice": 944.4287012035913,
+    "quantity": 10,
+    "pnl": -37.68701203591377,
+    "pnlPercent": -0.4006443564721979,
+    "exitReason": "VWAP reclaim stop",
+    "highestPrice": 946.51,
+    "lowestPrice": 940.46,
+    "gapSize": 1.53,
+    "prevClose": 912.75,
+    "exitDetails": [
+      {
+        "time": "13:20:00",
+        "price": 944.4287012035913,
+        "reason": "VWAP reclaim stop",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-20",
+    "ticker": "DDOG",
+    "side": "SHORT",
+    "entryTime": "11:15:00",
+    "entryPrice": 157,
+    "exitTime": "12:10:00",
+    "exitPrice": 157.40295283237975,
+    "quantity": 63,
+    "pnl": -25.386028439924473,
+    "pnlPercent": -0.25665785501895133,
+    "exitReason": "VWAP reclaim stop",
+    "highestPrice": 157.5,
+    "lowestPrice": 156.6101,
+    "gapSize": 1.49,
+    "prevClose": 152.87,
+    "exitDetails": [
+      {
+        "time": "12:10:00",
+        "price": 157.40295283237975,
+        "reason": "VWAP reclaim stop",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-20",
+    "ticker": "SHOP",
+    "side": "SHORT",
+    "entryTime": "12:25:00",
+    "entryPrice": 163.33,
+    "exitTime": "12:30:00",
+    "exitPrice": 163.8360576540601,
+    "quantity": 61,
+    "pnl": -30.86951689766613,
+    "pnlPercent": -0.30983753998659186,
+    "exitReason": "VWAP reclaim stop",
+    "highestPrice": 163.85,
+    "lowestPrice": 163.32,
+    "gapSize": 1.06,
+    "prevClose": 157.76,
+    "exitDetails": [
+      {
+        "time": "12:30:00",
+        "price": 163.8360576540601,
+        "reason": "VWAP reclaim stop",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-31",
+    "ticker": "SHOP",
+    "side": "SHORT",
+    "entryTime": "15:50:00",
+    "entryPrice": 174.61,
+    "exitTime": "16:00:00",
+    "exitPrice": 174.525,
+    "quantity": 57,
+    "pnl": 4.845000000000454,
+    "pnlPercent": 0.04867991523968155,
+    "exitReason": "Market close (scaled exit)",
+    "highestPrice": 175.08,
+    "lowestPrice": 173.31,
+    "gapSize": 2.64,
+    "prevClose": 174.35,
+    "exitDetails": [
+      {
+        "time": "15:55:00",
+        "price": 174.81,
+        "reason": "Primary target (90% gap fill)",
+        "size": 0.7
+      },
+      {
+        "time": "16:00:00",
+        "price": 173.86,
+        "reason": "Market close",
+        "size": 0.30000000000000004
+      }
+    ]
+  },
+  {
+    "date": "2025-10-27",
+    "ticker": "AA",
+    "side": "SHORT",
+    "entryTime": "14:10:00",
+    "entryPrice": 40.24,
+    "exitTime": "14:40:00",
+    "exitPrice": 40.42184425229973,
+    "quantity": 248,
+    "pnl": -45.09737457033202,
+    "pnlPercent": -0.4518992353372909,
+    "exitReason": "VWAP reclaim stop",
+    "highestPrice": 40.585,
+    "lowestPrice": 40.01,
+    "gapSize": 1.23,
+    "prevClose": 39.7,
+    "exitDetails": [
+      {
+        "time": "14:40:00",
+        "price": 40.42184425229973,
+        "reason": "VWAP reclaim stop",
+        "size": 1
+      }
+    ]
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "MU",
+    "side": "SHORT",
+    "entryTime": "12:30:00",
+    "entryPrice": 201.4,
+    "exitTime": "12:55:00",
+    "exitPrice": 202.37932627524327,
+    "quantity": 49,
+    "pnl": -47.98698748692007,
+    "pnlPercent": -0.48625932236507785,
+    "exitReason": "VWAP reclaim stop",
+    "highestPrice": 203.6,
+    "lowestPrice": 199.46,
+    "gapSize": 4.18,
+    "prevClose": 191.94,
+    "exitDetails": [
+      {
+        "time": "12:55:00",
+        "price": 202.37932627524327,
+        "reason": "VWAP reclaim stop",
+        "size": 1
+      }
+    ]
+  }
+]
