@@ -11,8 +11,10 @@ import {
   isLowerLows,
   findSupport,
   findResistance,
+  findPivotResistance,
   calculateAverageVolume,
   distanceFromLevel,
+  calculateRelativeStrength,
   hasVolumeSpike
 } from '../backtest-helpers';
 
@@ -329,6 +331,31 @@ describe('backtest-helpers', () => {
     });
   });
 
+  describe('findPivotResistance', () => {
+    it('finds clustered pivot highs and ignores single spikes', () => {
+      const pivotBars: Bar[] = [
+        { timestamp: 1, open: 100, high: 101, low: 99, close: 100, volume: 1000 },
+        { timestamp: 2, open: 100, high: 110, low: 99, close: 109, volume: 1000 }, // one-off spike
+        { timestamp: 3, open: 109, high: 108, low: 107, close: 107.5, volume: 1000 },
+        { timestamp: 4, open: 107, high: 110.1, low: 106, close: 109.8, volume: 1000 }, // touch 1
+        { timestamp: 5, open: 109.5, high: 110.05, low: 108, close: 109.9, volume: 1000 }, // touch 2
+        { timestamp: 6, open: 109.8, high: 109.9, low: 108, close: 108.5, volume: 1000 },
+      ];
+      const resistance = findPivotResistance(pivotBars, 6, 0.2, 2);
+      expect(resistance).toBeGreaterThan(110);
+      expect(resistance).toBeLessThan(111);
+    });
+
+    it('returns 0 when not enough touches are present', () => {
+      const pivotBars: Bar[] = [
+        { timestamp: 1, open: 100, high: 101, low: 99, close: 100, volume: 1000 },
+        { timestamp: 2, open: 100, high: 105, low: 99, close: 104, volume: 1000 }, // single pivot
+        { timestamp: 3, open: 103, high: 104, low: 102, close: 103, volume: 1000 },
+      ];
+      expect(findPivotResistance(pivotBars, 3, 0.2, 2)).toBe(0);
+    });
+  });
+
   describe('calculateAverageVolume', () => {
     it('should calculate average volume correctly', () => {
       const avgVol = calculateAverageVolume(sampleBars, 3);
@@ -369,6 +396,28 @@ describe('backtest-helpers', () => {
     it('should return percentage correctly', () => {
       const distance = distanceFromLevel(105, 100);
       expect(distance).toBeCloseTo(5, 1);
+    });
+  });
+
+  describe('calculateRelativeStrength', () => {
+    it('returns positive when stock outperforms benchmark', () => {
+      const stockBars: Bar[] = [
+        { timestamp: 1, open: 100, high: 102, low: 99, close: 100, volume: 1000 },
+        { timestamp: 2, open: 100, high: 104, low: 99, close: 103, volume: 1000 },
+        { timestamp: 3, open: 103, high: 106, low: 102, close: 105, volume: 1000 },
+      ];
+      const benchmarkBars: Bar[] = [
+        { timestamp: 1, open: 100, high: 101, low: 99, close: 100, volume: 1000 },
+        { timestamp: 2, open: 100, high: 101, low: 99, close: 100.5, volume: 1000 },
+        { timestamp: 3, open: 100.5, high: 101.5, low: 99.5, close: 101, volume: 1000 },
+      ];
+      const rs = calculateRelativeStrength(stockBars, benchmarkBars, 2);
+      expect(rs).toBeGreaterThan(0);
+    });
+
+    it('returns 0 for insufficient data', () => {
+      const rs = calculateRelativeStrength(sampleBars.slice(0, 2), sampleBars.slice(0, 2), 3);
+      expect(rs).toBe(0);
     });
   });
 

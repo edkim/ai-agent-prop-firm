@@ -1,5 +1,65 @@
 # API Endpoints Quick Reference
 
+## Scanner Debug Endpoints (NEW - Fast Iteration Tools)
+
+### Debug Scanner on Single Ticker/Date
+```bash
+POST /api/scanner-debug
+```
+**Body:**
+```json
+{
+  "scannerCode": "TypeScript scanner code",
+  "ticker": "AAPL",
+  "date": "2025-01-15",
+  "explain": true  // Optional: adds detailed condition logging
+}
+```
+
+**Response:**
+```json
+{
+  "ticker": "AAPL",
+  "date": "2025-01-15",
+  "barsScanned": 78,
+  "signalsFound": 2,
+  "sampleBars": [...],
+  "debugLogs": ["..."],
+  "signals": [...]
+}
+```
+
+**Use case:** Quickly understand why a scanner isn't finding signals on a specific ticker/date
+
+### Validate Scanner (Quick Check)
+```bash
+POST /api/scanner-debug/validate
+```
+**Body:**
+```json
+{
+  "scannerCode": "TypeScript scanner code",
+  "tickers": ["AAPL", "TSLA", "NVDA"],  // Optional, defaults to these 3
+  "dates": ["2025-01-10", "2025-01-13"],  // Optional, defaults to recent dates
+  "minSignals": 1  // Optional, default 1
+}
+```
+
+**Response:**
+```json
+{
+  "valid": true,
+  "signalsFound": 5,
+  "message": "✅ Found 5 signals in quick check",
+  "details": [
+    { "ticker": "AAPL", "date": "2025-01-10", "signals": 2 },
+    { "ticker": "TSLA", "date": "2025-01-10", "signals": 3 }
+  ]
+}
+```
+
+**Use case:** Pre-flight check before running full backtest. Catches zero-signal scanners in ~10 seconds instead of wasting 60+ seconds on full backtest.
+
 ## Learning Agent Endpoints
 
 ### Agent CRUD

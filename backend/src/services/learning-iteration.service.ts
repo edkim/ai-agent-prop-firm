@@ -28,6 +28,7 @@ import { ScriptExecutionService } from './script-execution.service';
 import { AgentKnowledgeExtractionService } from './agent-knowledge-extraction.service';
 import { TemplateRendererService } from './template-renderer.service';
 import { IterationPerformanceService } from './iteration-performance.service';
+import { ScannerDebugService } from './scanner-debug.service';
 import { executionTemplates, DEFAULT_TEMPLATES } from '../templates/execution';
 import { createIterationLogger } from '../utils/logger';
 import { execSync } from 'child_process';
@@ -59,6 +60,7 @@ export class LearningIterationService {
   private scriptExecution: ScriptExecutionService;
   private templateRenderer: TemplateRendererService;
   private performanceTracker: IterationPerformanceService;
+  private scannerDebug: ScannerDebugService;
 
   constructor() {
     this.agentMgmt = new LearningAgentManagementService();
@@ -71,6 +73,7 @@ export class LearningIterationService {
     this.knowledgeExtraction = new AgentKnowledgeExtractionService();
     this.templateRenderer = new TemplateRendererService();
     this.performanceTracker = new IterationPerformanceService();
+    this.scannerDebug = new ScannerDebugService();
   }
 
   /**
@@ -639,6 +642,22 @@ export class LearningIterationService {
         maxSignalsPerIteration: 200,
         enableParallelProcessing: true      // Uses batch processing (5 tickers at a time)
       };
+
+      // Pre-flight validation: Quick check if scanner finds any signals
+      console.log('   ⚡ Running pre-flight validation (quick check for signals)...');
+      const quickCheck = await this.scannerDebug.validateScanner(scanScript, {
+        tickers: tickers.slice(0, 3), // Test on first 3 tickers
+        dates: [startDate, this.getDateDaysAgo(Math.floor((new Date(startDate).getTime() - new Date(endDate).getTime()) / (1000 * 60 * 60 * 24) / 2))], // Start date and midpoint
+        minSignals: 1
+      });
+
+      if (!quickCheck.valid) {
+        console.warn(`   ⚠️  WARNING: ${quickCheck.message}`);
+        console.warn(`   Details:`, quickCheck.details);
+        console.warn(`   Continuing with full backtest anyway, but results may be sparse.`);
+      } else {
+        console.log(`   ✅ Pre-flight check passed: ${quickCheck.message}`);
+      }
 
       // Run real-time backtest
       const signals = await runRealtimeBacktest(scanScript, options);

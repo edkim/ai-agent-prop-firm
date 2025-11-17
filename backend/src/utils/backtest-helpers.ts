@@ -282,6 +282,64 @@ export function findResistance(bars: Bar[], lookback: number = 20): number {
 }
 
 /**
+ * Find a clustered pivot-based resistance level.
+ * Looks for swing highs (higher than prior and next bar) in the lookback window,
+ * groups nearby highs within tolerancePct, and returns the top of the most
+ * frequented cluster. Requires a minimum number of touches to avoid one-off wicks.
+ */
+export function findPivotResistance(
+  bars: Bar[],
+  lookback: number = 30,
+  tolerancePct: number = 0.15,
+  minTouches: number = 2
+): number {
+  if (bars.length < Math.max(3, lookback)) return 0;
+  if (tolerancePct <= 0 || minTouches < 1) return 0;
+
+  const recent = bars.slice(-lookback);
+  const pivots: { price: number; idx: number }[] = [];
+
+  for (let i = 1; i < recent.length - 1; i++) {
+    const prev = recent[i - 1];
+    const curr = recent[i];
+    const next = recent[i + 1];
+    const isPivotHigh = curr.high > prev.high && curr.high > next.high;
+    if (isPivotHigh) {
+      pivots.push({ price: curr.high, idx: i });
+    }
+  }
+
+  if (pivots.length === 0) return 0;
+
+  let bestLevel = 0;
+  let bestCount = 0;
+  let bestRecency = -1; // larger idx = more recent within window
+
+  for (const pivot of pivots) {
+    const bandLow = pivot.price * (1 - tolerancePct / 100);
+    const bandHigh = pivot.price * (1 + tolerancePct / 100);
+    const inBand = pivots.filter(p => p.price >= bandLow && p.price <= bandHigh);
+    if (inBand.length < minTouches) continue;
+
+    const count = inBand.length;
+    const mostRecentIdx = Math.max(...inBand.map(p => p.idx));
+    const level = Math.max(...inBand.map(p => p.price)); // use the top of the band as resistance
+
+    const isBetterCluster =
+      count > bestCount ||
+      (count === bestCount && mostRecentIdx > bestRecency);
+
+    if (isBetterCluster) {
+      bestCount = count;
+      bestRecency = mostRecentIdx;
+      bestLevel = level;
+    }
+  }
+
+  return bestLevel;
+}
+
+/**
  * Calculate average volume over a period
  */
 export function calculateAverageVolume(bars: Bar[], period: number): number {
@@ -309,4 +367,35 @@ export function hasVolumeSpike(
   multiplier: number = 1.5
 ): boolean {
   return avgVolume > 0 && currentVolume >= avgVolume * multiplier;
+}
+
+/**
+ * Calculate relative strength vs a benchmark over a recent window.
+ * Returns percentage outperformance (stock return - benchmark return) * 100.
+ */
+export function calculateRelativeStrength(
+  bars: Bar[],
+  benchmarkBars: Bar[],
+  lookbackBars: number = 12
+): number {
+  if (
+    bars.length < lookbackBars + 1 ||
+    benchmarkBars.length < lookbackBars + 1
+  ) {
+    return 0;
+  }
+
+  const stockStart = bars[bars.length - lookbackBars - 1].close;
+  const stockEnd = bars[bars.length - 1].close;
+  const benchStart = benchmarkBars[benchmarkBars.length - lookbackBars - 1].close;
+  const benchEnd = benchmarkBars[benchmarkBars.length - 1].close;
+
+  if (stockStart === 0 || benchStart === 0) {
+    return 0;
+  }
+
+  const stockRet = (stockEnd - stockStart) / stockStart;
+  const benchRet = (benchEnd - benchStart) / benchStart;
+
+  return (stockRet - benchRet) * 100;
 }

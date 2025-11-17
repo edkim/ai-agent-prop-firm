@@ -26,6 +26,7 @@ import batchBacktestRoutes from './routes/batch-backtest';
 import liveTradingAgentRoutes from './routes/live-trading-agents';
 import learningAgentRoutes from './routes/learning-agents'; // Learning laboratory agents
 import paperTradingRoutes from './routes/paper-trading';
+import scannerDebugRoutes from './routes/scanner-debug';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
@@ -60,6 +61,7 @@ app.use('/api/batch-backtest', batchBacktestRoutes);
 app.use('/api/agents', liveTradingAgentRoutes); // Live trading agents (production)
 app.use('/api/learning-agents', learningAgentRoutes); // Learning laboratory agents
 app.use('/api/paper-trading', paperTradingRoutes); // Paper trading
+app.use('/api/scanner-debug', scannerDebugRoutes); // Scanner debugging tools
 
 // Error handling middleware
 app.use((err: Error, _req: Request, res: Response, _next: any) => {
