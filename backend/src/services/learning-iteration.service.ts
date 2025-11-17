@@ -622,9 +622,12 @@ export class LearningIterationService {
         tickers = await this.getUniverseTickers('Tech Sector');
       }
       
-      // Limit to 20 tickers for performance (unless custom tickers specified)
-      if (!customTickers && tickers.length > 20) {
-        tickers = tickers.slice(0, 20);
+      // Limit to 30 tickers for reasonable performance during testing
+      // Can be overridden with customTickers parameter
+      // Note: Processing all 65 tickers takes ~10-15 minutes per iteration
+      if (!customTickers && tickers.length > 30) {
+        console.log(`   ℹ️  Limiting to 30 tickers for performance (${tickers.length} available). Use customTickers to override.`);
+        tickers = tickers.slice(0, 30);
       }
       
       const options: RealtimeBacktestOptions = {
