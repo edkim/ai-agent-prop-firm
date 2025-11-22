@@ -1,7 +1,7 @@
 /**
  * Opening Range Breakout Execution
  *
- * Entry: LONG at opening range high breakout
+ * Entry: LONG at/above opening range high on the NEXT bar after breakout
  * Stop: Opening range low
  * Target: 2x opening range (measured from entry)
  * Exit: Market close if still in position
@@ -82,7 +82,8 @@ for (const signal of SCANNER_SIGNALS) {
     continue;
   }
 
-  const signalBarIndex = bars.findIndex((b: Bar) => b.time_of_day >= signal_time);
+  // Find the breakout bar by exact time_of_day
+  const signalBarIndex = bars.findIndex((b: Bar) => b.time_of_day === signal_time);
 
   if (signalBarIndex === -1 || signalBarIndex >= bars.length - 1) {
     results.push({
@@ -90,14 +91,28 @@ for (const signal of SCANNER_SIGNALS) {
       ticker,
       side: 'LONG',
       noTrade: true,
-      noTradeReason: 'Signal too late'
+      noTradeReason: 'Signal too late or bar not found'
     });
     continue;
   }
 
-  // Entry on next bar at OR high
+  // Entry on next bar at/through OR high (with small slippage tolerance); skip if not reachable
   const entryBar = bars[signalBarIndex + 1];
-  const entryPrice = or_high;
+  const SLIPPAGE_TOLERANCE = 0.002; // 0.2%
+  const fillThreshold = or_high * (1 + SLIPPAGE_TOLERANCE);
+
+  if (entryBar.high < or_high) {
+    results.push({
+      date: signal_date,
+      ticker,
+      side: 'LONG',
+      noTrade: true,
+      noTradeReason: 'Next bar did not trade at OR high'
+    });
+    continue;
+  }
+  // Fill at the first reasonable price: if open is above OR high, use open; otherwise OR high (or within tolerance)
+  const entryPrice = entryBar.open >= or_high ? entryBar.open : or_high;
   const orRange = or_high - or_low;
 
   // Calculate stop and target

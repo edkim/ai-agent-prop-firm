@@ -1,13 +1,9 @@
 /**
  * 5-Minute Opening Range Breakout Scanner
  *
- * Pattern: Price breaks above the first 5-minute range (09:30-09:35)
- *
- * Filters:
- * 1. Volume on breakout bar > 20-bar average
- * 2. QQQ above previous day's close (bullish market regime)
- *
- * Entry: LONG on breakout above opening range high
+ * Pattern: First breakout above opening range high (09:30-09:35), early in session.
+ * Filters: Same-time RVOL, bullish QQQ regime.
+ * Entry intent: Next bar after the breakout; if not reachable, no trade.
  */
 
 import Database from 'better-sqlite3';
@@ -16,8 +12,9 @@ const dbPath = process.env.DATABASE_PATH || '/Users/edwardkim/Code/ai-backtest/b
 const db = new Database(dbPath, { readonly: true });
 
 // Scanner parameters
-const MIN_VOLUME_RATIO = 1.0;  // Breakout volume must be >= average
-const LOOKBACK_BARS = 20;       // For average volume calculation
+const MIN_RVOL_RATIO = 1.0;             // Breakout bar volume >= same time-of-day average (prior days)
+const RVOL_LOOKBACK_DAYS = 5;           // Prior days to compute same-time RVOL
+const BREAKOUT_TIME_CUTOFF = '10:30:00';// Ignore late breakouts
 
 interface Bar {
   timestamp: number;
@@ -66,17 +63,6 @@ function getRTHBars(ticker: string, date: string): Bar[] {
   return bars;
 }
 
-function calculateAverageVolume(bars: Bar[], currentIndex: number, lookback: number): number {
-  if (currentIndex < lookback) return 0;
-
-  let totalVolume = 0;
-  for (let i = currentIndex - lookback; i < currentIndex; i++) {
-    totalVolume += bars[i].volume;
-  }
-
-  return totalVolume / lookback;
-}
-
 function getPreviousDate(date: string): string {
   const d = new Date(date);
   d.setDate(d.getDate() - 1);
@@ -98,6 +84,32 @@ function getQQQPreviousClose(date: string): number {
   }
 
   return 0;
+}
+
+function getSameTimeVolumeAverage(ticker: string, date: string, timeOfDay: string, lookbackDays: number): number {
+  let volumes: number[] = [];
+  let currentDate = getPreviousDate(date);
+  let attempts = 0;
+
+  while (attempts < lookbackDays) {
+    const row = db.prepare(`
+      SELECT volume FROM ohlcv_data
+      WHERE ticker = ?
+        AND date(timestamp/1000, 'unixepoch') = ?
+        AND timeframe = '5min'
+        AND time_of_day = ?
+    `).get(ticker, currentDate, timeOfDay) as { volume: number } | undefined;
+
+    if (row && row.volume) {
+      volumes.push(row.volume);
+    }
+
+    currentDate = getPreviousDate(currentDate);
+    attempts++;
+  }
+
+  if (volumes.length === 0) return 0;
+  return volumes.reduce((sum, v) => sum + v, 0) / volumes.length;
 }
 
 async function scan(): Promise<Signal[]> {
@@ -134,25 +146,31 @@ async function scan(): Promise<Signal[]> {
 
         const orHigh = orBar.high;
         const orLow = orBar.low;
-        const orRange = ((orHigh - orLow) / orLow) * 100;
+        const orRangePct = ((orHigh - orLow) / orLow) * 100;
 
-        // Find breakout above OR high
+        // Find FIRST breakout above OR high, within cutoff, with RVOL
         let breakoutBarIndex = -1;
+        let breakoutVolumeRatio = 0;
 
         for (let i = 1; i < dayBars.length; i++) {
           const bar = dayBars[i];
+          if (bar.time_of_day > BREAKOUT_TIME_CUTOFF) break;
 
-          // Check if price breaks above OR high
-          if (bar.high > orHigh) {
-            // Check volume filter
-            const avgVolume = calculateAverageVolume(dayBars, i, LOOKBACK_BARS);
-            const volumeRatio = avgVolume > 0 ? bar.volume / avgVolume : 0;
+          // First true breakout (prior bar not above OR high)
+          const prevBar = dayBars[i - 1];
+          if (!(prevBar.high <= orHigh && bar.high > orHigh)) continue;
 
-            if (volumeRatio >= MIN_VOLUME_RATIO) {
-              breakoutBarIndex = i;
-              break;
-            }
+          const avgSameTimeVol = getSameTimeVolumeAverage(ticker, trade_date, bar.time_of_day, RVOL_LOOKBACK_DAYS);
+          if (avgSameTimeVol === 0) {
+            console.error(`Missing RVOL benchmark for ${ticker} ${trade_date} ${bar.time_of_day}`);
+            continue;
           }
+          const volumeRatio = bar.volume / avgSameTimeVol;
+          if (volumeRatio < MIN_RVOL_RATIO) continue;
+
+          breakoutBarIndex = i;
+          breakoutVolumeRatio = volumeRatio;
+          break;
         }
 
         if (breakoutBarIndex === -1) continue;
@@ -168,12 +186,10 @@ async function scan(): Promise<Signal[]> {
 
         if (!qqqBullish) continue;  // Skip if market not bullish
 
-        // Calculate signal strength
         const breakoutBar = dayBars[breakoutBarIndex];
-        const avgVolume = calculateAverageVolume(dayBars, breakoutBarIndex, LOOKBACK_BARS);
-        const volumeRatio = avgVolume > 0 ? breakoutBar.volume / avgVolume : 0;
+        const volumeRatio = breakoutVolumeRatio;
 
-        const rangeStrength = Math.min(orRange * 20, 40);
+        const rangeStrength = Math.min(orRangePct * 20, 40);
         const volumeStrength = Math.min(volumeRatio * 20, 40);
         const timingStrength = Math.max(20 - breakoutBarIndex, 0);  // Earlier breakout = stronger
         const patternStrength = Math.floor(rangeStrength + volumeStrength + timingStrength);
@@ -184,16 +200,16 @@ async function scan(): Promise<Signal[]> {
           signal_time: breakoutBar.time_of_day,
           direction: 'LONG',
           pattern_strength: patternStrength,
-          entry_price: orHigh,  // Entry at OR high breakout
+          entry_price: orHigh,  // Intent: enter next bar at/above OR high
           or_high: orHigh,
           or_low: orLow,
-          or_range: Math.round(orRange * 100) / 100,
+          or_range: Math.round(orRangePct * 100) / 100,
           volume_ratio: Math.round(volumeRatio * 100) / 100,
           qqq_bullish: qqqBullish,
           metrics: {
             or_high: orHigh,
             or_low: orLow,
-            or_range_percent: Math.round(orRange * 100) / 100,
+            or_range_percent: Math.round(orRangePct * 100) / 100,
             volume_ratio: Math.round(volumeRatio * 100) / 100,
             qqq_prev_close: Math.round(qqqPrevClose * 100) / 100,
             qqq_current_close: Math.round(qqqCurrentClose * 100) / 100

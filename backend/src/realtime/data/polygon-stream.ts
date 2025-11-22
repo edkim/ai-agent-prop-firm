@@ -62,20 +62,35 @@ export class PolygonStream {
         const authHandler = (message: string) => {
           const data = JSON.parse(message);
 
+          logger.info(`[AuthHandler] Received message: ${message}`);
+          logger.info(`[AuthHandler] Parsed data: ${JSON.stringify(data)}`);
+          logger.info(`[AuthHandler] data[0]: ${JSON.stringify(data[0])}`);
+          logger.info(`[AuthHandler] data[0]?.status: ${data[0]?.status}`);
+
           if (data[0]?.status === 'auth_success') {
             clearTimeout(authTimeout);
             this.isConnected = true;
             this.reconnectAttempts = 0;
 
             logger.info('✓ Authenticated with Polygon');
+            logger.info('Calling subscribe()...');
 
             // Subscribe to 5-minute aggregates
-            this.subscribe();
+            try {
+              this.subscribe();
+              logger.info('subscribe() completed');
+            } catch (err) {
+              logger.error('Error in subscribe():', err);
+            }
 
             // Start heartbeat
+            logger.info('Starting heartbeat...');
             this.startHeartbeat();
+            logger.info('Heartbeat started');
 
+            logger.info('Resolving connection promise...');
             resolve();
+            logger.info('Connection promise resolved');
           } else if (data[0]?.status === 'auth_failed') {
             clearTimeout(authTimeout);
             reject(new Error('Authentication failed'));
@@ -96,13 +111,25 @@ export class PolygonStream {
 
       this.ws.on('error', (error) => {
         logger.error('WebSocket error:', error);
+        // Don't exit - will attempt reconnect on close
       });
 
-      this.ws.on('close', () => {
-        logger.warn('WebSocket closed');
+      this.ws.on('close', (code: number, reason: Buffer) => {
+        const reasonStr = reason.toString() || 'No reason provided';
+        logger.warn(`WebSocket closed. Code: ${code}, Reason: ${reasonStr}`);
         this.isConnected = false;
         this.stopHeartbeat();
+
+        // Don't exit process - attempt to reconnect
+        logger.info('Attempting to reconnect...');
         this.attemptReconnect();
+      });
+
+      this.ws.on('ping', () => {
+        // Respond to pings to keep connection alive
+        if (this.ws) {
+          this.ws.pong();
+        }
       });
     });
   }
@@ -119,12 +146,14 @@ export class PolygonStream {
     // Subscribe to 5-minute aggregates for all tickers
     const subscriptions = this.tickers.map(t => `AM.${t}`);  // AM = Aggregate Minute
 
+    logger.info(`Subscribing to ${this.tickers.length} tickers: ${this.tickers.join(', ')}`);
+
     this.send({
       action: 'subscribe',
       params: subscriptions.join(',')
     });
 
-    logger.info(`✓ Subscribed to ${this.tickers.length} tickers`);
+    logger.info(`✓ Subscription message sent`);
   }
 
   /**

@@ -66,10 +66,10 @@ class RealTimeScanner {
     logger.info('Registering patterns...');
 
     // Register all patterns
-    registry.register(GapAndHold);
+    // registry.register(GapAndHold);
     registry.register(NewSessionLow);
-    registry.register(NewSessionHigh);
-    registry.register(VWAPFade);
+    // registry.register(NewSessionHigh);
+    // registry.register(VWAPFade);
 
     // Add more patterns here as they're created
 
@@ -102,6 +102,13 @@ class RealTimeScanner {
       this.setupShutdownHandlers();
 
       logger.info('\n✓ Scanner is running. Press Ctrl+C to stop.\n');
+      logger.info('Waiting for market data...');
+
+      // Keep-alive heartbeat to show scanner is running
+      setInterval(() => {
+        const stats = this.scanner.getStats();
+        logger.info(`[Heartbeat] Scans: ${stats.totalScans}, Active signals: ${stats.activeSignals}, Tickers: ${stats.tickersTracked}`);
+      }, 60000);  // Every 60 seconds
     } catch (error) {
       logger.error('Failed to start scanner:', error);
       process.exit(1);
@@ -172,7 +179,14 @@ class RealTimeScanner {
 
     process.on('uncaughtException', (error) => {
       logger.error('Uncaught exception:', error);
-      this.stop();
+      logger.error('Stack:', error.stack);
+      // Don't stop - log and continue
+    });
+
+    process.on('unhandledRejection', (reason, promise) => {
+      logger.error('Unhandled promise rejection:', reason);
+      logger.error('Promise:', promise);
+      // Don't stop - log and continue
     });
   }
 }

@@ -1,0 +1,466 @@
+
+Afternoon Filter Summary:
+Total signals: 56
+Filtered (too early): 50
+Executed trades: 6
+
+[
+  {
+    "date": "2025-08-18",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-08-21",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-08-22",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-08-25",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (10:00:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-08-26",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:45:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-08-27",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-08-28",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (11:20:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-09-02",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-09-03",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (10:05:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-09-04",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-09-08",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-09-09",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "entryTime": "15:25:00",
+    "entryPrice": 580.135,
+    "exitTime": "15:55:00",
+    "exitPrice": 580.47,
+    "quantity": 17,
+    "pnl": 5.6950000000006185,
+    "pnlPercent": 0.05774518000121289,
+    "exitReason": "Market close",
+    "highestPrice": 580.94,
+    "lowestPrice": 579.69,
+    "orRange": 0.82,
+    "orHigh": 580.2,
+    "orLow": 579.38
+  },
+  {
+    "date": "2025-09-11",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (10:10:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-09-12",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (10:25:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-09-15",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-09-17",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "entryTime": "15:30:00",
+    "entryPrice": 591.27,
+    "exitTime": "15:30:00",
+    "exitPrice": 590.48,
+    "quantity": 16,
+    "pnl": -12.639999999999418,
+    "pnlPercent": -0.13361070238638248,
+    "exitReason": "Stop loss (entry bar)",
+    "highestPrice": 591.67,
+    "lowestPrice": 589.91,
+    "orRange": 1.09,
+    "orHigh": 591.57,
+    "orLow": 590.48
+  },
+  {
+    "date": "2025-09-18",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-09-19",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:50:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-09-22",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-09-25",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (10:15:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-09-26",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-09-29",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-09-30",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (10:50:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-01",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-03",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:55:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-06",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "entryTime": "13:25:00",
+    "entryPrice": 608.7,
+    "exitTime": "15:55:00",
+    "exitPrice": 607.71,
+    "quantity": 16,
+    "pnl": -15.840000000000146,
+    "pnlPercent": -0.16264169541646278,
+    "exitReason": "Market close",
+    "highestPrice": 609.36,
+    "lowestPrice": 607.62,
+    "orRange": 1.58,
+    "orHigh": 608.6188,
+    "orLow": 607.04
+  },
+  {
+    "date": "2025-10-07",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-08",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-10",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "QQQ",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:55:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "AAPL",
+    "side": "LONG",
+    "entryTime": "12:25:00",
+    "entryPrice": 249.2919,
+    "exitTime": "15:55:00",
+    "exitPrice": 247.59,
+    "quantity": 40,
+    "pnl": -68.0759999999998,
+    "pnlPercent": -0.6826936615269068,
+    "exitReason": "Market close",
+    "highestPrice": 249.69,
+    "lowestPrice": 247.33,
+    "orRange": 2.86,
+    "orHigh": 249.49,
+    "orLow": 246.63
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "NVDA",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:55:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "AMZN",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:45:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "GOOGL",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (10:00:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "META",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:45:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "TSLA",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (10:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "NFLX",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (10:05:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "AMD",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:50:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "INTC",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:55:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "ORCL",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "CRM",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:45:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "AVGO",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:50:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "TXN",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (10:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "AMAT",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (10:10:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "QCOM",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "ADI",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (10:10:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "MU",
+    "side": "LONG",
+    "entryTime": "14:25:00",
+    "entryPrice": 193.11,
+    "exitTime": "15:55:00",
+    "exitPrice": 192.71,
+    "quantity": 51,
+    "pnl": -20.40000000000029,
+    "pnlPercent": -0.20713582932007957,
+    "exitReason": "Market close",
+    "highestPrice": 193.3995,
+    "lowestPrice": 192.25,
+    "orRange": 3.15,
+    "orHigh": 193,
+    "orLow": 189.8529
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "KLAC",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (11:15:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "SNPS",
+    "side": "LONG",
+    "entryTime": "12:15:00",
+    "entryPrice": 450.145,
+    "exitTime": "15:55:00",
+    "exitPrice": 447.81,
+    "quantity": 22,
+    "pnl": -51.36999999999955,
+    "pnlPercent": -0.518721745215426,
+    "exitReason": "Market close",
+    "highestPrice": 453.8,
+    "lowestPrice": 447.72,
+    "orRange": 8.51,
+    "orHigh": 450.01,
+    "orLow": 441.5
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "CDNS",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (11:35:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "MCHP",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (10:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "DIS",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (11:45:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "PAYX",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "ADSK",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:40:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "INTU",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:50:00 < 12:00:00)"
+  },
+  {
+    "date": "2025-10-13",
+    "ticker": "NOW",
+    "side": "LONG",
+    "noTrade": true,
+    "noTradeReason": "Entry too early (09:45:00 < 12:00:00)"
+  }
+]

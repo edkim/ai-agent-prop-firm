@@ -1,0 +1,15 @@
+/Users/edwardkim/Code/ai-backtest/backend/tmp/orb-execution-simple.ts:10
+const SCANNER_SIGNALS = JSON.parse(
+                             ^
+SyntaxError: Unexpected token 'A', "
+Afternoon "... is not valid JSON
+    at JSON.parse (<anonymous>)
+    at Object.<anonymous> (/Users/edwardkim/Code/ai-backtest/backend/tmp/orb-execution-simple.ts:10:30)
+    at Module._compile (node:internal/modules/cjs/loader:1692:14)
+    at Module.m._compile (/Users/edwardkim/Code/ai-backtest/backend/node_modules/ts-node/src/index.ts:1618:23)
+    at node:internal/modules/cjs/loader:1824:10
+    at Object.require.extensions.<computed> [as .ts] (/Users/edwardkim/Code/ai-backtest/backend/node_modules/ts-node/src/index.ts:1621:12)
+    at Module.load (node:internal/modules/cjs/loader:1427:32)
+    at Module._load (node:internal/modules/cjs/loader:1250:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)

@@ -1,0 +1,468 @@
+[
+  {
+    "date": "2025-10-16",
+    "ticker": "AAPL",
+    "side": "SHORT",
+    "entryTime": "10:15:00",
+    "entryPrice": 247.52321593663146,
+    "exitTime": "10:30:00",
+    "exitPrice": 247.89765,
+    "quantity": 40,
+    "pnl": -14.977362534741587,
+    "pnlPercent": -0.1512723006412452,
+    "exitReason": "Initial stop",
+    "highestPrice": 248.07,
+    "lowestPrice": 247.0101
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "MSFT",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "NVDA",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "BA",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "TXN",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "QCOM",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "SNPS",
+    "side": "SHORT",
+    "entryTime": "12:55:00",
+    "entryPrice": 441.3082678097335,
+    "exitTime": "13:35:00",
+    "exitPrice": 442.2181764,
+    "quantity": 22,
+    "pnl": -20.017988985863553,
+    "pnlPercent": -0.20618435153787443,
+    "exitReason": "Initial stop",
+    "highestPrice": 442.73,
+    "lowestPrice": 437.8927
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "CDNS",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "ABT",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "ABT",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "ISRG",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "REGN",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "BMY",
+    "side": "SHORT",
+    "entryTime": "13:10:00",
+    "entryPrice": 43.502948965553905,
+    "exitTime": "15:55:00",
+    "exitPrice": 43.395,
+    "quantity": 229,
+    "pnl": 24.72031311184358,
+    "pnlPercent": 0.2481417194024645,
+    "exitReason": "Market close",
+    "highestPrice": 43.502948965553905,
+    "lowestPrice": 43.22
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "BMY",
+    "side": "SHORT",
+    "entryTime": "10:05:00",
+    "entryPrice": 43.52706484960006,
+    "exitTime": "10:40:00",
+    "exitPrice": 43.72368,
+    "quantity": 229,
+    "pnl": -45.02486944158688,
+    "pnlPercent": -0.451707807726781,
+    "exitReason": "Initial stop",
+    "highestPrice": 43.74,
+    "lowestPrice": 43.52
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "GS",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "BLK",
+    "side": "SHORT",
+    "entryTime": "10:55:00",
+    "entryPrice": 1152.085,
+    "exitTime": "11:00:00",
+    "exitPrice": 1154.7435899999998,
+    "quantity": 8,
+    "pnl": -21.26871999999821,
+    "pnlPercent": -0.23076335513436738,
+    "exitReason": "Initial stop",
+    "highestPrice": 1156.4746,
+    "lowestPrice": 1151.79
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "AXP",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "MA",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "PYPL",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "BX",
+    "side": "SHORT",
+    "entryTime": "11:00:00",
+    "entryPrice": 162.8802071000092,
+    "exitTime": "13:15:00",
+    "exitPrice": 159.277,
+    "quantity": 61,
+    "pnl": 219.79563310056122,
+    "pnlPercent": 2.212182292841029,
+    "exitReason": "Trailing stop",
+    "highestPrice": 162.8802071000092,
+    "lowestPrice": 157.7
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "BX",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "AFL",
+    "side": "SHORT",
+    "entryTime": "13:00:00",
+    "entryPrice": 107.45665181080223,
+    "exitTime": "13:15:00",
+    "exitPrice": 107.612505,
+    "quantity": 93,
+    "pnl": -14.494346595392685,
+    "pnlPercent": -0.14503819593428224,
+    "exitReason": "Initial stop",
+    "highestPrice": 107.68,
+    "lowestPrice": 107.28
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "AFL",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "MCO",
+    "side": "SHORT",
+    "entryTime": "11:10:00",
+    "entryPrice": 476.45949723661886,
+    "exitTime": "15:55:00",
+    "exitPrice": 468.38,
+    "quantity": 20,
+    "pnl": 161.58994473237726,
+    "pnlPercent": 1.6957364232381815,
+    "exitReason": "Market close",
+    "highestPrice": 476.45949723661886,
+    "lowestPrice": 466.38
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "MSCI",
+    "side": "SHORT",
+    "entryTime": "09:50:00",
+    "entryPrice": 547.5531379209831,
+    "exitTime": "15:55:00",
+    "exitPrice": 533.34,
+    "quantity": 18,
+    "pnl": 255.83648257769505,
+    "pnlPercent": 2.595754993743483,
+    "exitReason": "Market close",
+    "highestPrice": 547.5531379209831,
+    "lowestPrice": 531.78
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "HD",
+    "side": "SHORT",
+    "entryTime": "14:20:00",
+    "entryPrice": 385.619178551817,
+    "exitTime": "14:30:00",
+    "exitPrice": 386.32594,
+    "quantity": 25,
+    "pnl": -17.669036204574695,
+    "pnlPercent": -0.18327964154615245,
+    "exitReason": "Initial stop",
+    "highestPrice": 386.36,
+    "lowestPrice": 385.54
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "LOW",
+    "side": "SHORT",
+    "entryTime": "12:50:00",
+    "entryPrice": 241.52387016322282,
+    "exitTime": "12:55:00",
+    "exitPrice": 241.87162999999998,
+    "quantity": 41,
+    "pnl": -14.258153307863466,
+    "pnlPercent": -0.14398570068546027,
+    "exitReason": "Initial stop",
+    "highestPrice": 241.92,
+    "lowestPrice": 241.52387016322282
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "CMCSA",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "CMCSA",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "T",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "T",
+    "side": "SHORT",
+    "entryTime": "10:05:00",
+    "entryPrice": 26.04213699076854,
+    "exitTime": "10:30:00",
+    "exitPrice": 26.076050000000002,
+    "quantity": 383,
+    "pnl": -12.988682535649907,
+    "pnlPercent": -0.13022360355251736,
+    "exitReason": "Initial stop",
+    "highestPrice": 26.08,
+    "lowestPrice": 25.92
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "VZ",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "RTX",
+    "side": "SHORT",
+    "entryTime": "10:00:00",
+    "entryPrice": 157.2021,
+    "exitTime": "10:30:00",
+    "exitPrice": 157.569412,
+    "quantity": 63,
+    "pnl": -23.140655999999893,
+    "pnlPercent": -0.23365591172128,
+    "exitReason": "Initial stop",
+    "highestPrice": 157.8,
+    "lowestPrice": 156.87
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "RTX",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "BA",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "EMR",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "PH",
+    "side": "SHORT",
+    "entryTime": "10:00:00",
+    "entryPrice": 734.9389569180133,
+    "exitTime": "11:05:00",
+    "exitPrice": 732.0378999999999,
+    "quantity": 13,
+    "pnl": 37.71373993417433,
+    "pnlPercent": 0.3947344049060988,
+    "exitReason": "Trailing stop",
+    "highestPrice": 734.9389569180133,
+    "lowestPrice": 724.79
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "PH",
+    "side": "SHORT",
+    "entryTime": "10:05:00",
+    "entryPrice": 743.25,
+    "exitTime": "10:10:00",
+    "exitPrice": 743.99325,
+    "quantity": 13,
+    "pnl": -9.662249999999858,
+    "pnlPercent": -0.09999999999999853,
+    "exitReason": "Initial stop",
+    "highestPrice": 744.51,
+    "lowestPrice": 742.825
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "CARR",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "WM",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "RSG",
+    "side": "SHORT",
+    "entryTime": "11:10:00",
+    "entryPrice": 218.85002618331654,
+    "exitTime": "12:10:00",
+    "exitPrice": 219.254035,
+    "quantity": 45,
+    "pnl": -18.180396750754966,
+    "pnlPercent": -0.18460533166444842,
+    "exitReason": "Initial stop",
+    "highestPrice": 219.3,
+    "lowestPrice": 218.2
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "ADP",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-21",
+    "ticker": "ADP",
+    "side": "SHORT",
+    "entryTime": "11:35:00",
+    "entryPrice": 283.8264086815387,
+    "exitTime": "12:20:00",
+    "exitPrice": 284.19391,
+    "quantity": 35,
+    "pnl": -12.86254614614677,
+    "pnlPercent": -0.12948101629037742,
+    "exitReason": "Initial stop",
+    "highestPrice": 284.5025,
+    "lowestPrice": 283.02
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "ADSK",
+    "side": "SHORT",
+    "entryTime": "10:15:00",
+    "entryPrice": 306.2694979585437,
+    "exitTime": "15:55:00",
+    "exitPrice": 299.78,
+    "quantity": 32,
+    "pnl": 207.66393467339913,
+    "pnlPercent": 2.1188848389408124,
+    "exitReason": "Market close",
+    "highestPrice": 306.2694979585437,
+    "lowestPrice": 298.8
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "INTU",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  },
+  {
+    "date": "2025-10-16",
+    "ticker": "NOW",
+    "side": "SHORT",
+    "noTrade": true,
+    "noTradeReason": "Next bar never touched VWAP"
+  }
+]

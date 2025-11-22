@@ -1,0 +1,692 @@
+[
+  {
+    "ticker": "AAPL",
+    "signal_date": "2025-10-16",
+    "signal_time": "10:10:00",
+    "direction": "SHORT",
+    "pattern_strength": 66,
+    "entry_price": 247.52321593663146,
+    "vwap_at_signal": 247.52321593663146,
+    "volume_ratio": 1.31,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 247.52321593663146,
+      "volume_ratio": 1.31
+    }
+  },
+  {
+    "ticker": "MSFT",
+    "signal_date": "2025-10-16",
+    "signal_time": "12:15:00",
+    "direction": "SHORT",
+    "pattern_strength": 66,
+    "entry_price": 514.2379958870123,
+    "vwap_at_signal": 514.2379958870123,
+    "volume_ratio": 1.31,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 514.2379958870123,
+      "volume_ratio": 1.31
+    }
+  },
+  {
+    "ticker": "NVDA",
+    "signal_date": "2025-10-16",
+    "signal_time": "12:05:00",
+    "direction": "SHORT",
+    "pattern_strength": 61,
+    "entry_price": 182.25290465709483,
+    "vwap_at_signal": 182.25290465709483,
+    "volume_ratio": 1.06,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 182.25290465709483,
+      "volume_ratio": 1.06
+    }
+  },
+  {
+    "ticker": "BA",
+    "signal_date": "2025-10-16",
+    "signal_time": "10:30:00",
+    "direction": "SHORT",
+    "pattern_strength": 121,
+    "entry_price": 213.82998653307254,
+    "vwap_at_signal": 213.82998653307254,
+    "volume_ratio": 4.07,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 213.82998653307254,
+      "volume_ratio": 4.07
+    }
+  },
+  {
+    "ticker": "TXN",
+    "signal_date": "2025-10-16",
+    "signal_time": "13:20:00",
+    "direction": "SHORT",
+    "pattern_strength": 65,
+    "entry_price": 176.03751590205889,
+    "vwap_at_signal": 176.03751590205889,
+    "volume_ratio": 1.26,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 176.03751590205889,
+      "volume_ratio": 1.26
+    }
+  },
+  {
+    "ticker": "QCOM",
+    "signal_date": "2025-10-16",
+    "signal_time": "13:15:00",
+    "direction": "SHORT",
+    "pattern_strength": 67,
+    "entry_price": 164.25903932023502,
+    "vwap_at_signal": 164.25903932023502,
+    "volume_ratio": 1.35,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 164.25903932023502,
+      "volume_ratio": 1.35
+    }
+  },
+  {
+    "ticker": "SNPS",
+    "signal_date": "2025-10-16",
+    "signal_time": "12:50:00",
+    "direction": "SHORT",
+    "pattern_strength": 85,
+    "entry_price": 441.3082678097335,
+    "vwap_at_signal": 441.3082678097335,
+    "volume_ratio": 2.27,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 441.3082678097335,
+      "volume_ratio": 2.27
+    }
+  },
+  {
+    "ticker": "CDNS",
+    "signal_date": "2025-10-16",
+    "signal_time": "13:25:00",
+    "direction": "SHORT",
+    "pattern_strength": 60,
+    "entry_price": 324.73620096484717,
+    "vwap_at_signal": 324.73620096484717,
+    "volume_ratio": 1.02,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 324.73620096484717,
+      "volume_ratio": 1.02
+    }
+  },
+  {
+    "ticker": "ABT",
+    "signal_date": "2025-10-16",
+    "signal_time": "09:55:00",
+    "direction": "SHORT",
+    "pattern_strength": 61,
+    "entry_price": 129.65362036587354,
+    "vwap_at_signal": 129.65362036587354,
+    "volume_ratio": 1.03,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 129.65362036587354,
+      "volume_ratio": 1.03
+    }
+  },
+  {
+    "ticker": "ABT",
+    "signal_date": "2025-10-21",
+    "signal_time": "11:25:00",
+    "direction": "SHORT",
+    "pattern_strength": 63,
+    "entry_price": 128.57448977470963,
+    "vwap_at_signal": 128.57448977470963,
+    "volume_ratio": 1.17,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 128.57448977470963,
+      "volume_ratio": 1.17
+    }
+  },
+  {
+    "ticker": "ISRG",
+    "signal_date": "2025-10-16",
+    "signal_time": "10:15:00",
+    "direction": "SHORT",
+    "pattern_strength": 69,
+    "entry_price": 436.59861426416956,
+    "vwap_at_signal": 436.59861426416956,
+    "volume_ratio": 1.43,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 436.59861426416956,
+      "volume_ratio": 1.43
+    }
+  },
+  {
+    "ticker": "REGN",
+    "signal_date": "2025-10-16",
+    "signal_time": "10:15:00",
+    "direction": "SHORT",
+    "pattern_strength": 63,
+    "entry_price": 586.1961361092086,
+    "vwap_at_signal": 586.1961361092086,
+    "volume_ratio": 1.17,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 586.1961361092086,
+      "volume_ratio": 1.17
+    }
+  },
+  {
+    "ticker": "BMY",
+    "signal_date": "2025-10-16",
+    "signal_time": "13:05:00",
+    "direction": "SHORT",
+    "pattern_strength": 64,
+    "entry_price": 43.502948965553905,
+    "vwap_at_signal": 43.502948965553905,
+    "volume_ratio": 1.19,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 43.502948965553905,
+      "volume_ratio": 1.19
+    }
+  },
+  {
+    "ticker": "BMY",
+    "signal_date": "2025-10-21",
+    "signal_time": "10:00:00",
+    "direction": "SHORT",
+    "pattern_strength": 81,
+    "entry_price": 43.52706484960006,
+    "vwap_at_signal": 43.52706484960006,
+    "volume_ratio": 2.03,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 43.52706484960006,
+      "volume_ratio": 2.03
+    }
+  },
+  {
+    "ticker": "GS",
+    "signal_date": "2025-10-21",
+    "signal_time": "13:30:00",
+    "direction": "SHORT",
+    "pattern_strength": 66,
+    "entry_price": 762.2607486821346,
+    "vwap_at_signal": 762.2607486821346,
+    "volume_ratio": 1.32,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 762.2607486821346,
+      "volume_ratio": 1.32
+    }
+  },
+  {
+    "ticker": "BLK",
+    "signal_date": "2025-10-21",
+    "signal_time": "10:50:00",
+    "direction": "SHORT",
+    "pattern_strength": 129,
+    "entry_price": 1151.596676015059,
+    "vwap_at_signal": 1151.596676015059,
+    "volume_ratio": 4.45,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 1151.596676015059,
+      "volume_ratio": 4.45
+    }
+  },
+  {
+    "ticker": "AXP",
+    "signal_date": "2025-10-16",
+    "signal_time": "11:05:00",
+    "direction": "SHORT",
+    "pattern_strength": 67,
+    "entry_price": 329.1081831399654,
+    "vwap_at_signal": 329.1081831399654,
+    "volume_ratio": 1.35,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 329.1081831399654,
+      "volume_ratio": 1.35
+    }
+  },
+  {
+    "ticker": "MA",
+    "signal_date": "2025-10-16",
+    "signal_time": "10:15:00",
+    "direction": "SHORT",
+    "pattern_strength": 63,
+    "entry_price": 557.7680591162554,
+    "vwap_at_signal": 557.7680591162554,
+    "volume_ratio": 1.13,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 557.7680591162554,
+      "volume_ratio": 1.13
+    }
+  },
+  {
+    "ticker": "PYPL",
+    "signal_date": "2025-10-16",
+    "signal_time": "09:55:00",
+    "direction": "SHORT",
+    "pattern_strength": 65,
+    "entry_price": 67.9252575342241,
+    "vwap_at_signal": 67.9252575342241,
+    "volume_ratio": 1.27,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 67.9252575342241,
+      "volume_ratio": 1.27
+    }
+  },
+  {
+    "ticker": "BX",
+    "signal_date": "2025-10-16",
+    "signal_time": "10:55:00",
+    "direction": "SHORT",
+    "pattern_strength": 77,
+    "entry_price": 162.8802071000092,
+    "vwap_at_signal": 162.8802071000092,
+    "volume_ratio": 1.87,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 162.8802071000092,
+      "volume_ratio": 1.87
+    }
+  },
+  {
+    "ticker": "BX",
+    "signal_date": "2025-10-21",
+    "signal_time": "13:30:00",
+    "direction": "SHORT",
+    "pattern_strength": 67,
+    "entry_price": 161.64435238353914,
+    "vwap_at_signal": 161.64435238353914,
+    "volume_ratio": 1.36,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 161.64435238353914,
+      "volume_ratio": 1.36
+    }
+  },
+  {
+    "ticker": "AFL",
+    "signal_date": "2025-10-16",
+    "signal_time": "12:55:00",
+    "direction": "SHORT",
+    "pattern_strength": 78,
+    "entry_price": 107.45665181080223,
+    "vwap_at_signal": 107.45665181080223,
+    "volume_ratio": 1.89,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 107.45665181080223,
+      "volume_ratio": 1.89
+    }
+  },
+  {
+    "ticker": "AFL",
+    "signal_date": "2025-10-21",
+    "signal_time": "12:40:00",
+    "direction": "SHORT",
+    "pattern_strength": 63,
+    "entry_price": 108.52233044489068,
+    "vwap_at_signal": 108.52233044489068,
+    "volume_ratio": 1.14,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 108.52233044489068,
+      "volume_ratio": 1.14
+    }
+  },
+  {
+    "ticker": "MCO",
+    "signal_date": "2025-10-16",
+    "signal_time": "11:05:00",
+    "direction": "SHORT",
+    "pattern_strength": 68,
+    "entry_price": 476.45949723661886,
+    "vwap_at_signal": 476.45949723661886,
+    "volume_ratio": 1.41,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 476.45949723661886,
+      "volume_ratio": 1.41
+    }
+  },
+  {
+    "ticker": "MSCI",
+    "signal_date": "2025-10-16",
+    "signal_time": "09:45:00",
+    "direction": "SHORT",
+    "pattern_strength": 71,
+    "entry_price": 547.5531379209831,
+    "vwap_at_signal": 547.5531379209831,
+    "volume_ratio": 1.54,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 547.5531379209831,
+      "volume_ratio": 1.54
+    }
+  },
+  {
+    "ticker": "HD",
+    "signal_date": "2025-10-16",
+    "signal_time": "14:15:00",
+    "direction": "SHORT",
+    "pattern_strength": 75,
+    "entry_price": 385.619178551817,
+    "vwap_at_signal": 385.619178551817,
+    "volume_ratio": 1.73,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 385.619178551817,
+      "volume_ratio": 1.73
+    }
+  },
+  {
+    "ticker": "LOW",
+    "signal_date": "2025-10-16",
+    "signal_time": "12:45:00",
+    "direction": "SHORT",
+    "pattern_strength": 62,
+    "entry_price": 241.52387016322282,
+    "vwap_at_signal": 241.52387016322282,
+    "volume_ratio": 1.12,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 241.52387016322282,
+      "volume_ratio": 1.12
+    }
+  },
+  {
+    "ticker": "CMCSA",
+    "signal_date": "2025-10-16",
+    "signal_time": "09:45:00",
+    "direction": "SHORT",
+    "pattern_strength": 61,
+    "entry_price": 29.699437803465532,
+    "vwap_at_signal": 29.699437803465532,
+    "volume_ratio": 1.05,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 29.699437803465532,
+      "volume_ratio": 1.05
+    }
+  },
+  {
+    "ticker": "CMCSA",
+    "signal_date": "2025-10-21",
+    "signal_time": "12:30:00",
+    "direction": "SHORT",
+    "pattern_strength": 74,
+    "entry_price": 29.79612824711124,
+    "vwap_at_signal": 29.79612824711124,
+    "volume_ratio": 1.69,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 29.79612824711124,
+      "volume_ratio": 1.69
+    }
+  },
+  {
+    "ticker": "T",
+    "signal_date": "2025-10-16",
+    "signal_time": "13:10:00",
+    "direction": "SHORT",
+    "pattern_strength": 69,
+    "entry_price": 26.256097711574903,
+    "vwap_at_signal": 26.256097711574903,
+    "volume_ratio": 1.46,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 26.256097711574903,
+      "volume_ratio": 1.46
+    }
+  },
+  {
+    "ticker": "T",
+    "signal_date": "2025-10-21",
+    "signal_time": "10:00:00",
+    "direction": "SHORT",
+    "pattern_strength": 62,
+    "entry_price": 26.04213699076854,
+    "vwap_at_signal": 26.04213699076854,
+    "volume_ratio": 1.11,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 26.04213699076854,
+      "volume_ratio": 1.11
+    }
+  },
+  {
+    "ticker": "VZ",
+    "signal_date": "2025-10-21",
+    "signal_time": "10:10:00",
+    "direction": "SHORT",
+    "pattern_strength": 83,
+    "entry_price": 40.51558456651471,
+    "vwap_at_signal": 40.51558456651471,
+    "volume_ratio": 2.17,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 40.51558456651471,
+      "volume_ratio": 2.17
+    }
+  },
+  {
+    "ticker": "RTX",
+    "signal_date": "2025-10-16",
+    "signal_time": "09:55:00",
+    "direction": "SHORT",
+    "pattern_strength": 73,
+    "entry_price": 157.15922263905455,
+    "vwap_at_signal": 157.15922263905455,
+    "volume_ratio": 1.67,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 157.15922263905455,
+      "volume_ratio": 1.67
+    }
+  },
+  {
+    "ticker": "RTX",
+    "signal_date": "2025-10-21",
+    "signal_time": "10:20:00",
+    "direction": "SHORT",
+    "pattern_strength": 142,
+    "entry_price": 176.19354049063406,
+    "vwap_at_signal": 176.19354049063406,
+    "volume_ratio": 5.09,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 176.19354049063406,
+      "volume_ratio": 5.09
+    }
+  },
+  {
+    "ticker": "BA",
+    "signal_date": "2025-10-16",
+    "signal_time": "10:30:00",
+    "direction": "SHORT",
+    "pattern_strength": 121,
+    "entry_price": 213.82998653307254,
+    "vwap_at_signal": 213.82998653307254,
+    "volume_ratio": 4.07,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 213.82998653307254,
+      "volume_ratio": 4.07
+    }
+  },
+  {
+    "ticker": "EMR",
+    "signal_date": "2025-10-16",
+    "signal_time": "10:45:00",
+    "direction": "SHORT",
+    "pattern_strength": 84,
+    "entry_price": 130.26559954612048,
+    "vwap_at_signal": 130.26559954612048,
+    "volume_ratio": 2.21,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 130.26559954612048,
+      "volume_ratio": 2.21
+    }
+  },
+  {
+    "ticker": "PH",
+    "signal_date": "2025-10-16",
+    "signal_time": "09:55:00",
+    "direction": "SHORT",
+    "pattern_strength": 106,
+    "entry_price": 734.9389569180133,
+    "vwap_at_signal": 734.9389569180133,
+    "volume_ratio": 3.3,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 734.9389569180133,
+      "volume_ratio": 3.3
+    }
+  },
+  {
+    "ticker": "PH",
+    "signal_date": "2025-10-21",
+    "signal_time": "10:00:00",
+    "direction": "SHORT",
+    "pattern_strength": 63,
+    "entry_price": 741.8267297033507,
+    "vwap_at_signal": 741.8267297033507,
+    "volume_ratio": 1.13,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 741.8267297033507,
+      "volume_ratio": 1.13
+    }
+  },
+  {
+    "ticker": "CARR",
+    "signal_date": "2025-10-16",
+    "signal_time": "10:15:00",
+    "direction": "SHORT",
+    "pattern_strength": 71,
+    "entry_price": 56.89304316110679,
+    "vwap_at_signal": 56.89304316110679,
+    "volume_ratio": 1.57,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 56.89304316110679,
+      "volume_ratio": 1.57
+    }
+  },
+  {
+    "ticker": "WM",
+    "signal_date": "2025-10-21",
+    "signal_time": "11:55:00",
+    "direction": "SHORT",
+    "pattern_strength": 63,
+    "entry_price": 215.54796092643437,
+    "vwap_at_signal": 215.54796092643437,
+    "volume_ratio": 1.13,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 215.54796092643437,
+      "volume_ratio": 1.13
+    }
+  },
+  {
+    "ticker": "RSG",
+    "signal_date": "2025-10-16",
+    "signal_time": "11:05:00",
+    "direction": "SHORT",
+    "pattern_strength": 70,
+    "entry_price": 218.85002618331654,
+    "vwap_at_signal": 218.85002618331654,
+    "volume_ratio": 1.5,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 218.85002618331654,
+      "volume_ratio": 1.5
+    }
+  },
+  {
+    "ticker": "ADP",
+    "signal_date": "2025-10-16",
+    "signal_time": "10:00:00",
+    "direction": "SHORT",
+    "pattern_strength": 68,
+    "entry_price": 282.3730054213334,
+    "vwap_at_signal": 282.3730054213334,
+    "volume_ratio": 1.4,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 282.3730054213334,
+      "volume_ratio": 1.4
+    }
+  },
+  {
+    "ticker": "ADP",
+    "signal_date": "2025-10-21",
+    "signal_time": "11:30:00",
+    "direction": "SHORT",
+    "pattern_strength": 73,
+    "entry_price": 283.8264086815387,
+    "vwap_at_signal": 283.8264086815387,
+    "volume_ratio": 1.64,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 283.8264086815387,
+      "volume_ratio": 1.64
+    }
+  },
+  {
+    "ticker": "ADSK",
+    "signal_date": "2025-10-16",
+    "signal_time": "10:10:00",
+    "direction": "SHORT",
+    "pattern_strength": 112,
+    "entry_price": 306.2694979585437,
+    "vwap_at_signal": 306.2694979585437,
+    "volume_ratio": 3.62,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 306.2694979585437,
+      "volume_ratio": 3.62
+    }
+  },
+  {
+    "ticker": "INTU",
+    "signal_date": "2025-10-16",
+    "signal_time": "09:55:00",
+    "direction": "SHORT",
+    "pattern_strength": 63,
+    "entry_price": 655.6004182944957,
+    "vwap_at_signal": 655.6004182944957,
+    "volume_ratio": 1.14,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 655.6004182944957,
+      "volume_ratio": 1.14
+    }
+  },
+  {
+    "ticker": "NOW",
+    "signal_date": "2025-10-16",
+    "signal_time": "10:15:00",
+    "direction": "SHORT",
+    "pattern_strength": 68,
+    "entry_price": 923.8325479340413,
+    "vwap_at_signal": 923.8325479340413,
+    "volume_ratio": 1.38,
+    "qqq_bearish": true,
+    "metrics": {
+      "vwap": 923.8325479340413,
+      "volume_ratio": 1.38
+    }
+  }
+]
