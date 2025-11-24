@@ -1,7 +1,7 @@
 /**
- * Polygon WebSocket Stream
+ * Polygon/Massive WebSocket Stream
  *
- * Connects to Polygon.io websocket and streams real-time bar data
+ * Connects to Massive.com websocket and streams real-time bar data
  */
 
 import WebSocket from 'ws';
@@ -12,7 +12,7 @@ import logger from '../../services/logger.service';
 
 interface PolygonMessage {
   ev: string;  // Event type
-  sym: string; // Symbol
+  sym?: string; // Symbol
   s?: number;  // Start timestamp (ms)
   o?: number;  // Open
   h?: number;  // High
@@ -20,6 +20,8 @@ interface PolygonMessage {
   c?: number;  // Close
   v?: number;  // Volume
   vw?: number; // VWAP
+  status?: string; // Status (for auth messages)
+  message?: string; // Message (for status messages)
 }
 
 export class PolygonStream {
@@ -38,15 +40,18 @@ export class PolygonStream {
   }
 
   /**
-   * Connect to Polygon websocket
+   * Connect to Massive.com websocket
    */
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const url = 'wss://socket.polygon.io/stocks';
+      const url = 'wss://socket.massive.com/stocks';
 
-      logger.info(`Connecting to Polygon websocket...`);
+      logger.info(`Connecting to Massive.com websocket...`);
 
       this.ws = new WebSocket(url);
+
+      let authTimeout: NodeJS.Timeout | null = null;
+      let authResolved = false;
 
       this.ws.on('open', () => {
         logger.info('✓ WebSocket connected');
@@ -55,54 +60,56 @@ export class PolygonStream {
         this.send({ action: 'auth', params: this.apiKey });
 
         // Wait for auth confirmation
-        const authTimeout = setTimeout(() => {
-          reject(new Error('Authentication timeout'));
-        }, 10000);
-
-        const authHandler = (message: string) => {
-          const data = JSON.parse(message);
-
-          logger.info(`[AuthHandler] Received message: ${message}`);
-          logger.info(`[AuthHandler] Parsed data: ${JSON.stringify(data)}`);
-          logger.info(`[AuthHandler] data[0]: ${JSON.stringify(data[0])}`);
-          logger.info(`[AuthHandler] data[0]?.status: ${data[0]?.status}`);
-
-          if (data[0]?.status === 'auth_success') {
-            clearTimeout(authTimeout);
-            this.isConnected = true;
-            this.reconnectAttempts = 0;
-
-            logger.info('✓ Authenticated with Polygon');
-            logger.info('Calling subscribe()...');
-
-            // Subscribe to 5-minute aggregates
-            try {
-              this.subscribe();
-              logger.info('subscribe() completed');
-            } catch (err) {
-              logger.error('Error in subscribe():', err);
-            }
-
-            // Start heartbeat
-            logger.info('Starting heartbeat...');
-            this.startHeartbeat();
-            logger.info('Heartbeat started');
-
-            logger.info('Resolving connection promise...');
-            resolve();
-            logger.info('Connection promise resolved');
-          } else if (data[0]?.status === 'auth_failed') {
-            clearTimeout(authTimeout);
-            reject(new Error('Authentication failed'));
+        authTimeout = setTimeout(() => {
+          if (!authResolved) {
+            logger.error('❌ Authentication timeout - no auth_success received within 10s');
+            logger.error('This usually means:');
+            logger.error('  1. Your API key is invalid or expired');
+            logger.error('  2. Your Polygon.io key needs to be migrated to Massive.com');
+            logger.error('  3. Get a new key at: https://massive.com/dashboard/keys');
+            reject(new Error('Authentication timeout'));
           }
-        };
-
-        this.ws!.once('message', authHandler);
+        }, 10000);
       });
 
       this.ws.on('message', (data: string) => {
         try {
           const messages: PolygonMessage[] = JSON.parse(data);
+
+          // Handle authentication if not yet connected
+          if (!this.isConnected) {
+            for (const msg of messages) {
+              if (msg.ev === 'status') {
+                if (msg.status === 'auth_success') {
+                  if (authTimeout) clearTimeout(authTimeout);
+                  authResolved = true;
+                  this.isConnected = true;
+                  this.reconnectAttempts = 0;
+
+                  logger.info('✓ Authenticated with Massive.com');
+
+                  // Subscribe to tickers
+                  this.subscribe();
+
+                  // Start heartbeat
+                  this.startHeartbeat();
+
+                  logger.info('✓ Real-time data stream started');
+                  resolve();
+                  return;
+                } else if (msg.status === 'auth_failed') {
+                  if (authTimeout) clearTimeout(authTimeout);
+                  authResolved = true;
+                  logger.error('❌ Authentication failed');
+                  logger.error('Check your API key at: https://massive.com/dashboard/keys');
+                  reject(new Error('Authentication failed'));
+                  return;
+                }
+              }
+            }
+          }
+
+          // Handle regular messages
           this.handleMessages(messages);
         } catch (error) {
           logger.error('Error parsing message:', error);
@@ -143,7 +150,7 @@ export class PolygonStream {
       return;
     }
 
-    // Subscribe to 5-minute aggregates for all tickers
+    // Subscribe to 1-minute aggregates for all tickers
     const subscriptions = this.tickers.map(t => `AM.${t}`);  // AM = Aggregate Minute
 
     logger.info(`Subscribing to ${this.tickers.length} tickers: ${this.tickers.join(', ')}`);
@@ -176,7 +183,7 @@ export class PolygonStream {
    * Handle bar data
    */
   private handleBar(msg: PolygonMessage): void {
-    if (!msg.s || !msg.o || !msg.h || !msg.l || !msg.c || !msg.v) {
+    if (!msg.sym || !msg.s || !msg.o || !msg.h || !msg.l || !msg.c || !msg.v) {
       return;
     }
 
@@ -203,10 +210,10 @@ export class PolygonStream {
     // Update market state
     marketState.updateBar(ticker, bar);
 
-    // Log extended hours bars (optional - can be noisy)
-    // if (!isRegularHours) {
-    //   logger.info(`Extended hours bar: ${ticker} ${dateET} ${timeET}`);
-    // }
+    // Log first bar received as confirmation
+    if (marketState.getState(ticker)?.bars.length === 1) {
+      logger.info(`✓ Received first bar for ${ticker}: ${dateET} ${timeET} close=$${msg.c.toFixed(2)}`);
+    }
   }
 
   /**
@@ -271,7 +278,7 @@ export class PolygonStream {
     }
 
     this.isConnected = false;
-    logger.info('✓ Disconnected from Polygon');
+    logger.info('✓ Disconnected from Massive.com');
   }
 
   /**
