@@ -88,17 +88,17 @@ export class PaperTradingOrchestratorService {
         i.execution_script as latest_execution_script,
         i.iteration_number,
         p.id as account_id
-      FROM trading_agents a
+      FROM learning_agents a
       LEFT JOIN paper_accounts p ON p.agent_id = a.id
       LEFT JOIN (
-        SELECT agent_id, scan_script, execution_script, iteration_number
+        SELECT learning_agent_id, scan_script, execution_script, iteration_number
         FROM agent_iterations
-        WHERE (agent_id, iteration_number) IN (
-          SELECT agent_id, MAX(iteration_number)
+        WHERE (learning_agent_id, iteration_number) IN (
+          SELECT learning_agent_id, MAX(iteration_number)
           FROM agent_iterations
-          GROUP BY agent_id
+          GROUP BY learning_agent_id
         )
-      ) i ON i.agent_id = a.id
+      ) i ON i.learning_agent_id = a.id
       WHERE a.status = 'paper_trading'
       AND p.status = 'active'
     `).all() as any[];

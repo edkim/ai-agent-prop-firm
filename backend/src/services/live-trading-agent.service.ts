@@ -58,7 +58,7 @@ class TradingAgentService {
 
     try {
       db.prepare(`
-        INSERT INTO trading_agents (
+        INSERT INTO learning_agents (
           id, name, account_id, timeframe, strategies, risk_limits, active, created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
@@ -90,7 +90,7 @@ class TradingAgentService {
     const db = getDatabase();
 
     const row = db.prepare(`
-      SELECT * FROM trading_agents WHERE id = ?
+      SELECT * FROM learning_agents WHERE id = ?
     `).get(agentId) as any;
 
     if (!row) {
@@ -107,8 +107,8 @@ class TradingAgentService {
     const db = getDatabase();
 
     const query = activeOnly
-      ? `SELECT * FROM trading_agents WHERE active = 1 ORDER BY created_at DESC`
-      : `SELECT * FROM trading_agents ORDER BY created_at DESC`;
+      ? `SELECT * FROM learning_agents WHERE active = 1 ORDER BY created_at DESC`
+      : `SELECT * FROM learning_agents ORDER BY created_at DESC`;
 
     const rows = db.prepare(query).all() as any[];
 
@@ -122,7 +122,7 @@ class TradingAgentService {
     const db = getDatabase();
 
     const rows = db.prepare(`
-      SELECT * FROM trading_agents WHERE timeframe = ? AND active = 1
+      SELECT * FROM learning_agents WHERE timeframe = ? AND active = 1
     `).all(timeframe) as any[];
 
     return rows.map(row => this.rowToAgent(row));
@@ -181,7 +181,7 @@ class TradingAgentService {
       }
 
       db.prepare(`
-        UPDATE trading_agents
+        UPDATE learning_agents
         SET ${updateFields.join(', ')}
         WHERE id = ?
       `).run(...values);
@@ -203,7 +203,7 @@ class TradingAgentService {
     const db = getDatabase();
 
     const result = db.prepare(`
-      DELETE FROM trading_agents WHERE id = ?
+      DELETE FROM learning_agents WHERE id = ?
     `).run(agentId);
 
     if (result.changes === 0) {
@@ -348,8 +348,8 @@ class TradingAgentService {
 
     try {
       db.prepare(`
-        INSERT INTO agent_activity_log (
-          id, agent_id, activity_type, ticker, description, data, timestamp
+        INSERT INTO learning_agent_activity_log (
+          id, learning_agent_id, activity_type, ticker, description, data, timestamp
         ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       `).run(
         activityId,
@@ -373,8 +373,8 @@ class TradingAgentService {
     const db = getDatabase();
 
     const rows = db.prepare(`
-      SELECT * FROM agent_activity_log
-      WHERE agent_id = ?
+      SELECT * FROM learning_agent_activity_log
+      WHERE learning_agent_id = ?
       ORDER BY timestamp DESC
       LIMIT ?
     `).all(agentId, limit) as any[];

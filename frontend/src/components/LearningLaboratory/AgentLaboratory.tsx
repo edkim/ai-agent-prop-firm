@@ -86,7 +86,7 @@ export default function AgentLaboratory() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-2 text-sm text-gray-600">Loading learning laboratory...</p>
+          <p className="mt-2 text-sm text-gray-400">Loading learning laboratory...</p>
         </div>
       </div>
     );
@@ -95,11 +95,11 @@ export default function AgentLaboratory() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
+      <div className="bg-gray-800 rounded-lg shadow-sm p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">🧠 Multi-Agent Learning Laboratory</h1>
-            <p className="text-sm text-gray-600 mt-1">
+            <h1 className="text-2xl font-bold text-white">🧠 Multi-Agent Learning Laboratory</h1>
+            <p className="text-sm text-gray-400 mt-1">
               Create autonomous trading agents that learn and evolve through backtesting iterations
             </p>
           </div>
@@ -126,7 +126,7 @@ export default function AgentLaboratory() {
 
       {/* Selected Agent View */}
       {selectedAgent && viewMode !== 'list' && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
+        <div className="bg-gray-800 rounded-lg shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               {(() => {
@@ -135,50 +135,47 @@ export default function AgentLaboratory() {
                 const displayName = nameMatch ? nameMatch[2] : selectedAgent.name;
                 return (
                   <>
-                    {displayId && <span className="text-sm font-semibold text-gray-500 mr-2">{displayId}.</span>}
-                    <h2 className="text-xl font-bold text-gray-900 inline">{displayName}</h2>
+                    {displayId && <span className="text-gray-500 mr-2">{displayId}.</span>}
+                    <h2 className="text-xl font-bold text-white inline">{displayName}</h2>
                   </>
                 );
               })()}
-              <p className="text-sm text-gray-600 mt-1">{selectedAgent.instructions}</p>
+              <p className="text-sm text-gray-400 mt-1">{selectedAgent.instructions}</p>
             </div>
             <button
               onClick={() => setViewMode('list')}
-              className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
+              className="px-3 py-1 text-sm text-gray-400 hover:text-white"
             >
               ← Back to List
             </button>
           </div>
 
           {/* View Tabs */}
-          <div className="flex space-x-4 border-b border-gray-200 mb-4">
+          <div className="flex space-x-4 border-b border-gray-700 mb-4">
             <button
               onClick={() => setViewMode('iterations')}
-              className={`px-4 py-2 border-b-2 transition-colors ${
-                viewMode === 'iterations'
+              className={`px-4 py-2 border-b-2 transition-colors ${viewMode === 'iterations'
                   ? 'border-blue-600 text-blue-600 font-medium'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
+                  : 'border-transparent text-gray-400 hover:text-white'
+                }`}
             >
               Iterations
             </button>
             <button
               onClick={() => setViewMode('knowledge')}
-              className={`px-4 py-2 border-b-2 transition-colors ${
-                viewMode === 'knowledge'
+              className={`px-4 py-2 border-b-2 transition-colors ${viewMode === 'knowledge'
                   ? 'border-blue-600 text-blue-600 font-medium'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
+                  : 'border-transparent text-gray-400 hover:text-white'
+                }`}
             >
               Knowledge Base
             </button>
             <button
               onClick={() => setViewMode('strategies')}
-              className={`px-4 py-2 border-b-2 transition-colors ${
-                viewMode === 'strategies'
+              className={`px-4 py-2 border-b-2 transition-colors ${viewMode === 'strategies'
                   ? 'border-blue-600 text-blue-600 font-medium'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
+                  : 'border-transparent text-gray-400 hover:text-white'
+                }`}
             >
               Strategy Versions
             </button>
@@ -197,10 +194,10 @@ export default function AgentLaboratory() {
       {viewMode === 'list' && (
         <div className="space-y-4">
           {agents.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+            <div className="bg-gray-800 rounded-lg shadow-sm p-12 text-center">
               <div className="text-6xl mb-4">🤖</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Learning Agents Yet</h3>
-              <p className="text-gray-600 mb-4">
+              <h3 className="text-lg font-medium text-white mb-2">No Learning Agents Yet</h3>
+              <p className="text-gray-400 mb-4">
                 Create your first autonomous trading agent that learns from backtests
               </p>
               <button
@@ -218,85 +215,85 @@ export default function AgentLaboratory() {
                 const nameMatch = agent.name.match(/^(\d+)\.\s*(.+)$/);
                 const displayId = nameMatch ? nameMatch[1] : (index + 1).toString();
                 const displayName = nameMatch ? nameMatch[2] : agent.name;
-                
+
                 return (
-                <div
-                  key={agent.id}
-                  className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3">
-                        <span className="text-sm font-semibold text-gray-500">{displayId}.</span>
-                        <h3 className="text-lg font-bold text-gray-900">{displayName}</h3>
-                        <span className={`px-2 py-1 text-xs rounded-full ${
-                          agent.status === 'learning' ? 'bg-blue-100 text-blue-800' :
-                          agent.status === 'paper_trading' ? 'bg-green-100 text-green-800' :
-                          agent.status === 'live_trading' ? 'bg-purple-100 text-purple-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {agent.status}
-                        </span>
-                      </div>
-
-                      <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                        {agent.instructions}
-                      </p>
-
-                      <div className="flex items-center space-x-6 mt-4 text-sm">
-                        <div>
-                          <span className="text-gray-600">Risk:</span>
-                          <span className="ml-1 font-medium text-gray-900">{agent.risk_tolerance}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Style:</span>
-                          <span className="ml-1 font-medium text-gray-900">{agent.trading_style}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Focus:</span>
-                          <span className="ml-1 font-medium text-gray-900">
-                            {agent.pattern_focus.join(', ')}
+                  <div
+                    key={agent.id}
+                    className="bg-gray-800 rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3">
+                          <span className="text-gray-500">{displayId}.</span>
+                          <h3 className="text-lg font-bold text-white">{displayName}</h3>
+                          <span className={`px-2 py-1 text-xs rounded-full ${agent.status === 'learning' ? 'bg-blue-100 text-blue-800' :
+                              agent.status === 'paper_trading' ? 'bg-green-100 text-green-800' :
+                                agent.status === 'live_trading' ? 'bg-purple-100 text-purple-800' :
+                                  'bg-gray-700 text-gray-800'
+                            }`}>
+                            {agent.status}
                           </span>
                         </div>
+
+                        <p className="text-sm text-gray-400 mt-2 line-clamp-2">
+                          {agent.instructions}
+                        </p>
+
+                        <div className="flex items-center space-x-6 mt-4 text-sm">
+                          <div>
+                            <span className="text-gray-400">Risk:</span>
+                            <span className="ml-1 font-medium text-white">{agent.risk_tolerance}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Style:</span>
+                            <span className="ml-1 font-medium text-white">{agent.trading_style}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Focus:</span>
+                            <span className="ml-1 font-medium text-white">
+                              {agent.pattern_focus.join(', ')}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex flex-col space-y-2">
-                      <button
-                        onClick={() => handleStartIteration(agent.id)}
-                        disabled={iterationInProgress === agent.id}
-                        className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-                      >
-                        {iterationInProgress === agent.id ? (
-                          <span className="flex items-center">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                            Learning...
-                          </span>
-                        ) : (
-                          'Start Iteration'
-                        )}
-                      </button>
+                      <div className="flex flex-col space-y-2">
+                        <button
+                          onClick={() => handleStartIteration(agent.id)}
+                          disabled={iterationInProgress === agent.id}
+                          className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                          {iterationInProgress === agent.id ? (
+                            <span className="flex items-center">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Learning...
+                            </span>
+                          ) : (
+                            'Start Iteration'
+                          )}
+                        </button>
 
-                      <button
-                        onClick={() => {
-                          setSelectedAgentId(agent.id);
-                          setViewMode('iterations');
-                        }}
-                        className="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors"
-                      >
-                        View Details
-                      </button>
+                        <button
+                          onClick={() => {
+                            setSelectedAgentId(agent.id);
+                            setViewMode('iterations');
+                          }}
+                          className="px-4 py-2 bg-gray-700 text-gray-200 text-sm rounded-lg hover:bg-gray-600 transition-colors"
+                        >
+                          View Details
+                        </button>
 
-                      <button
-                        onClick={() => handleDeleteAgent(agent.id)}
-                        className="px-4 py-2 bg-red-50 text-red-600 text-sm rounded-lg hover:bg-red-100 transition-colors"
-                      >
-                        Delete
-                      </button>
+                        <button
+                          onClick={() => handleDeleteAgent(agent.id)}
+                          className="px-4 py-2 bg-red-50 text-red-600 text-sm rounded-lg hover:bg-red-100 transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )})}
+                )
+              })}
             </div>
           )}
         </div>

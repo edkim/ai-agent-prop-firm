@@ -275,7 +275,7 @@ export class RefinementApprovalService {
 
     // Save
     db.prepare(`
-      UPDATE trading_agents
+      UPDATE learning_agents
       SET approval_thresholds = ?
       WHERE id = ?
     `).run(JSON.stringify(updated), agentId);

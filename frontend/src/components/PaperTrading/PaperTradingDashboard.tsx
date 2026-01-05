@@ -50,7 +50,7 @@ export default function PaperTradingDashboard() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-2 text-sm text-gray-600">Loading paper trading data...</p>
+          <p className="mt-2 text-sm text-gray-400">Loading paper trading data...</p>
         </div>
       </div>
     );
@@ -74,30 +74,30 @@ export default function PaperTradingDashboard() {
     <div className="space-y-6">
       {/* System Status */}
       {status && (
-        <div className="bg-white shadow-md rounded-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Paper Trading System</h2>
+        <div className="bg-gray-800 shadow-md rounded-lg p-6">
+          <h2 className="text-2xl font-bold text-white mb-4">Paper Trading System</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
               <div className={`text-3xl font-bold ${status.isRunning ? 'text-green-600' : 'text-red-600'}`}>
                 {status.isRunning ? '✓' : '✗'}
               </div>
-              <p className="text-sm text-gray-600 mt-1">Status</p>
-              <p className="text-xs text-gray-500">{status.isRunning ? 'Running' : 'Stopped'}</p>
+              <p className="text-sm text-gray-400 mt-1">Status</p>
+              <p className="text-xs text-gray-300">{status.isRunning ? 'Running' : 'Stopped'}</p>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-blue-600">{status.activeAgents}</div>
-              <p className="text-sm text-gray-600 mt-1">Active Agents</p>
+              <p className="text-sm text-gray-400 mt-1">Active Agents</p>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-purple-600">{status.watchedTickers}</div>
-              <p className="text-sm text-gray-600 mt-1">Tickers</p>
+              <p className="text-sm text-gray-400 mt-1">Tickers</p>
             </div>
             <div className="text-center">
               <div className={`text-3xl font-bold ${status.polygonConnected ? 'text-green-600' : 'text-red-600'}`}>
                 {status.polygonConnected ? '✓' : '✗'}
               </div>
-              <p className="text-sm text-gray-600 mt-1">Data Feed</p>
-              <p className="text-xs text-gray-500">{status.polygonConnected ? 'Connected' : 'Disconnected'}</p>
+              <p className="text-sm text-gray-400 mt-1">Data Feed</p>
+              <p className="text-xs text-gray-300">{status.polygonConnected ? 'Connected' : 'Disconnected'}</p>
             </div>
           </div>
         </div>
@@ -105,74 +105,72 @@ export default function PaperTradingDashboard() {
 
       {/* Summary Stats */}
       {summary && (
-        <div className="bg-white shadow-md rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Portfolio Summary</h3>
+        <div className="bg-gray-800 shadow-md rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Portfolio Summary</h3>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div>
-              <p className="text-sm text-gray-600">Total Equity</p>
-              <p className="text-2xl font-bold text-gray-900">
-                ${summary.total_equity.toLocaleString()}
+              <p className="text-sm text-gray-400">Total Equity</p>
+              <p className="text-2xl font-bold text-white">
+                ${(summary.total_equity || 0).toLocaleString()}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Avg P&L</p>
-              <p className={`text-2xl font-bold ${summary.avg_pnl_percent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {summary.avg_pnl_percent >= 0 ? '+' : ''}{summary.avg_pnl_percent.toFixed(2)}%
+              <p className="text-sm text-gray-400">Avg P&L</p>
+              <p className={`text-2xl font-bold ${(summary.avg_pnl_percent || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {(summary.avg_pnl_percent || 0) >= 0 ? '+' : ''}{(summary.avg_pnl_percent || 0).toFixed(2)}%
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Total Trades</p>
-              <p className="text-2xl font-bold text-gray-900">{summary.total_trades}</p>
+              <p className="text-sm text-gray-400">Total Trades</p>
+              <p className="text-2xl font-bold text-white">{summary.total_trades}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Win Rate</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="text-sm text-gray-400">Win Rate</p>
+              <p className="text-2xl font-bold text-white">
                 {summary.avg_win_rate ? `${summary.avg_win_rate.toFixed(1)}%` : 'N/A'}
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">Open Positions</p>
-              <p className="text-2xl font-bold text-gray-900">{summary.active_positions}</p>
+              <p className="text-sm text-gray-400">Open Positions</p>
+              <p className="text-2xl font-bold text-white">{summary.active_positions}</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Trading Agents */}
-      <div className="bg-white shadow-md rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Trading Agents</h3>
+      <div className="bg-gray-800 shadow-md rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Trading Agents</h3>
         {agents.length === 0 ? (
-          <p className="text-center text-gray-500 py-8">No paper trading agents active</p>
+          <p className="text-center text-gray-300 py-8">No paper trading agents active</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {agents.map(agent => (
               <div
                 key={agent.id}
-                className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                  selectedAgentId === agent.id
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
+                className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${selectedAgentId === agent.id
+                  ? 'border-blue-500 bg-blue-900/30'
+                  : 'border-gray-700 hover:border-gray-600'
+                  }`}
                 onClick={() => setSelectedAgentId(agent.id)}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-semibold text-gray-900">{agent.name}</h4>
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    agent.account_status === 'active'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}>
+                  <h4 className="font-semibold text-white">{agent.name}</h4>
+                  <span className={`text-xs px-2 py-1 rounded-full ${agent.account_status === 'active'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-gray-700 text-gray-800'
+                    }`}>
                     {agent.account_status}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
-                    <p className="text-gray-600">Equity</p>
+                    <p className="text-gray-400">Equity</p>
                     <p className="font-semibold">${agent.equity.toLocaleString()}</p>
                   </div>
                   <div>
-                    <p className="text-gray-600">P&L</p>
+                    <p className="text-gray-400">P&L</p>
                     <p className={`font-semibold ${agent.total_pnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {agent.total_pnl >= 0 ? '+' : ''}${agent.total_pnl.toLocaleString()}
                       <span className="text-xs ml-1">
@@ -181,15 +179,15 @@ export default function PaperTradingDashboard() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-600">Cash</p>
+                    <p className="text-gray-400">Cash</p>
                     <p className="font-semibold">${agent.current_cash.toLocaleString()}</p>
                   </div>
                   <div>
-                    <p className="text-gray-600">Trades</p>
+                    <p className="text-gray-400">Trades</p>
                     <p className="font-semibold">
                       {agent.total_trades}
                       {agent.total_trades > 0 && (
-                        <span className="text-xs text-gray-500 ml-1">
+                        <span className="text-xs text-gray-300 ml-1">
                           ({agent.winning_trades}W/{agent.losing_trades}L)
                         </span>
                       )}
@@ -197,8 +195,8 @@ export default function PaperTradingDashboard() {
                   </div>
                 </div>
 
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-xs text-gray-500">
+                <div className="mt-3 pt-3 border-t border-gray-700">
+                  <p className="text-xs text-gray-300">
                     Started: {new Date(agent.account_created_at).toLocaleDateString()}
                   </p>
                 </div>
@@ -210,38 +208,37 @@ export default function PaperTradingDashboard() {
 
       {/* Recent Trades */}
       {summary && summary.recent_trades.length > 0 && (
-        <div className="bg-white shadow-md rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Trades (24h)</h3>
+        <div className="bg-gray-800 shadow-md rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-white mb-4">Recent Trades (24h)</h3>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-gray-700">
               <thead>
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Agent</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ticker</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Side</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Qty</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Price</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">P&L</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase">Time</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase">Agent</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase">Ticker</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-300 uppercase">Side</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-300 uppercase">Qty</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-300 uppercase">Price</th>
+                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-300 uppercase">P&L</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-700">
                 {summary.recent_trades.map((trade: any, idx: number) => (
-                  <tr key={idx} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 text-sm text-gray-900">
+                  <tr key={idx} className="hover:bg-gray-900">
+                    <td className="px-4 py-2 text-sm text-white">
                       {new Date(trade.executed_at).toLocaleTimeString()}
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-600">{trade.agent_name}</td>
-                    <td className="px-4 py-2 text-sm font-medium text-gray-900">{trade.ticker}</td>
+                    <td className="px-4 py-2 text-sm text-gray-400">{trade.agent_name}</td>
+                    <td className="px-4 py-2 text-sm font-medium text-white">{trade.ticker}</td>
                     <td className="px-4 py-2">
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        trade.side === 'BUY' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
+                      <span className={`text-xs px-2 py-1 rounded-full ${trade.side === 'BUY' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
                         {trade.side}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-900 text-right">{trade.quantity}</td>
-                    <td className="px-4 py-2 text-sm text-gray-900 text-right">${trade.price.toFixed(2)}</td>
+                    <td className="px-4 py-2 text-sm text-white text-right">{trade.quantity}</td>
+                    <td className="px-4 py-2 text-sm text-white text-right">${trade.price.toFixed(2)}</td>
                     <td className="px-4 py-2 text-sm text-right">
                       {trade.pnl !== null ? (
                         <span className={trade.pnl >= 0 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>

@@ -59,18 +59,23 @@ interface StrategyPerformanceSummary {
 }
 
 export class BatchBacktestService {
-  private anthropic: Anthropic;
-  private scriptExecutor: ScriptExecutionService;
+  private anthropic: Anthropic | null = null;
+  private scriptExecutor: ScriptExecutionService | null = null;
   private scriptsDir: string;
 
   constructor() {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      throw new Error('ANTHROPIC_API_KEY required for batch backtesting');
-    }
-    this.anthropic = new Anthropic({ apiKey });
-    this.scriptExecutor = new ScriptExecutionService();
     this.scriptsDir = path.join(process.cwd(), 'claude-generated-scripts');
+  }
+
+  private ensureInitialized(): void {
+    if (!this.anthropic) {
+      const apiKey = process.env.ANTHROPIC_API_KEY;
+      if (!apiKey) {
+        throw new Error('ANTHROPIC_API_KEY required for batch backtesting');
+      }
+      this.anthropic = new Anthropic({ apiKey });
+      this.scriptExecutor = new ScriptExecutionService();
+    }
   }
 
   /**
@@ -143,6 +148,7 @@ export class BatchBacktestService {
     strategies: StrategyRecommendation[],
     samples: Sample[]
   ): Promise<void> {
+    this.ensureInitialized();
     const db = getDatabase();
     const startTime = Date.now();
 
@@ -192,7 +198,7 @@ export class BatchBacktestService {
             process.env.BACKTEST_START_DATE = sample.start_date;
             process.env.BACKTEST_END_DATE = sample.end_date;
 
-            const result = await this.scriptExecutor.executeScript(script.script_path);
+            const result = await this.scriptExecutor!.executeScript(script.script_path);
 
             const executionTime = Date.now() - testStartTime;
 
@@ -353,9 +359,10 @@ export class BatchBacktestService {
    * Generate backtest script from strategy recommendation using Claude
    */
   private async generateStrategyScript(strategy: StrategyRecommendation): Promise<string> {
+    this.ensureInitialized();
     const prompt = this.buildStrategyScriptPrompt(strategy);
 
-    const response = await this.anthropic.messages.create({
+    const response = await this.anthropic!.messages.create({
       model: 'claude-sonnet-4-5-20250929',
       max_tokens: 8192,
       temperature: 0,

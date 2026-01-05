@@ -251,7 +251,7 @@ export class PerformanceMonitorService {
     // Get agent status
     const agent = db.prepare(`
       SELECT status
-      FROM trading_agents
+      FROM learning_agents
       WHERE id = ?
     `).get(agentId) as any;
 
@@ -291,7 +291,7 @@ export class PerformanceMonitorService {
     const consistentPerformance = recentWinRates.every(wr => wr >= 0.55);
 
     const allCriteriaMet = meetsIterationCount && meetsWinRate && meetsSharpe &&
-                            meetsReturn && meetsSignals && consistentPerformance;
+      meetsReturn && meetsSignals && consistentPerformance;
 
     if (allCriteriaMet) {
       return {

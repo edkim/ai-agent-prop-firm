@@ -49,7 +49,7 @@ router.get('/agents', async (_req: Request, res: Response) => {
         p.losing_trades,
         p.status as account_status,
         p.created_at as account_created_at
-      FROM trading_agents a
+      FROM learning_agents a
       INNER JOIN paper_accounts p ON p.agent_id = a.id
       WHERE a.status = 'paper_trading'
       ORDER BY p.equity DESC
@@ -176,7 +176,7 @@ router.get('/leaderboard', async (_req: Request, res: Response) => {
         p.sharpe_ratio,
         p.max_drawdown,
         p.created_at
-      FROM trading_agents a
+      FROM learning_agents a
       INNER JOIN paper_accounts p ON p.agent_id = a.id
       WHERE a.status = 'paper_trading'
       AND p.status = 'active'
@@ -205,7 +205,7 @@ router.get('/summary', async (_req: Request, res: Response) => {
         AVG(p.total_pnl_percent) as avg_pnl_percent,
         SUM(p.total_trades) as total_trades,
         AVG(CAST(p.winning_trades AS REAL) / NULLIF(p.total_trades, 0) * 100) as avg_win_rate
-      FROM trading_agents a
+      FROM learning_agents a
       INNER JOIN paper_accounts p ON p.agent_id = a.id
       WHERE a.status = 'paper_trading'
       AND p.status = 'active'
@@ -230,7 +230,7 @@ router.get('/summary', async (_req: Request, res: Response) => {
         a.name as agent_name
       FROM paper_trades t
       INNER JOIN paper_accounts pa ON t.account_id = pa.id
-      INNER JOIN trading_agents a ON pa.agent_id = a.id
+      INNER JOIN learning_agents a ON pa.agent_id = a.id
       WHERE t.executed_at >= datetime('now', '-24 hours')
       ORDER BY t.executed_at DESC
       LIMIT 10
